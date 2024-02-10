@@ -793,3 +793,41 @@ class PushRodMotor(Motor):  # TODO: Test!
             Current Azimuth and Elevation Coordinate as a Tuple of Floats
         """
         return self.az, self.el
+
+class W1XMBigDishMotor(Motor):
+    """
+    Class for Controlling the 54 roof Big Dish
+    """
+
+    def __init__(self):
+        """
+        Initializer for W1XM Big Dish controller
+        """
+        super().__init__(None, None, (0.0, 360.0), (-90.0, 90.0))
+        self.position = (60.0, 30.0)
+
+    def point(self, az, el):
+        """Points the dish at a point
+
+        Parameters
+        ----------
+        az : float
+            Azimuth Coordinate to Point At
+        el : float
+            Elevation Coordinate to Point At
+
+        Returns
+        -------
+        None
+        """
+        self.position = (az, el)
+
+    def status(self):
+        """Returns the Position of the Dish
+
+        Returns
+        -------
+        (float, float)
+            Current Azimuth and Elevation Coordinate as a Tuple of Floats
+        """
+        return self.position
