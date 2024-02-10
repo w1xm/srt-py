@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from time import sleep
 from math import cos, acos, pi, sqrt, floor
 
+from .bigdish_client import BigDishClient
 
 class Motor(ABC):
     """Abstract Class for All Motors Types
@@ -793,3 +794,45 @@ class PushRodMotor(Motor):  # TODO: Test!
             Current Azimuth and Elevation Coordinate as a Tuple of Floats
         """
         return self.az, self.el
+
+class W1XMBigDishMotor(Motor):
+    """
+    Class for Controlling the 54 roof Big Dish
+    """
+
+    def __init__(self):
+        """
+        Initializer for W1XM Big Dish controller
+        """
+        super().__init__(None, None, (0.0, 360.0), (0.0, 85.0))
+        self.position = (60.0, 30.0)
+        self.client = BigDishClient("w1xm-radar-1.mitrs.org", 1234, "w1xm", "test", True)
+
+    def point(self, az, el):
+        """Points the dish at a point
+
+        Parameters
+        ----------
+        az : float
+            Azimuth Coordinate to Point At
+        el : float
+            Elevation Coordinate to Point At
+
+        Returns
+        -------
+        None
+        """
+        self.client.goto_posvel_azel(az, el, 0.0, 0.0)
+        self.position = (az, el)
+
+    def status(self):
+        """Returns the Position of the Dish
+
+        Returns
+        -------
+        (float, float)
+            Current Azimuth and Elevation Coordinate as a Tuple of Floats
+        """
+        pos = self.client.get_posvel("azel", False)
+        self.position = (pos["az_pos"], pos["el_pos"])
+        return self.position
