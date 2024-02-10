@@ -8,9 +8,11 @@ from websockets.sync.client import connect
 class BigDishClient:
     def __init__(self, server_host, server_port, user, password, kick_others = False):
         self.websocket = connect(f"ws://{server_host}:{server_port}")
-        self.websocket.send(json.dumps({"type": "auth", "user": user, "password": password, "version": "0.0.1"}))
-        self.websocket.send(json.dumps({"type": "init", "kick_others": kick_others}))
         self.message_id = 0
+        self.websocket.send(json.dumps({"type": "auth", "id": self.message_id, "user": user, "password": password, "version": "0.0.1"}))
+        self.message_id += 1
+        self.websocket.send(json.dumps({"type": "init", "id": self.message_id, "kick_others": kick_others}))
+        self.message_id += 1
         self.received_messages = {}
         self._message_recv_thread_handle = threading.Thread(target = self._message_recv_thread)
         self._message_recv_thread_handle.start()
