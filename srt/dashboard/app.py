@@ -87,7 +87,7 @@ def generate_app(config_dir, config_dict):
     pio.templates.default = "seaborn"  # Style Choice for Graphs
     curfold = Path(__file__).parent.absolute()
     # Generate Sidebar Objects
-    side_title = "Small Radio Telescope"
+    side_title = "Medium Radio Telescope"
 
     image_filename = curfold.joinpath(
         "images", "MIT_HO_logo_landscape.png"
@@ -269,7 +269,7 @@ def generate_app(config_dir, config_dict):
             az_offset = el_offset = np.nan
             cf = np.nan
             bandwidth = np.nan
-            status_string = "SRT Not Connected"
+            status_string = "MRT Not Connected"
             vlsr = np.nan
         else:
             az = status["motor_azel"][0]
@@ -281,11 +281,11 @@ def generate_app(config_dir, config_dict):
             vlsr = status["vlsr"]
             time_dif = time() - status["time"]
             if time_dif > 5:
-                status_string = "SRT Daemon Not Available"
+                status_string = "MRT Daemon Not Available"
             elif status["queue_size"] == 0 and status["queued_item"] == "None":
-                status_string = "SRT Inactive"
+                status_string = "MRT Inactive"
             else:
-                status_string = "SRT In Use!"
+                status_string = "MRT In Use!"
 
         status_string = f"""
          #### {status_string}

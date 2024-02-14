@@ -183,6 +183,7 @@ class SmallRadioTelescopeDaemon:
         scan_center = self.ephemeris_locations[object_id]
         np_sides = [5, 5]
         for scan in range(N_pnt_default):
+            scan_center = self.ephemeris_locations[object_id] #recompute target position for every iteration
             self.log_message("{0} of {1} point scan.".format(scan, N_pnt_default))
             i = (scan // 5) - 2
             j = (scan % 5) - 2
@@ -235,6 +236,7 @@ class SmallRadioTelescopeDaemon:
         rotor_loc = []
         pwr_list = []
         for j in range(0, 3 * self.num_beamswitches):
+            new_rotor_destination = self.ephemeris_locations[object_id] #recompute target position for every iteration
             self.radio_queue.put(("beam_switch", j + 1))
             az_dif_scalar = np.cos(new_rotor_destination[1] * np.pi / 180.0)
             az_dif = (j % 3 - 1) * self.beamwidth / az_dif_scalar

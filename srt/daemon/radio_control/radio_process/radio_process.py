@@ -28,7 +28,7 @@ import threading
 import math
 import numpy as np
 from . import add_clock_tags
-#import osmosdr
+import osmosdr
 import time
 
 
@@ -52,12 +52,12 @@ class radio_process(gr.top_block):
         self.sinc_samples = sinc_samples = np.sinc(sinc_sample_locations/np.pi)
         self.freq = freq = 1420000000
         self.vlsr = vlsr = np.nan
-        self.tsys = tsys = 171
-        self.tcal = tcal = 290
+        self.tsys = tsys = 60
+        self.tcal = tcal = 40
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
         self.samp_rate = samp_rate = 2000000
-        self.rf_gain = rf_gain = 20
+        self.rf_gain = rf_gain = 25
         self.rf_freq = rf_freq = freq
         self.motor_el = motor_el = np.nan
         self.motor_az = motor_az = np.nan
@@ -102,12 +102,12 @@ class radio_process(gr.top_block):
         # Sleep 1 second to ensure next PPS has come
         time.sleep(1)
 
-        self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
+        self.uhd_usrp_source_1.set_center_freq(freq, 0)
         self.uhd_usrp_source_1.set_antenna("RX2", 0)
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 0)
         self.uhd_usrp_source_1.set_gain(rf_gain, 0)
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 0)
-        self.uhd_usrp_source_1.set_auto_iq_balance(True, 0)
+        #self.uhd_usrp_source_1.set_auto_iq_balance(True, 0)
         self.fft_vxx_0 = fft.fft_vcc(num_bins, True, fft_window, True, 3)
         self.dc_blocker_xx_0 = filter.dc_blocker_cc((num_bins*num_integrations), False)
         self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch}), tag_period, pmt.intern("metadata"))

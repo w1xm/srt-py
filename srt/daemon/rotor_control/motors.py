@@ -806,7 +806,7 @@ class W1XMBigDishMotor(Motor):
         """
         super().__init__(None, None, (0.0, 360.0), (0.0, 85.0))
         self.position = (60.0, 30.0)
-        self.client = BigDishClient("w1xm-radar-1.mitrs.org", 1234, "w1xm", "test", True)
+        self.client = BigDishClient("172.25.15.11", 1234, "w1xm", "test", True)
 
     def point(self, az, el):
         """Points the dish at a point
