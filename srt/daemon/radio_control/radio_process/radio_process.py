@@ -37,7 +37,7 @@ import time
 class radio_process(gr.top_block):
 
     def __init__(self, num_bins=256, num_integrations=100000):
-        gr.top_block.__init__(self, "radio_process", catch_exceptions=True)
+        gr.top_block.__init__(self, "radio_process") #, catch_exceptions=True)
 
         ##################################################
         # Parameters
