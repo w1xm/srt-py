@@ -84,6 +84,9 @@ class radio_process(gr.top_block):
         self.xmlrpc_server_0_thread = threading.Thread(target=self.xmlrpc_server_0.serve_forever)
         self.xmlrpc_server_0_thread.daemon = True
         self.xmlrpc_server_0_thread.start()
+        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch}), tag_period, pmt.intern("metadata"))
+        self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
+        
         self.uhd_usrp_source_1 = uhd.usrp_source(
             ",".join(("addr=172.25.14.11", '')),
             uhd.stream_args(
@@ -110,8 +113,6 @@ class radio_process(gr.top_block):
         #self.uhd_usrp_source_1.set_auto_iq_balance(True, 0)
         self.fft_vxx_0 = fft.fft_vcc(num_bins, True, fft_window, True, 3)
         self.dc_blocker_xx_0 = filter.dc_blocker_cc((num_bins*num_integrations), False)
-        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch}), tag_period, pmt.intern("metadata"))
-        self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
         self.blocks_stream_to_vector_0_2 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
         self.blocks_stream_to_vector_0_1 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
         self.blocks_stream_to_vector_0_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
