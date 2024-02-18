@@ -416,16 +416,28 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
     # create the output grid
     az_in = np.array(az_in)
     el_in = np.array(el_in)
-    az_range = np.linspace(az_in.min(), az_in.max(), sides[0])
-    el_range = np.linspace(el_in.min(), el_in.max(), sides[1])
+    
+    idx_center = int(np.ceil(len(az_in)/2))
+    az_center = az_in[idx_center]
+    el_center = el_in[idx_center]
+    
+    #az_span = (sides[0]-1)*d_az
+    #el_span = (sides[1]-1)*d_el
+    
+    az_range = np.linspace(az_center-d_az, az_center+d_az, sides[0])
+    el_range = np.linspace(el_center-d_el, el_center+d_el, sides[1])
+    
+    #below doesn't quite work because we are griddig a moving target
+    #az_range = np.linspace(az_in.min(), az_in.max(), sides[0])
+    #el_range = np.linspace(el_in.min(), el_in.max(), sides[1])
 
     #azout, elout = np.meshgrid(az_a, el_a)
     pow_in = np.array(pow_in)
     pow_grid = np.reshape(pow_in, (sides[0],sides[1]))
     pmin = pow_in.min()
     #p_in = pow_in - pmin
-    x_l = np.linspace(-0.5, 0.5, sides[0])
-    y_l = np.linspace(-0.5, 0.5, sides[1])
+    #x_l = np.linspace(-0.5, 0.5, sides[0])
+    #y_l = np.linspace(-0.5, 0.5, sides[1])
     #xm, ym = np.meshgrid(x_l, y_l)
     #xf = xm.flatten()
     #yf = ym.flatten()

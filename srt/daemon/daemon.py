@@ -158,7 +158,7 @@ class SmallRadioTelescopeDaemon:
         self.command_error_logs.append((time(), message))
         print(message)
 
-    def n_point_scan(self, object_id):
+    def n_point_scan(self, object_id, grid_size=5):
         """Runs an N-Point (25) Scan About an Object
 
         Parameters
@@ -176,17 +176,17 @@ class SmallRadioTelescopeDaemon:
         cur_vlsr = self.ephemeris_vlsr[object_id]
         self.radio_queue.put(("vlsr", float(cur_vlsr)))
         self.current_vlsr = cur_vlsr
-        N_pnt_default = 25
+        N_pnt_default = grid_size**2
         rotor_loc = []
         pwr_list = []
         #
         scan_center = self.ephemeris_locations[object_id]
-        np_sides = [5, 5]
+        np_sides = [grid_size, grid_size]
         for scan in range(N_pnt_default):
             scan_center = self.ephemeris_locations[object_id] #recompute target position for every iteration
             self.log_message("{0} of {1} point scan.".format(scan, N_pnt_default))
-            i = (scan // 5) - 2
-            j = (scan % 5) - 2
+            i = (scan // grid_size) - int(grid_size/2)
+            j = (scan % grid_size) - int(grid_size/2)
             el_dif = i * self.beamwidth * 0.5
             az_dif_scalar = np.cos((scan_center[1] + el_dif) * np.pi / 180.0)
             # Avoid issues where you get close to the zenith
