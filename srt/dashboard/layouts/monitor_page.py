@@ -33,7 +33,8 @@ from .graphs import (
     generate_az_el_graph,
     generate_power_history_graph,
     generate_spectrum_graph,
-    generate_npoint,
+    generate_npoint_raw,
+    generate_npoint_interpolated,
     emptygraph,
 )
 
@@ -84,9 +85,13 @@ def generate_fig_row():
                 [
                     dcc.Store(id="npoint_info", storage_type="session"),
                     html.Div(
-                        [dcc.Graph(id="npoint-graph")],
+                        [dcc.Graph(id="npoint-graph-1")],
                         className="pretty_container six columns",
                     ),
+                    html.Div(
+                         [dcc.Graph(id="npoint-graph-2")],
+                         className="pretty_container six columns",
+                     ),
                     # html.Div(
                     #     [dcc.Graph(id="beamsswitch-graph")],
                     #     className="pretty_container six columns",
@@ -583,11 +588,11 @@ def register_callbacks(
             raise PreventUpdate
 
     @app.callback(
-        Output("npoint-graph", "figure"),
+        Output("npoint-graph-1", "figure"),
         [Input("npoint_info", "modified_timestamp")],
         [State("npoint_info", "data")],
     )
-    def update_n_point(ts, npdata):
+    def update_n_point_raw(ts, npdata):
         """Update the npoint track info
 
         Parameters
@@ -620,8 +625,50 @@ def register_callbacks(
         sc = npdata["scan_center"]
         plist = npdata["pwr"]
         sd = npdata["sides"]
-        ofig = generate_npoint(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
+        ofig = generate_npoint_raw(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
         return ofig
+        
+    @app.callback(
+        Output("npoint-graph-2", "figure"),
+        [Input("npoint_info", "modified_timestamp")],
+        [State("npoint_info", "data")],
+    )
+    def update_n_point_interpolated(ts, npdata):
+        """Update the npoint track info
+
+        Parameters
+        ----------
+        ts : int
+            modified time stamp
+        npdata : dict
+            will hold N- point data.
+
+        Returns
+        -------
+        ofig : plotly.fig
+            Plotly figure
+        """
+
+        if ts is None:
+            raise PreventUpdate
+        if npdata is None:
+            return emptygraph("x", "y", "N-Point Scan")
+
+        if npdata.get("scan_center", [1, 1])[0] == 0:
+            return emptygraph("x", "y", "N-Point Scan")
+
+        az_a = []
+        el_a = []
+        for irot in npdata["rotor_loc"]:
+            az_a.append(irot[0])
+            el_a.append(irot[1])
+        mdiff = npdata["maxdiff"]
+        sc = npdata["scan_center"]
+        plist = npdata["pwr"]
+        sd = npdata["sides"]
+        ofig = generate_npoint_interpolated(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
+        return ofig
+        
 
     @app.callback(
         Output("start-warning", "children"),
