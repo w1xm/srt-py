@@ -82,6 +82,7 @@ class SmallRadioTelescopeDaemon:
         self.temp_sys = config_dict["TSYS"]
         self.temp_cal = config_dict["TCAL"]
         self.save_dir = config_dict["SAVE_DIRECTORY"]
+        self.npoints = 5 #default size of grid for npoint scan
 
         # Generate Default Calibration Values
         # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
@@ -201,7 +202,7 @@ class SmallRadioTelescopeDaemon:
                 self.rotor_destination = scan_center
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
-            sleep(5)
+            sleep(3)
             raw_spec = get_spectrum(port=5561)
             p = np.sum(raw_spec)
             a = len(raw_spec)
@@ -438,6 +439,15 @@ class SmallRadioTelescopeDaemon:
         if self.radio_save_task is not None:
             self.radio_save_task.terminate()
             self.radio_save_task = None
+            
+    def set_npoints(self, n):
+        """Set the number of points for the N point scan
+        
+        Parameters
+        ----------
+        npoints : number of points along grid edge for npoint scan
+        """
+        self.npoints = n
 
     def set_freq(self, frequency):
         """Set the Frequency of the Processing Script
@@ -738,7 +748,7 @@ class SmallRadioTelescopeDaemon:
                 # If Command Starts With a Valid Object Name
                 if command_parts[0] in self.ephemeris_locations:
                     if command_parts[-1] == "n":  # N-Point Scan About Object
-                        self.n_point_scan(object_id=command_parts[0])
+                        self.n_point_scan(object_id=command_parts[0], grid_size=self.npoints)
                     elif command_parts[-1] == "b":  # Beam-Switch Away From Object
                         self.beam_switch(object_id=command_parts[0])
                     else:  # Point Directly At Object
@@ -749,6 +759,8 @@ class SmallRadioTelescopeDaemon:
                     self.point_at_azel(*self.cal_location)
                 elif command_name == "calibrate":
                     self.calibrate()
+                elif command_name == "npointset":
+                    self.set_npoints(n=int(command_parts[1]))
                 elif command_name == "quit":
                     self.quit()
                 elif command_name == "record":
