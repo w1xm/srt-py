@@ -748,45 +748,11 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
     az_center = az_in[idx_center]
     el_center = el_in[idx_center]
     
-    #az_span = (sides[0]-1)*d_az
-    #el_span = (sides[1]-1)*d_el
-    
     az_range = np.linspace(az_center-d_az, az_center+d_az, sides[0])
     el_range = np.linspace(el_center-d_el, el_center+d_el, sides[1])
-    
-    #below doesn't quite work because we are griddig a moving target
-    #az_range = np.linspace(az_in.min(), az_in.max(), sides[0])
-    #el_range = np.linspace(el_in.min(), el_in.max(), sides[1])
 
-    #azout, elout = np.meshgrid(az_a, el_a)
     pow_in = np.array(pow_in)
     pow_grid = np.reshape(pow_in, (sides[0],sides[1]))
-    pmin = pow_in.min()
-    #p_in = pow_in - pmin
-    #x_l = np.linspace(-0.5, 0.5, sides[0])
-    #y_l = np.linspace(-0.5, 0.5, sides[1])
-    #xm, ym = np.meshgrid(x_l, y_l)
-    #xf = xm.flatten()
-    #yf = ym.flatten()
-    #xaout = np.linspace(-0.5, 0.5, 100)
-    #idxout = [(np.abs(xm - x_o)).argmin() for x_o in xaout] #get nearest neighboring point
-    #xo, yo = np.meshgrid(xaout, xaout)
-    #idxgrid, idygrid = np.meshgrid(idxout, idyout)
-    #idxf = idxgrid.flatten()
-    #idyf = idygrid.flatten() 
-    #indices = np.transpose(np.array([idxf, idyf]))
-    # Interpolate the data
-    #interp_data_flat = pow_grid[indices]
-    #interp_data = np.reshape(interp_data_flat,(100,100))
-    #interp_data = sinc_interp2d(xf, yf, p_in, d_az, d_el, xo, yo)
-    # Determine center of the object and compare to desired center.
-    #pow_tot = np.sum(np.sum(interp_data))
-    #az_center = np.sum(np.sum(interp_data * azout)) / pow_tot
-    #el_center = np.sum(np.sum(interp_data * elout)) / pow_tot
-    #az_off = az_center - cent[0]
-    #el_off = el_center - cent[1]
-    #antext0 = "Az Center {0:.2f} deg".format(az_off)
-    #antext1 = "El Center {0:.2f} deg".format(el_off)
     # Make the contour plot
     d1 = go.Contour(z=pow_grid, x=az_range, y=el_range, colorscale="Viridis")
     fig = go.Figure(

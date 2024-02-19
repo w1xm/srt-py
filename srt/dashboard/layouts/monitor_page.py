@@ -479,6 +479,41 @@ def generate_popups(software):
         ),
             dbc.Modal(
                 [
+                    dbc.ModalHeader("Enter the New N-point Grid Size"),
+                    dbc.ModalBody(
+                        [
+                            dcc.Input(
+                                id="npoint-size",
+                                type="number",
+                                debounce=True,
+                                placeholder="Grid Edge Points sqrt(N)",
+                                style={"width": "100%"},
+                            ),
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Yes",
+                                id="npoint-set-btn-yes",
+                                className="ml-auto",
+                                # block=True,
+                                color="primary",
+                            ),
+                            dbc.Button(
+                                "No",
+                                id="npoint-set-btn-no",
+                                className="ml-auto",
+                                # block=True,
+                                color="secondary",
+                            ),
+                        ]
+                    ),
+                ],
+                id="n-point-modal",
+            ),
+            dbc.Modal(
+                [
                     dbc.ModalHeader("Enter the New Center Frequency"),
                     dbc.ModalBody(
                         [
@@ -586,7 +621,9 @@ def generate_popups(software):
                     ),
                 ],
                 id="offset-modal",
+
         ),
+            
             dbc.Modal(
                 [
                     dbc.ModalHeader("Start Recording"),
@@ -752,6 +789,7 @@ def generate_layout(software):
             dbc.DropdownMenuItem("Stow", id="btn-stow"),
             dbc.DropdownMenuItem("Set AzEl", id="btn-point-azel"),
             dbc.DropdownMenuItem("Set Offsets", id="btn-set-offset"),
+            dbc.DropdownMenuItem("Set N-point size", id="btn-set-npoint"),
         ],
         "Radio": [
             dbc.DropdownMenuItem("Set Frequency", id="btn-set-freq"),
@@ -1295,6 +1333,32 @@ def register_callbacks(
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
             if button_id == "point-btn-yes":
                 command_thread.add_to_queue(f"azel {az} {el}")
+            if n_clicks_yes or n_clicks_no or n_clicks_btn:
+                return not is_open
+            return is_open
+            
+    
+    
+    @app.callback(
+        Output("n-point-modal", "is_open"),
+        [
+            Input("btn-set-npoint", "n_clicks"),
+            Input("npoint-set-btn-yes", "n_clicks"),
+            Input("npoint-set-btn-no", "n_clicks"),
+        ],
+        [
+            State("n-point-modal", "is_open"),
+            State("npoint-size", "value"),
+        ],
+    )
+    def freq_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, npoints):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open
+        else:
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "npoint-set-btn-yes":
+                command_thread.add_to_queue(f"npointset {npoints}")
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
                 return not is_open
             return is_open
