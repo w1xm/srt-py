@@ -202,7 +202,7 @@ class SmallRadioTelescopeDaemon:
                 self.rotor_destination = scan_center
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
-            sleep(3)
+            sleep(5)
             raw_spec = get_spectrum(port=5561)
             p = np.sum(raw_spec)
             a = len(raw_spec)
@@ -321,6 +321,55 @@ class SmallRadioTelescopeDaemon:
                 sleep(0.1)
         else:
             self.log_message(f"Object at {new_rotor_cmd_location} Not in Motor Bounds")
+            
+    def point_at_galactic(self, l_pos, b_pos, duration):
+        """Points Antenna at a Specific Galactic longitude and lattitude
+
+        Parameters
+        ----------
+        l_pos : float
+            longitude, in degrees, to turn antenna towards
+        b_pos : float
+            lattitude, in degrees, to point antenna upwards at
+        duration : float
+            duration in seconds to continue tracking coordinate
+            
+        Returns
+        -------
+        None
+        """
+        
+        if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
+            #rotor is smart enough to directly handle the command
+            self.log_message("direct ra dec coordinate commands not yet supported for your rotor") 
+        else:
+            #rotor needs command converted to az-el
+            self.log_message("direct galactic coordinate commands not yet supported for your rotor")
+    
+    def point_at_radec(self, ra_pos, dec_pos, duration):
+        """Points Antenna at a specific ICRS coordinate in Ra Dec 
+        (Bigdish uses J2000)
+
+        Parameters
+        ----------
+        ra_pos : float
+            right ascension, in degrees, to turn antenna towards
+        dec_pos : float
+            declination, in degrees, to point antenna upwards at
+        duration : float
+            duration in seconds to continue tracking coordinate
+            
+        Returns
+        -------
+        None
+        """
+        
+        if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
+            #rotor is smart enough to directly handle the command
+            self.log_message("direct ra dec coordinate commands not yet supported for your rotor") 
+        else:
+            #rotor needs command converted to az-el
+            self.log_message("direct ra dec coordinate commands not yet supported for your rotor")       
 
     def point_at_offset(self, az_off, el_off):
         """From the Current Object or Position Pointed At, Move to an Offset of That Location
@@ -776,6 +825,20 @@ class SmallRadioTelescopeDaemon:
                 elif command_name == "azel":
                     self.point_at_azel(
                         float(command_parts[1]),
+                        float(command_parts[2]),
+                    )
+                #for bigdish enable temporary bypass of SRT command and control to directly point dish
+                elif command_name == "galactic":
+                    self.point_at_galactic(
+                        float(command_parts[1]),
+                        float(command_parts[2]),
+                        float(command_parts[3]),
+                    )
+                #for bigdish enable temporary bypass of SRT command and control to directly point dish
+                elif command_name == "radec":
+                    self.point_at_radec(
+                        float(command_parts[1]),
+                        float(command_parts[2]),
                         float(command_parts[2]),
                     )
                 elif command_name == "offset":
