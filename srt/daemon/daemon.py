@@ -79,10 +79,13 @@ class SmallRadioTelescopeDaemon:
         self.radio_autostart = config_dict["RADIO_AUTOSTART"]
         self.num_beamswitches = config_dict["NUM_BEAMSWITCHES"]
         self.beamwidth = config_dict["BEAMWIDTH"]
+        self.cal_type = config_dict["CAL_TYPE"]
         self.temp_sys = config_dict["TSYS"]
         self.temp_cal = config_dict["TCAL"]
         self.save_dir = config_dict["SAVE_DIRECTORY"]
+        
         self.npoints = 5 #default size of grid for npoint scan
+        self.radio_calibrator_state = False
 
         # Generate Default Calibration Values
         # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
@@ -419,6 +422,10 @@ class SmallRadioTelescopeDaemon:
         -------
         None
         """
+        
+        self.set_calibrator_state(True)
+        sleep(0.1)
+        
         sleep(
             self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency
         )
@@ -435,6 +442,7 @@ class SmallRadioTelescopeDaemon:
             self.cal_power = cal_data["cal_pwr"]
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
+        self.set_calibrator_state(False)
         self.log_message("Calibration Done")
 
     def start_recording(self, name):
@@ -533,6 +541,29 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         self.radio_sample_frequency = samp_rate
         self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
+        
+    def set_calibrator_state(self, calibrator_state):
+        """Set the state of the calibrator via radio GPIO
+
+        Note that this is highly system specific and must be programmed appropriately
+
+        Parameters
+        ----------
+        calibrator_state : boolean
+            whether the calibrator is on
+
+        Returns
+        -------
+        None
+        """
+        if self.cal_type == "NOISE_DIODE":
+            #customize for appropriate control scheme
+            self.radio_calibrator_state = calibrator_state
+            self.radio_queue.put(("cal_on", self.radio_calibrator_state))
+            
+        else:
+            self.log_message("Noise Source Not Implemented")
+    
 
     def quit(self):
         """Stops the Daemon Process
@@ -682,6 +713,7 @@ class SmallRadioTelescopeDaemon:
                 "n_point_data": self.n_point_data,
                 "beam_switch_data": self.beam_switch_data,
                 "time": time(),
+                "cal_state": self.radio_calibrator_state,
             }
             status_socket.send_json(status)
             sleep(0.5)

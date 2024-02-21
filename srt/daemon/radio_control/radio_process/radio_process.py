@@ -88,7 +88,7 @@ class radio_process(gr.top_block):
         self.xmlrpc_server_0_thread.start()
 
         #blocks_tags_strobe blocks need to come before slow radio startup commands
-        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
+        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on": cal_on}), tag_period, pmt.intern("metadata"))
         self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
         
 
@@ -117,9 +117,9 @@ class radio_process(gr.top_block):
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 0)
 
         ##### Manually Configure USRP GPIO
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ self.calibrator_control_mask)  #set pins 2 and 3 manual
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, self.calibrator_control_mask) #set pins 2 and 3 as output
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , self.calibrator_control_mask)
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
         
 
         self.fft_vxx_0 = fft.fft_vcc(num_bins, True, fft_window, True, 3)
