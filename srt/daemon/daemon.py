@@ -555,7 +555,7 @@ class SmallRadioTelescopeDaemon:
         """
         last_updated_time = None
         while True:
-            if last_updated_time is None or time() - last_updated_time > 10:
+            if last_updated_time is None or time() - last_updated_time > 1:
                 last_updated_time = time()
                 self.ephemeris_tracker.update_all_az_el()
             self.ephemeris_locations = (
