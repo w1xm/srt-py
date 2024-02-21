@@ -423,6 +423,14 @@ class SmallRadioTelescopeDaemon:
         None
         """
         
+        # erase existing calibration
+        self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = 1.0 / (self.temp_sys + self.temp_cal)
+        
+        self.radio_queue.put(("cal_pwr", self.cal_power))
+        self.radio_queue.put(("cal_values", self.cal_values))
+        
+        #turn on calibration source (if we have one)
         self.set_calibrator_state(True)
         sleep(0.1)
         
@@ -435,6 +443,7 @@ class SmallRadioTelescopeDaemon:
         )
         radio_cal_task.start()
         radio_cal_task.join(30)
+        sleep(0.1)
         path = Path(self.config_directory, "calibration.json")
         with open(path, "r") as input_file:
             cal_data = json.load(input_file)
@@ -442,6 +451,8 @@ class SmallRadioTelescopeDaemon:
             self.cal_power = cal_data["cal_pwr"]
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
+        
+        #disable calibration source and return
         self.set_calibrator_state(False)
         self.log_message("Calibration Done")
 
