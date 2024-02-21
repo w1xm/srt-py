@@ -45,6 +45,18 @@ blocks:
     coordinate: [108, 398]
     rotation: 0
     state: true
+- name: cal_on
+  id: variable
+  parameters:
+    comment: ''
+    value: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [176, 468.0]
+    rotation: 0
+    state: true
 - name: cal_pwr
   id: variable
   parameters:
@@ -69,6 +81,18 @@ blocks:
     coordinate: [12, 594]
     rotation: 0
     state: true
+- name: calibrator_mask
+  id: variable
+  parameters:
+    comment: ''
+    value: '0b000000000011'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216, 380.0]
+    rotation: 0
+    state: enabled
 - name: custom_window
   id: variable
   parameters:
@@ -382,6 +406,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     num_ports: '1'
+    showports: 'False'
     type: complex
     vlen: '1'
   states:
@@ -401,6 +426,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     num_ports: '1'
+    showports: 'False'
     type: complex
     vlen: '1'
   states:
@@ -420,6 +446,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     num_ports: '1'
+    showports: 'False'
     type: complex
     vlen: '1'
   states:
@@ -461,7 +488,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [823, 281]
+    coordinate: [800, 276.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_0
@@ -719,13 +746,60 @@ blocks:
     value: 'pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations":
       num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq,
       "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat,
-      "glon": glon, "soutrack": soutrack, "bsw": beam_switch})'
+      "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on})'
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
     coordinate: [548, 253]
+    rotation: 0
+    state: true
+- name: calibrator_control_strobe
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nblock to generate calibrator control commands for the X300\
+      \ radio. \nnote that this block assumes a latency lower than the calibrator\
+      \ cycle time\nand will break if that condition is not met\n\nEmbedded Python\
+      \ Blocks:\n\nEach time this file is saved, GRC will instantiate the first class\
+      \ it finds\nto get ports and parameters of your block. The arguments to __init__\
+      \  will\nbe the parameters. All of them are required to have default values!\n\
+      \"\"\"\nimport numpy as np\nfrom gnuradio import gr \nimport pmt\nimport time\n\
+      import uhd\n\nclass msg_blk(gr.sync_block):\n    def __init__(self, calibrator_mask=0xFFF,cal_state=False):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name=\"calibrator_msg_block\"\
+      ,\n            in_sig=None,\n           out_sig=None\n        )\n\n        #input\
+      \ parameters\n        self.calibrator_mask = calibrator_mask\n        self.cal_state\
+      \ = cal_state\n\n        #derived variables\n\n        self.last_cal_state =\
+      \ False\n    \n        self.message_port_register_in(pmt.intern('strobe'))\n\
+      \        self.message_port_register_out(pmt.intern('command'))\n        \n \
+      \       self.set_msg_handler(pmt.intern('strobe'), self.handle_msg)\n\n    def\
+      \ handle_msg(self, msg):\n\n        #send message to define next calibrator\
+      \ state change\n\n        if self.last_cal_state != self.cal_state:\n      \
+      \      if self.cal_state:\n                new_cal_value = 0xFFF\n         \
+      \   else:\n                new_cal_value = 0x000\n\n        #issue command to\
+      \ set toggle gpio\n\n        set_gpio = pmt.make_dict()\n        set_gpio =\
+      \ pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))\n        set_gpio\
+      \ = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))\n        set_gpio\
+      \ = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(new_cal_value))\n\
+      \        set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.calibrator_mask))\n\
+      \n        msg = pmt.make_dict()\n        msg = pmt.dict_add(msg, pmt.to_pmt('gpio'),\
+      \ set_gpio)\n\n        self.message_port_pub(pmt.intern('command'), msg) #issue\
+      \ message\n\n        self.last_cal_state = self.cal_state\n\n        "
+    affinity: ''
+    alias: ''
+    cal_state: cal_on
+    calibrator_mask: calibrator_mask
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('calibrator_msg_block', 'msg_blk', [('calibrator_mask', '4095'), ('cal_state',
+      'False')], [('strobe', 'message', 1)], [('command', 'message', 1)], '', ['cal_state',
+      'calibrator_mask'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1080, 276.0]
     rotation: 0
     state: true
 - name: dc_blocker_xx_0
@@ -1184,11 +1258,34 @@ blocks:
     coordinate: [296, 92.0]
     rotation: 0
     state: disabled
+- name: snippet_0
+  id: snippet
+  parameters:
+    alias: ''
+    code: 'calibrator_control_mask = self.calibrator_mask
+
+      self.usrp0.set_gpio_attr(''FP0A'', ''CTRL'', 0x000, 0xFFF ^ calibrator_control_mask)  #set
+      pins 2 and 3 manual
+
+      self.usrp0.set_gpio_attr(''FP0A'', ''DDR'', 0xFFF, calibrator_control_mask)
+      #set pins 2 and 3 as output
+
+      self.usrp0.set_gpio_attr(''FP0A'', ''OUT'', 0x000 , calibrator_control_mask)'
+    comment: ''
+    priority: '0'
+    section: main_after_init
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 300.0]
+    rotation: 0
+    state: true
 - name: uhd_usrp_source_1
   id: uhd_usrp_source
   parameters:
     affinity: ''
-    alias: ''
+    alias: usrp0
     ant0: '"RX2"'
     ant1: '"RX2"'
     ant10: '"RX2"'
@@ -1640,6 +1737,7 @@ blocks:
     address: tcp://127.0.0.1:5558
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1661,6 +1759,7 @@ blocks:
     address: tcp://127.0.0.1:5559
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1682,6 +1781,7 @@ blocks:
     address: tcp://127.0.0.1:5563
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1703,6 +1803,7 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1724,6 +1825,7 @@ blocks:
     address: tcp://127.0.0.1:5560
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1745,6 +1847,7 @@ blocks:
     address: tcp://127.0.0.1:5561 
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1770,6 +1873,7 @@ connections:
 - [blocks_delay_0_0, '0', blocks_stream_to_vector_0_0, '0']
 - [blocks_delay_0_1, '0', blocks_stream_to_vector_0_1, '0']
 - [blocks_integrate_xx_0, '0', blocks_multiply_const_xx_0, '0']
+- [blocks_message_strobe_0, strobe, calibrator_control_strobe, strobe]
 - [blocks_multiply_const_vxx_0, '0', blocks_add_xx_0, '0']
 - [blocks_multiply_const_vxx_0_0, '0', blocks_add_xx_0, '1']
 - [blocks_multiply_const_vxx_0_0_0, '0', blocks_add_xx_0, '2']
@@ -1792,6 +1896,7 @@ connections:
 - [blocks_stream_to_vector_0_2, '0', blocks_multiply_const_vxx_0_0_0_0, '0']
 - [blocks_tags_strobe_0, '0', blocks_add_xx_0_0, '0']
 - [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0, '2']
+- [calibrator_control_strobe, command, uhd_usrp_source_1, command]
 - [dc_blocker_xx_0, '0', blocks_skiphead_0, '0']
 - [fft_vxx_0, '0', blocks_complex_to_mag_squared_0, '0']
 - [osmosdr_source_0, '0', add_clock_tags, '0']
@@ -1799,4 +1904,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
+  grc_version: 3.10.9.2
