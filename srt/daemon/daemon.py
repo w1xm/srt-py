@@ -425,13 +425,14 @@ class SmallRadioTelescopeDaemon:
         
         # erase existing calibration
         self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = 1.0 / (self.temp_sys + self.temp_cal)
+        self.cal_power = 1.0
         
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
         
         #turn on calibration source (if we have one)
         self.set_calibrator_state(True)
+        
         sleep(0.1)
         
         sleep(
@@ -571,6 +572,7 @@ class SmallRadioTelescopeDaemon:
             #customize for appropriate control scheme
             self.radio_calibrator_state = calibrator_state
             self.radio_queue.put(("cal_on", self.radio_calibrator_state))
+            sleep(0.1)
             
         else:
             self.log_message("Noise Source Not Implemented")
