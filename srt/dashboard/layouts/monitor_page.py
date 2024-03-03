@@ -795,10 +795,14 @@ def generate_layout(software):
             dbc.DropdownMenuItem("Set Frequency", id="btn-set-freq"),
             dbc.DropdownMenuItem("Set Bandwidth", id="btn-set-samp"),
         ],
+        "Calibration": [
+            dbc.DropdownMenuItem("Calibrate", id="btn-calibrate"),
+            dbc.DropdownMenuItem("Noise Reference on", id="btn-calon"),
+            dbc.DropdownMenuItem("Noise Reference off", id="btn-caloff"),
+        ],
         "Routine": [
             dbc.DropdownMenuItem("Start Recording", id="btn-start-record"),
             dbc.DropdownMenuItem("Stop Recording", id="btn-stop-record"),
-            dbc.DropdownMenuItem("Calibrate", id="btn-calibrate"),
             dbc.DropdownMenuItem("Upload CMD File", id="btn-cmd-file"),
         ],
         "Power": [
@@ -1546,18 +1550,22 @@ def register_callbacks(
     @ app.callback(
         Output("signal", "children"),
         [
-            # Input("btn-stow", "n_clicks"),
+            Input("btn-stow", "n_clicks"),
             Input("btn-stop-record", "n_clicks"),
             Input("btn-quit", "n_clicks"),
             Input("btn-calibrate", "n_clicks"),
+            Input("btn-calon", "n_clicks"),
+            Input("btn-caloff", "n_clicks"),
         ],
         [State("recording-alert", "is_open")]
     )
     def cmd_button_pressed(
-        # n_clicks_stow,
+        n_clicks_stow,
         n_clicks_stop_record,
         n_clicks_shutdown,
         n_clicks_calibrate,
+        n_clicks_calon,
+        n_clicks_caloff,
         is_open
     ):
         ctx = dash.callback_context
@@ -1574,3 +1582,7 @@ def register_callbacks(
                 command_thread.add_to_queue("quit")
             elif button_id == "btn-calibrate":
                 command_thread.add_to_queue("calibrate")
+            elif button_id == "btn-calon":
+                command_thread.add_to_queue("calon")
+            elif button_id == "btn-caloff":
+                command_thread.add_to_queue("caloff")
