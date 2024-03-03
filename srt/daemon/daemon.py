@@ -851,6 +851,10 @@ class SmallRadioTelescopeDaemon:
                     self.stow()
                 elif command_name == "cal":
                     self.point_at_azel(*self.cal_location)
+                elif command_name == "calon":
+                    self.set_calibrator_state(True)
+                elif command_name == "caloff":
+                    self.set_calibrator_state(False)
                 elif command_name == "calibrate":
                     self.calibrate()
                 elif command_name == "npointset":
