@@ -51,6 +51,7 @@ def parse_metadata(metadata):
     glon = metadata["glon"]
     soutrack = metadata["soutrack"]
     bsw = metadata["bsw"]
+    cal_on = metadata["cal_on"]
     return (
         motor_az,
         motor_el,
@@ -66,6 +67,7 @@ def parse_metadata(metadata):
         glon,
         soutrack,
         bsw,
+        cal_on,
     )
 
 
@@ -123,6 +125,7 @@ class blk(
             glon,
             soutrack,
             bsw,
+            cal_on,
         ) = parse_metadata(latest_data_dict["metadata"])
         fbw = bw  # Old SRT Software Had Relative Bandwidth Limits and An Unchanging Sample Rate
         f1 = 0  # Relative Lower Bound (Since Sample Rate Determines Bandwidth)
@@ -167,6 +170,7 @@ class blk(
                 integ * nsam / (2.0e6 * bw),
                 sigma,
                 bsw,
+                cal_on, #add calibrator state to file
             )
             integration_line = integration_format % integ
             file.writelines([header_line, start_line, integration_line])
