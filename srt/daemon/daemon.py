@@ -729,7 +729,7 @@ class SmallRadioTelescopeDaemon:
                 "cal_state": self.radio_calibrator_state,
             }
             status_socket.send_json(status)
-            sleep(0.5)
+            sleep(0.1)
 
     def update_radio_settings(self):
         """Coordinates Sending XMLRPC Commands to the GNU Radio Script
@@ -745,7 +745,7 @@ class SmallRadioTelescopeDaemon:
             method, value = self.radio_queue.get()
             call = getattr(rpc_server, f"set_{method}")
             call(value)
-            sleep(0.1)
+            sleep(0.01)
 
     def update_command_queue(self):
         """Waits for New Commands Coming in Over ZMQ PUSH/PULL
