@@ -73,6 +73,7 @@ class SmallRadioTelescopeDaemon:
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
         self.radio_center_frequency = config_dict["RADIO_CF"]
         self.radio_sample_frequency = config_dict["RADIO_SF"]
+        self.radio_rf_gain = 12.0 #placeholder to add this to config dict and parser
         self.radio_frequency_correction = config_dict["RADIO_FREQ_CORR"]
         self.radio_num_bins = config_dict["RADIO_NUM_BINS"]
         self.radio_integ_cycles = config_dict["RADIO_INTEG_CYCLES"]
@@ -713,6 +714,7 @@ class SmallRadioTelescopeDaemon:
                 "cal_loc": self.cal_location,
                 "horizon_points": self.horizon_points,
                 "center_frequency": self.radio_center_frequency,
+                "rf_gain": self.radio_rf_gain,
                 "frequency_correction": self.radio_frequency_correction,
                 "bandwidth": self.radio_sample_frequency,
                 "motor_offsets": self.rotor_offsets,
@@ -787,7 +789,7 @@ class SmallRadioTelescopeDaemon:
                 self.radio_process_task.start()
             except RuntimeError as e:
                 self.log_message(str(e))
-            sleep(5)
+            sleep(5) #wait a bit for the radio to actually start up
 
         # Send Settings to the GNU Radio Script
         radio_params = {
@@ -796,6 +798,7 @@ class SmallRadioTelescopeDaemon:
                 self.radio_center_frequency + self.radio_frequency_correction,
             ),
             "Sample Rate": ("samp_rate", self.radio_sample_frequency),
+            "RF Gain": ("rf_gain", self.radio_rf_gain),
             "Motor Azimuth": ("motor_az", self.rotor_location[0]),
             "Motor Elevation": ("motor_el", self.rotor_location[1]),
             "Motor GalLat": (
