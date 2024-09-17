@@ -305,7 +305,7 @@ def generate_popups():
                     dbc.ModalBody(
                         [
                             dcc.Input(
-                                id="gain",
+                                id="rf_gain",
                                 type="number",
                                 debounce=True,
                                 placeholder="RF Gain (dB)",
@@ -946,11 +946,11 @@ def register_callbacks(
         [
             Input("btn-set-gain", "n_clicks"),
             Input("gain-btn-yes", "n_clicks"),
-            Input("gai-btn-no", "n_clicks"),
+            Input("gain-btn-no", "n_clicks"),
         ],
         [
             State("gain-modal", "is_open"),
-            State("gain", "value"),
+            State("rf_gain", "value"),
         ],
     )
     def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, gain):
