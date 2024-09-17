@@ -56,7 +56,7 @@ class radio_process(gr.top_block):
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
         self.samp_rate = samp_rate = 2000000
-        self.rf_gain = rf_gain = 20
+        self.rf_gain = rf_gain = 10
         self.rf_freq = rf_freq = freq
         self.motor_el = motor_el = np.nan
         self.motor_az = motor_az = np.nan
@@ -289,6 +289,7 @@ class radio_process(gr.top_block):
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
 
     def get_rf_gain(self):
         return self.rf_gain
@@ -302,7 +303,8 @@ class radio_process(gr.top_block):
 
     def set_rf_freq(self, rf_freq):
         self.rf_freq = rf_freq
-        self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
+        #self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
 
     def get_motor_el(self):
         return self.motor_el
