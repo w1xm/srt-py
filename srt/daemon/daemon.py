@@ -554,6 +554,28 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         self.radio_sample_frequency = samp_rate
         self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
+
+    def set_rf_gain(self, rf_gain):
+        """Set the Sample Rate of the Processing Script
+
+        Note that this stops any currently running raw saving tasks
+
+        Parameters
+        ----------
+        samp_rate : float
+            Sample Rate for the SDR in Hz
+
+        Returns
+        -------
+        None
+        """
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+        
+        #old_gain = self.radio_rf_gain 
+        self.radio_rf_gain = rf_gain
+        self.radio_queue.put(("rf_gain", self.radio_rf_gain))
+        #self.radio_queue.put(("cal_values", self.cal_values))
         
     def set_calibrator_state(self, calibrator_state):
         """Set the state of the calibrator via radio GPIO
@@ -874,6 +896,8 @@ class SmallRadioTelescopeDaemon:
                     self.set_freq(frequency=float(command_parts[1]) * pow(10, 6))
                 elif command_name == "samp":
                     self.set_samp_rate(samp_rate=float(command_parts[1]) * pow(10, 6))
+                elif command_name == "rf_gain":
+                    self.set_rf_gain(rf_gain=float(command_parts[1]))
                 elif command_name == "azel":
                     self.point_at_azel(
                         float(command_parts[1]),
