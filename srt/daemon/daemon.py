@@ -556,14 +556,14 @@ class SmallRadioTelescopeDaemon:
         self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
 
     def set_rf_gain(self, rf_gain):
-        """Set the Sample Rate of the Processing Script
+        """Set the rf gain of the radio
 
         Note that this stops any currently running raw saving tasks
 
         Parameters
         ----------
-        samp_rate : float
-            Sample Rate for the SDR in Hz
+        rf_gain : float
+            rf_gain for the SDR in dB
 
         Returns
         -------
@@ -571,11 +571,15 @@ class SmallRadioTelescopeDaemon:
         """
         if self.radio_save_task is not None:
             self.radio_save_task.terminate()
+        #save old gain and cal values
+        old_gain = self.radio_rf_gain 
+        old_cal_values = self.cal_values
         
-        #old_gain = self.radio_rf_gain 
         self.radio_rf_gain = rf_gain
+        self.cal_values = old_cal_values* 10**(0.1*(old_gain - self.radio_rf_gain))
+        
         self.radio_queue.put(("rf_gain", self.radio_rf_gain))
-        #self.radio_queue.put(("cal_values", self.cal_values))
+        self.radio_queue.put(("cal_values", self.cal_values))
         
     def set_calibrator_state(self, calibrator_state):
         """Set the state of the calibrator via radio GPIO
