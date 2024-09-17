@@ -79,6 +79,7 @@ class SmallRadioTelescopeDaemon:
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
         self.radio_center_frequency = config_dict["RADIO_CF"]
         self.radio_sample_frequency = config_dict["RADIO_SF"]
+        self.radio_rf_gain = config_dict["RADIO_RF_GAIN"]
         self.radio_frequency_correction = config_dict["RADIO_FREQ_CORR"]
         self.radio_num_bins = config_dict["RADIO_NUM_BINS"]
         self.radio_integ_cycles = config_dict["RADIO_INTEG_CYCLES"]
@@ -593,6 +594,32 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         self.radio_sample_frequency = samp_rate
         self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
+
+    def set_rf_gain(self, rf_gain):
+        """Set the rf gain of the radio
+
+        Note that this stops any currently running raw saving tasks
+
+        Parameters
+        ----------
+        rf_gain : float
+            rf_gain for the SDR in dB
+
+        Returns
+        -------
+        None
+        """
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+        #save old gain and cal values
+        #old_gain = self.radio_rf_gain 
+        #old_cal_values = self.cal_values
+        
+        self.radio_rf_gain = rf_gain
+        #self.cal_values = old_cal_values* 10**(0.1*(old_gain - self.radio_rf_gain))
+        
+        self.radio_queue.put(("rf_gain", self.radio_rf_gain))
+        #self.radio_queue.put(("cal_values", self.cal_values))
         
     def set_calibrator_state(self, calibrator_state):
         """Set the state of the calibrator via radio GPIO
@@ -786,6 +813,7 @@ class SmallRadioTelescopeDaemon:
                 "cal_loc": self.cal_location,
                 "horizon_points": self.horizon_points,
                 "center_frequency": self.radio_center_frequency,
+                "rf_gain": self.radio_rf_gain,
                 "frequency_correction": self.radio_frequency_correction,
                 "bandwidth": self.radio_sample_frequency,
                 "motor_offsets": self.rotor_offsets,
@@ -862,7 +890,7 @@ class SmallRadioTelescopeDaemon:
                 self.radio_process_task.start()
             except RuntimeError as e:
                 self.log_message(str(e))
-            sleep(5)
+            sleep(5) #wait a bit for the radio to actually start up
 
         # Send Settings to the GNU Radio Script
         radio_params = {
@@ -871,6 +899,7 @@ class SmallRadioTelescopeDaemon:
                 self.radio_center_frequency + self.radio_frequency_correction,
             ),
             "Sample Rate": ("samp_rate", self.radio_sample_frequency),
+            "RF Gain": ("rf_gain", self.radio_rf_gain),
             "Motor Azimuth": ("motor_az", self.rotor_location[0]),
             "Motor Elevation": ("motor_el", self.rotor_location[1]),
             "Motor GalLat": (
@@ -949,8 +978,9 @@ class SmallRadioTelescopeDaemon:
                     self.set_freq(frequency=float(
                         command_parts[1]) * pow(10, 6))
                 elif command_name == "samp":
-                    self.set_samp_rate(samp_rate=float(
-                        command_parts[1]) * pow(10, 6))
+                    self.set_samp_rate(samp_rate=float(command_parts[1]) * pow(10, 6))
+                elif command_name == "rf_gain":
+                    self.set_rf_gain(rf_gain=float(command_parts[1]))
                 elif command_name == "coords":
                     self.set_coords(
                         float(command_parts[1]), float(command_parts[2]))

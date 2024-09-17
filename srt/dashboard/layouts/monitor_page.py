@@ -584,6 +584,41 @@ def generate_popups(software):
         ),
             dbc.Modal(
                 [
+                    dbc.ModalHeader("Enter the New RF Gain"),
+                    dbc.ModalBody(
+                        [
+                            dcc.Input(
+                                id="rf_gain",
+                                type="number",
+                                debounce=True,
+                                placeholder="RF Gain (dB)",
+                                style={"width": "100%"},
+                            ),
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Yes",
+                                id="gain-btn-yes",
+                                className="ml-auto",
+                                # block=True,
+                                color="primary",
+                            ),
+                            dbc.Button(
+                                "No",
+                                id="gain-btn-no",
+                                className="ml-auto",
+                                # block=True,
+                                color="secondary",
+                            ),
+                        ]
+                    ),
+                ],
+                id="gain-modal",
+            ),
+            dbc.Modal(
+                [
                     dbc.ModalHeader("Enter the Motor Offsets"),
                     dbc.ModalBody(
                         [
@@ -794,6 +829,7 @@ def generate_layout(software):
         "Radio": [
             dbc.DropdownMenuItem("Set Frequency", id="btn-set-freq"),
             dbc.DropdownMenuItem("Set Bandwidth", id="btn-set-samp"),
+            dbc.DropdownMenuItem("Set RF Gain", id="btn-set-gain"),
         ],
         "Calibration": [
             dbc.DropdownMenuItem("Calibrate", id="btn-calibrate"),
@@ -1411,6 +1447,30 @@ def register_callbacks(
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
             if button_id == "samp-btn-yes":
                 command_thread.add_to_queue(f"samp {samp}")
+            if n_clicks_yes or n_clicks_no or n_clicks_btn:
+                return not is_open
+            return is_open
+
+    @app.callback(
+        Output("gain-modal", "is_open"),
+        [
+            Input("btn-set-gain", "n_clicks"),
+            Input("gain-btn-yes", "n_clicks"),
+            Input("gain-btn-no", "n_clicks"),
+        ],
+        [
+            State("gain-modal", "is_open"),
+            State("rf_gain", "value"),
+        ],
+    )
+    def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, gain):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open
+        else:
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "gain-btn-yes":
+                command_thread.add_to_queue(f"rf_gain {gain}")
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
                 return not is_open
             return is_open
