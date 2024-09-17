@@ -572,14 +572,14 @@ class SmallRadioTelescopeDaemon:
         if self.radio_save_task is not None:
             self.radio_save_task.terminate()
         #save old gain and cal values
-        old_gain = self.radio_rf_gain 
-        old_cal_values = self.cal_values
+        #old_gain = self.radio_rf_gain 
+        #old_cal_values = self.cal_values
         
         self.radio_rf_gain = rf_gain
-        self.cal_values = old_cal_values* 10**(0.1*(old_gain - self.radio_rf_gain))
+        #self.cal_values = old_cal_values* 10**(0.1*(old_gain - self.radio_rf_gain))
         
         self.radio_queue.put(("rf_gain", self.radio_rf_gain))
-        self.radio_queue.put(("cal_values", self.cal_values))
+        #self.radio_queue.put(("cal_values", self.cal_values))
         
     def set_calibrator_state(self, calibrator_state):
         """Set the state of the calibrator via radio GPIO
