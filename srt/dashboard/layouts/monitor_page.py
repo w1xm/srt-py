@@ -941,29 +941,29 @@ def register_callbacks(
                 return not is_open
             return is_open
 
-    #@app.callback(
-    #    Output("gain-modal", "is_open"),
-    #    [
-    #        Input("btn-set-gain", "n_clicks"),
-    #        Input("gain-btn-yes", "n_clicks"),
-    #        Input("gain-btn-no", "n_clicks"),
-    #    ],
-    #    [
-    #        State("gain-modal", "is_open"),
-    #        State("rf_gain", "value"),
-    #    ],
-    #)
-    #def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, gain):
-    #    ctx = dash.callback_context
-    #    if not ctx.triggered:
-    #        return is_open
-    #    else:
-    #        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    #        if button_id == "gain-btn-yes":
-    #            command_thread.add_to_queue(f"rf_gain {gain}")
-    #        if n_clicks_yes or n_clicks_no or n_clicks_btn:
-    #            return not is_open
-    #        return is_open
+    @app.callback(
+        Output("gain-modal", "is_open"),
+        [
+            Input("btn-set-gain", "n_clicks"),
+            Input("gain-btn-yes", "n_clicks"),
+            Input("gain-btn-no", "n_clicks"),
+        ],
+        [
+            State("gain-modal", "is_open"),
+            State("rf_gain", "value"),
+        ],
+    )
+    def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, gain):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open
+        else:
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "gain-btn-yes":
+                command_thread.add_to_queue(f"rf_gain {gain}")
+            if n_clicks_yes or n_clicks_no or n_clicks_btn:
+                return not is_open
+            return is_open
 
     @app.callback(
         Output("offset-modal", "is_open"),
