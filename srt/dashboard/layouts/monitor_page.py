@@ -941,7 +941,7 @@ def register_callbacks(
                 return not is_open
             return is_open
 
-        @app.callback(
+    @app.callback(
         Output("gain-modal", "is_open"),
         [
             Input("btn-set-gain", "n_clicks"),
