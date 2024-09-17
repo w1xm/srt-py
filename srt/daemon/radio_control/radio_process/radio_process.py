@@ -101,6 +101,8 @@ class radio_process(gr.top_block):
             ),
         )
         self.uhd_usrp_source_1.set_samp_rate(samp_rate)
+        self.uhd_usrp_source_1.set_clock_source("external")
+        self.uhd_usrp_source_1.set_time_source("external")
         _last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
         # Poll get_time_last_pps() every 50 ms until a change is seen
         while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
