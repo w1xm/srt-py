@@ -436,7 +436,7 @@ class SmallRadioTelescopeDaemon:
         sleep(0.1)
         
         sleep(
-            self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency
+            4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency
         )
         radio_cal_task = RadioCalibrateTask(
             self.radio_num_bins,
