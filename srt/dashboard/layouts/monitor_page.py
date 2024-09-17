@@ -950,7 +950,7 @@ def register_callbacks(
         ],
         [
             State("gain-modal", "is_open"),
-            State("rf_gain", "value"),
+            State("gain", "value"),
         ],
     )
     def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, gain):
