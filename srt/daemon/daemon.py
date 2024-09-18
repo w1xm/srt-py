@@ -11,7 +11,7 @@ from queue import Queue
 from xmlrpc.client import ServerProxy
 from pathlib import Path
 from operator import add
-#import os
+import os
 
 import zmq
 import json
@@ -447,9 +447,9 @@ class SmallRadioTelescopeDaemon:
             cold_sky_name = "cold_sky.fits"
 
             #erase prior calibration files if present
-            #cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
-            #if os.path.exists(cold_sky_file):
-            #    os.remove(cold_sky_file)
+            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
+            if os.path.exists(cold_sky_file):
+                os.remove(cold_sky_file)
 
             #start saving new calibration file
             self.start_recording(cold_sky_name, self.config_dir)
@@ -472,14 +472,14 @@ class SmallRadioTelescopeDaemon:
             cal_ref_name = "cold_sky_plus_cal.fits"
 
             #erase prior calibration files if present
-            #cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
-            #cal_ref_file=str(Path(config_directory, cal_ref_name).absolute())
+            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
+            cal_ref_file=str(Path(self.config_directory, cal_ref_name).absolute())
 
-            #if os.path.exists(cold_sky_file):
-            #    os.remove(cold_sky_file)
+            if os.path.exists(cold_sky_file):
+                os.remove(cold_sky_file)
 
-            #if os.path.exists(cal_ref_file):
-            #    os.remove(cal_ref_file)
+            if os.path.exists(cal_ref_file):
+                os.remove(cal_ref_file)
 
             #enable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
@@ -487,7 +487,7 @@ class SmallRadioTelescopeDaemon:
             self.set_calibrator_state(True)
             #sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
 
-            self.start_recording(cold_sky_name, self.config_dir)
+            self.start_recording(cold_sky_name, self.config_directory)
 
             #save new cold sky calibration file
             
@@ -501,7 +501,7 @@ class SmallRadioTelescopeDaemon:
 
             self.set_calibrator_state(False)
 
-            self.start_recording(cal_ref_name, self.config_dir)
+            self.start_recording(cal_ref_name, self.config_directory)
 
 
             sleep(1)
