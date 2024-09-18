@@ -11,6 +11,7 @@ from queue import Queue
 from xmlrpc.client import ServerProxy
 from pathlib import Path
 from operator import add
+import os
 
 import zmq
 import json
@@ -87,6 +88,7 @@ class SmallRadioTelescopeDaemon:
         self.num_beamswitches = config_dict["NUM_BEAMSWITCHES"]
         self.beamwidth = config_dict["BEAMWIDTH"]
         self.cal_type = config_dict["CAL_TYPE"]
+        self.cal_cycles = config_dict["CAL_INTEGRATION_CYCLES"]
         self.temp_sys = config_dict["TSYS"]
         self.temp_cal = config_dict["TCAL"]
         self.save_dir = config_dict["SAVE_DIRECTORY"]
@@ -434,6 +436,11 @@ class SmallRadioTelescopeDaemon:
         -------
         None
         """
+
+        #kill any running file save operations since we're about to scramble them
+
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
         
         # erase existing calibration
         self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
@@ -441,32 +448,116 @@ class SmallRadioTelescopeDaemon:
         
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
-        
-        #turn on calibration source (if we have one)
-        self.set_calibrator_state(True)
-        
-        sleep(0.1)
-        
-        sleep(
-            4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency
-        )
-        radio_cal_task = RadioCalibrateTask(
-            self.radio_num_bins,
-            self.config_directory,
-        )
-        radio_cal_task.start()
-        radio_cal_task.join(30)
-        sleep(0.1)
+
+        '''
+        simple cold sky cal for the basic SRT
+        '''
+
+        if self.cal_type == "COLD_SKY":
+            #define filenames for calibration measurements
+            cold_sky_name = "cold_sky.fits"
+
+            #erase prior calibration files if present
+            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
+            if os.path.exists(cold_sky_file):
+                os.remove(cold_sky_file)
+
+            #start saving new calibration file
+            self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.config_directory,
+                    cold_sky_name,
+                )
+            self.radio_save_task.start()
+
+            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
+
+            self.stop_recording()
+
+            ####
+
+            #goto calibration calculation program
+
+        '''
+        if we have a noise diode to use for calibration we need to make multiple measurements
+        '''
+
+        if self.cal_type == "NOISE_DIODE":
+            #define filenames for calibration measurements
+            cold_sky_name = "cold_sky.fits"
+            cal_ref_name = "cold_sky_plus_cal.fits"
+
+            #erase prior calibration files if present
+            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
+            cal_ref_file=str(Path(config_directory, cal_ref_name).absolute())
+
+            if os.path.exists(cold_sky_file):
+                os.remove(cold_sky_file)
+
+            if os.path.exists(cal_ref_file):
+                os.remove(cal_ref_file)
+
+            #enable calibrator and wait for the idiotically long settling time the filters currently have 
+            #(need to fix that eventually so integration intervals are fully independent like they should be)
+
+            self.set_calibrator_state(True)
+            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+            #save new cold sky calibration file
+            self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.config_directory,
+                    cold_sky_name,
+                )
+            self.radio_save_task.start()
+
+            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
+
+            self.stop_recording()
+
+            #disable calibrator and wait for the idiotically long settling time the filters currently have 
+            #(need to fix that eventually so integration intervals are fully independent like they should be)
+
+            self.set_calibrator_state(False)
+            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+            #save new calibration reference file
+            self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.config_directory,
+                    cold_sky_name,
+                )
+            self.radio_save_task.start()
+
+            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
+
+            self.stop_recording()
+
+
+
+        #radio_cal_task = RadioCalibrateTask(
+        #     self.radio_num_bins,
+        #     self.config_directory,
+        # )
+        # radio_cal_task.start()
+        # radio_cal_task.join(30)
+        # sleep(0.1)
+
+        cal_data = {
+            "cal_values": self.cal_values,
+            "cal_powers": self.cal_powers
+        }
+
         path = Path(self.config_directory, "calibration.json")
-        with open(path, "r") as input_file:
-            cal_data = json.load(input_file)
-            self.cal_values = cal_data["cal_values"]
-            self.cal_power = cal_data["cal_pwr"]
+        with open(path, "w") as input_file:
+            json.dump(cal_data, input_file)
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
-        
-        #disable calibration source and return
-        self.set_calibrator_state(False)
+    
+        # #disable calibration source and return
         self.log_message("Calibration Done")
 
     def start_recording(self, name):
@@ -639,7 +730,7 @@ class SmallRadioTelescopeDaemon:
             #customize for appropriate control scheme
             self.radio_calibrator_state = calibrator_state
             self.radio_queue.put(("cal_on", self.radio_calibrator_state))
-            sleep(0.1)
+            #sleep(0.1)
             
         else:
             self.log_message("Noise Source Not Implemented")
