@@ -493,16 +493,16 @@ class SmallRadioTelescopeDaemon:
             self.set_calibrator_state(True)
             #sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
 
-            self.start_recording(cold_sky_name)
+            #self.start_recording(cold_sky_name)
 
-            #save new cold sky calibration file
-            #self.radio_save_task = RadioSaveSpecFitsTask(
-            #        self.radio_sample_frequency,
-            #        self.radio_num_bins,
-            #        self.config_directory,
-            #        cold_sky_name,
-            #    )
-            #self.radio_save_task.start()
+            save new cold sky calibration file
+            self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.config_directory,
+                    cold_sky_name,
+                )
+            self.radio_save_task.start()
             sleep(5)
             #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
@@ -518,13 +518,13 @@ class SmallRadioTelescopeDaemon:
             #sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
 
             #save new calibration reference file
-            # self.radio_save_task = RadioSaveSpecFitsTask(
-            #         self.radio_sample_frequency,
-            #         self.radio_num_bins,
-            #         self.config_directory,
-            #         cold_sky_name,
-            #     )
-            # self.radio_save_task.start()
+            self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.config_directory,
+                    cold_sky_name,
+                )
+            self.radio_save_task.start()
             sleep(5)
             #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
