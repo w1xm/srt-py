@@ -478,31 +478,33 @@ class SmallRadioTelescopeDaemon:
             cal_ref_name = "cold_sky_plus_cal.fits"
 
             #erase prior calibration files if present
-            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
-            cal_ref_file=str(Path(config_directory, cal_ref_name).absolute())
+            #cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
+            #cal_ref_file=str(Path(config_directory, cal_ref_name).absolute())
 
-            if os.path.exists(cold_sky_file):
-                os.remove(cold_sky_file)
+            #if os.path.exists(cold_sky_file):
+            #    os.remove(cold_sky_file)
 
-            if os.path.exists(cal_ref_file):
-                os.remove(cal_ref_file)
+            #if os.path.exists(cal_ref_file):
+            #    os.remove(cal_ref_file)
 
             #enable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
             self.set_calibrator_state(True)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            #sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+            self.start_recording(cold_sky_name)
 
             #save new cold sky calibration file
-            self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    self.config_directory,
-                    cold_sky_name,
-                )
-            self.radio_save_task.start()
-
-            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
+            #self.radio_save_task = RadioSaveSpecFitsTask(
+            #        self.radio_sample_frequency,
+            #        self.radio_num_bins,
+            #        self.config_directory,
+            #        cold_sky_name,
+            #    )
+            #self.radio_save_task.start()
+            sleep(5)
+            #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
             self.stop_recording()
 
@@ -510,18 +512,21 @@ class SmallRadioTelescopeDaemon:
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
             self.set_calibrator_state(False)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+            self.start_recording(cal_ref_name)
+
+            #sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
 
             #save new calibration reference file
-            self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    self.config_directory,
-                    cold_sky_name,
-                )
-            self.radio_save_task.start()
-
-            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
+            # self.radio_save_task = RadioSaveSpecFitsTask(
+            #         self.radio_sample_frequency,
+            #         self.radio_num_bins,
+            #         self.config_directory,
+            #         cold_sky_name,
+            #     )
+            # self.radio_save_task.start()
+            sleep(5)
+            #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
             self.stop_recording()
 
@@ -535,16 +540,16 @@ class SmallRadioTelescopeDaemon:
         # radio_cal_task.join(30)
         # sleep(0.1)
 
-        cal_data = {
-            "cal_values": self.cal_values,
-            "cal_powers": self.cal_powers
-        }
+        #cal_data = {
+        #    "cal_values": self.cal_values,
+        #    "cal_powers": self.cal_powers
+        #}
 
-        path = Path(self.config_directory, "calibration.json")
-        with open(path, "w") as input_file:
-            json.dump(cal_data, input_file)
-        self.radio_queue.put(("cal_pwr", self.cal_power))
-        self.radio_queue.put(("cal_values", self.cal_values))
+        #path = Path(self.config_directory, "calibration.json")
+        #with open(path, "w") as input_file:
+        #    json.dump(cal_data, input_file)
+        #self.radio_queue.put(("cal_pwr", self.cal_power))
+        #self.radio_queue.put(("cal_values", self.cal_values))
     
         # #disable calibration source and return
         self.log_message("Calibration Done")
