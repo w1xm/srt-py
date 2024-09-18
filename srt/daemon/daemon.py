@@ -11,7 +11,7 @@ from queue import Queue
 from xmlrpc.client import ServerProxy
 from pathlib import Path
 from operator import add
-import os
+#import os
 
 import zmq
 import json
@@ -447,9 +447,9 @@ class SmallRadioTelescopeDaemon:
             cold_sky_name = "cold_sky.fits"
 
             #erase prior calibration files if present
-            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
-            if os.path.exists(cold_sky_file):
-                os.remove(cold_sky_file)
+            #cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
+            #if os.path.exists(cold_sky_file):
+            #    os.remove(cold_sky_file)
 
             #start saving new calibration file
             self.start_recording(cold_sky_name, self.config_dir)
@@ -491,7 +491,7 @@ class SmallRadioTelescopeDaemon:
 
             #save new cold sky calibration file
             
-            sleep(5)
+            sleep(1)
             #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
             self.stop_recording()
@@ -504,7 +504,7 @@ class SmallRadioTelescopeDaemon:
             self.start_recording(cal_ref_name, self.config_dir)
 
 
-            sleep(5)
+            sleep(1)
             #sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
 
             self.stop_recording()
@@ -548,7 +548,7 @@ class SmallRadioTelescopeDaemon:
         if self.radio_save_task is None:
             if name is None:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, self.save_dir, name
+                    self.radio_sample_frequency, file_dir, name
                 )
             elif name.endswith(".rad"):
                 name = None if name == "*.rad" else name
@@ -568,7 +568,7 @@ class SmallRadioTelescopeDaemon:
                 )
             else:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, self.save_dir, name
+                    self.radio_sample_frequency, file_dir, name
                 )
             self.radio_save_task.start()
         else:
