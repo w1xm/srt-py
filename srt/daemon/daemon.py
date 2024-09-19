@@ -27,7 +27,7 @@ from .radio_control.radio_task_starter import (
 )
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
-from .utilities.calibration_functions import basic_cold_sky_calibration_fit
+from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
 
 
 class SmallRadioTelescopeDaemon:
