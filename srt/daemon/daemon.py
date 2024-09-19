@@ -27,6 +27,7 @@ from .radio_control.radio_task_starter import (
 )
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
+from .utilities.calibration_functions import basic_cold_sky_calibration_fit
 
 
 class SmallRadioTelescopeDaemon:
@@ -451,18 +452,20 @@ class SmallRadioTelescopeDaemon:
             if os.path.exists(cold_sky_file):
                 os.remove(cold_sky_file)
 
-            self.log_message("starting cold cal measurement")
+            self.log_message("Starting cold calibration reference measurement")
 
             #start saving new calibration file
             self.start_recording(name=cold_sky_name, file_dir=self.config_dir)
-
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-
             self.stop_recording()
 
-            ####
+            
+            ### compute calibration corrections
 
-            #goto calibration calculation program
+            self.cal_values, self.cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, 20):
+
+
+
 
         '''
         if we have a noise diode to use for calibration we need to make multiple measurements
@@ -486,56 +489,38 @@ class SmallRadioTelescopeDaemon:
             #enable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
-            self.log_message("starting hot cal measurement")
+            self.log_message("Starting hot calibration reference measurement")
 
             self.set_calibrator_state(True)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
-
-            #save new cold sky calibration file
-            
-            #sleep(1)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-
             self.stop_recording()
 
             #disable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
-            self.log_message("starting cold cal measurement")
+            self.log_message("Starting cold calibration reference measurement")
 
             self.set_calibrator_state(False)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-
             self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
-
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-
             self.stop_recording()
 
+            self.cal_values, self.cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20):
 
 
-        #radio_cal_task = RadioCalibrateTask(
-        #     self.radio_num_bins,
-        #     self.config_directory,
-        # )
-        # radio_cal_task.start()
-        # radio_cal_task.join(30)
-        # sleep(0.1)
+        #save outputs
 
-        #cal_data = {
-        #    "cal_values": self.cal_values,
-        #    "cal_powers": self.cal_powers
-        #}
-
-        #path = Path(self.config_directory, "calibration.json")
-        #with open(path, "w") as input_file:
-        #    json.dump(cal_data, input_file)
-        #self.radio_queue.put(("cal_pwr", self.cal_power))
-        #self.radio_queue.put(("cal_values", self.cal_values))
+        file_output = {
+            "cal_pwr": self.cal_power,
+            "cal_values": self.cal_values.tolist(),
+        }
+        with open(pathlib.Path(self.calibration_directory, "calibration.json"), "w") as outfile:
+            json.dump(file_output, outfile)
     
-        # #disable calibration source and return
+
         self.log_message("Calibration Done")
 
     def start_recording(self, name, file_dir):

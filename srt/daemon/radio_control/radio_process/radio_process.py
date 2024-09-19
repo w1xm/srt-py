@@ -135,7 +135,7 @@ class radio_process(gr.top_block):
         self.blocks_selector_0 = blocks.selector(gr.sizeof_gr_complex*1,0,0)
         self.blocks_selector_0.set_enabled(True)
         self.blocks_multiply_const_xx_0 = blocks.multiply_const_ff(1.0/float(num_integrations), num_bins)
-        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff([(tsys + tcal)/(value * cal_pwr) for value in cal_values])
+        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff([1.0/(value * cal_pwr) for value in cal_values])
         self.blocks_multiply_const_vxx_0_0_0_0 = blocks.multiply_const_vcc(custom_window[0:num_bins])
         self.blocks_multiply_const_vxx_0_0_0 = blocks.multiply_const_vcc(custom_window[num_bins:2*num_bins])
         self.blocks_multiply_const_vxx_0_0 = blocks.multiply_const_vcc(custom_window[2*num_bins:3*num_bins])
