@@ -514,7 +514,8 @@ class SmallRadioTelescopeDaemon:
 
 
         self.cal_power = cal_power.astype(float)
-        self.cal_values = cal_values.astype(float) 
+        self.cal_values = cal_values.tolist()[0]
+        self.log_message(self.cal_values)
 
         #erase old cal file to prevent wierdness
 
@@ -526,7 +527,7 @@ class SmallRadioTelescopeDaemon:
 
         file_output = {
             "cal_pwr": self.cal_power,
-            "cal_values": self.cal_values.tolist(),
+            "cal_values": self.cal_values,
         }
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
