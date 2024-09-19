@@ -514,23 +514,23 @@ class SmallRadioTelescopeDaemon:
 
 
         self.cal_power = cal_power.astype(float)
-        self.cal_values = cal_values.tolist()[0]
+        self.cal_values = cal_values.tolist()
         self.log_message(self.cal_values)
 
         #erase old cal file to prevent wierdness
 
-        calibration_path = Path(self.config_directory, "calibration.json")
-        if os.path.exists(calibration_path):
-                os.remove(calibration_path)
+        #calibration_path = Path(self.config_directory, "calibration.json")
+        #if os.path.exists(calibration_path):
+        #        os.remove(calibration_path)
 
         #save result
 
-        file_output = {
-            "cal_pwr": self.cal_power,
-            "cal_values": self.cal_values,
-        }
-        with open(calibration_path, "w") as outfile:
-            json.dump(file_output, outfile)
+        #file_output = {
+        #    "cal_pwr": self.cal_power,
+        #    "cal_values": self.cal_values,
+        #}
+        #with open(calibration_path, "w") as outfile:
+        #    json.dump(file_output, outfile)
 
         #write corrections back to processing
 
