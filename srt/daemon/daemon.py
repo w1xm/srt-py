@@ -494,7 +494,7 @@ class SmallRadioTelescopeDaemon:
 
             self.set_calibrator_state(True)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-            self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
+            self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
@@ -505,15 +505,12 @@ class SmallRadioTelescopeDaemon:
 
             self.set_calibrator_state(False)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-            self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
+            self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
             cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20)
 
-
-
-        #self.log_message(self.cal_values)
 
         #erase old cal file to prevent wierdness
 
@@ -530,6 +527,10 @@ class SmallRadioTelescopeDaemon:
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
 
+        #write corrections back to processing
+
+        #readback from file is to circumvent a wierd formatting issue I can't figure out
+
         sleep(0.1)
         path = Path(self.config_directory, "calibration.json")
         with open(path, "r") as input_file:
@@ -538,12 +539,6 @@ class SmallRadioTelescopeDaemon:
             self.cal_power = cal_data["cal_pwr"]
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
-
-
-        #write corrections back to processing
-
-#        self.radio_queue.put(("cal_pwr", self.cal_power))
-#        self.radio_queue.put(("cal_values", self.cal_values))
     
 
         self.log_message("Calibration Done")

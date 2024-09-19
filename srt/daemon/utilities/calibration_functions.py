@@ -39,7 +39,7 @@ def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal
     polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_cold_sky_spectrum, polynomial_order,)
 
     smoothed_cold_sky_spectrum = polynomial_fit(relative_freq_values)
-    average_value = np.average(smoothed_cold_sky)
+    average_value = np.average(smoothed_cold_sky_spectrum)
     normalized_gain_spectrum = smoothed_cold_sky_spectrum/average_value
     average_gain_correction = average_value/(t_sys+t_cal)
 
