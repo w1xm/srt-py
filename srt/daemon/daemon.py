@@ -513,8 +513,8 @@ class SmallRadioTelescopeDaemon:
 
 
 
-        self.cal_power = float(cal_power)
-        self.cal_values = float(cal_values)
+        self.cal_power = cal_power.astype(float)
+        self.cal_values = cal_values.astype(float) 
 
         #erase old cal file to prevent wierdness
 
