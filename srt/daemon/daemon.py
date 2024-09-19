@@ -513,29 +513,37 @@ class SmallRadioTelescopeDaemon:
 
 
 
-        self.cal_power = cal_power.astype(float)
-        self.cal_values = cal_values.tolist()
-        self.log_message(self.cal_values)
+        #self.log_message(self.cal_values)
 
         #erase old cal file to prevent wierdness
 
-        #calibration_path = Path(self.config_directory, "calibration.json")
-        #if os.path.exists(calibration_path):
-        #        os.remove(calibration_path)
+        calibration_path = Path(self.config_directory, "calibration.json")
+        if os.path.exists(calibration_path):
+                os.remove(calibration_path)
 
         #save result
 
-        #file_output = {
-        #    "cal_pwr": self.cal_power,
-        #    "cal_values": self.cal_values,
-        #}
-        #with open(calibration_path, "w") as outfile:
-        #    json.dump(file_output, outfile)
+        file_output = {
+            "cal_pwr": cal_power,
+            "cal_values": cal_values.tolist(),
+        }
+        with open(calibration_path, "w") as outfile:
+            json.dump(file_output, outfile)
+
+        sleep(0.1)
+        path = Path(self.config_directory, "calibration.json")
+        with open(path, "r") as input_file:
+            cal_data = json.load(input_file)
+            self.cal_values = cal_data["cal_values"]
+            self.cal_power = cal_data["cal_pwr"]
+        self.radio_queue.put(("cal_pwr", self.cal_power))
+        self.radio_queue.put(("cal_values", self.cal_values))
+
 
         #write corrections back to processing
 
-        self.radio_queue.put(("cal_pwr", self.cal_power))
-        self.radio_queue.put(("cal_values", self.cal_values))
+#        self.radio_queue.put(("cal_pwr", self.cal_power))
+#        self.radio_queue.put(("cal_values", self.cal_values))
     
 
         self.log_message("Calibration Done")
