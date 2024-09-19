@@ -53,7 +53,7 @@ def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_refer
     average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
     average_calibrator_spectrum = average_calibrator_plus_sky_spectrum - average_cold_sky_spectrum
 
-    relative_freq_values = np.linspace(-1, 1, len(average_cold_sky))
+    relative_freq_values = np.linspace(-1, 1, len(average_cold_sky_spectrum))
     polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_calibrator_spectrum, polynomial_order,)
 
     smoothed_calibrator_spectrum = polynomial_fit(relative_freq_values)
