@@ -514,7 +514,7 @@ class SmallRadioTelescopeDaemon:
 
         #erase old cal file to prevent wierdness
 
-        calibration_path = Path(config_directory, "calibration.json")
+        calibration_path = Path(self.config_directory, "calibration.json")
         if os.path.exists(calibration_path):
                 os.remove(calibration_path)
 
