@@ -455,6 +455,7 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting cold calibration reference measurement")
 
             #start saving new calibration file
+            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cold_sky_name, file_dir=self.config_dir)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
@@ -511,14 +512,25 @@ class SmallRadioTelescopeDaemon:
             self.cal_values, self.cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20):
 
 
-        #save outputs
+        #erase old cal file to prevent wierdness
+
+        calibration_path = Path(config_directory, "calibration.json")
+        if os.path.exists(calibration_path):
+                os.remove(calibration_path)
+
+        #save result
 
         file_output = {
             "cal_pwr": self.cal_power,
             "cal_values": self.cal_values.tolist(),
         }
-        with open(pathlib.Path(self.calibration_directory, "calibration.json"), "w") as outfile:
+        with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
+
+        #write corrections back to processing
+
+        self.radio_queue.put(("cal_pwr", self.cal_power))
+        self.radio_queue.put(("cal_values", self.cal_values))
     
 
         self.log_message("Calibration Done")
