@@ -463,7 +463,7 @@ class SmallRadioTelescopeDaemon:
             
             ### compute calibration corrections
 
-            self.cal_values, self.cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, 20)
+            cal_values, cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, 20)
 
 
 
@@ -509,8 +509,12 @@ class SmallRadioTelescopeDaemon:
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
-            self.cal_values, self.cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20)
+            cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20)
 
+
+
+        self.cal_power = cal_power
+        self.cal_values = cal_values.tolist()
 
         #erase old cal file to prevent wierdness
 
@@ -522,7 +526,7 @@ class SmallRadioTelescopeDaemon:
 
         file_output = {
             "cal_pwr": self.cal_power,
-            "cal_values": self.cal_values.tolist(),
+            "cal_values": self.cal_values,
         }
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
