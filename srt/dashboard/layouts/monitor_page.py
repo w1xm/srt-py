@@ -1676,7 +1676,6 @@ def register_callbacks(
             Input("btn-calon", "n_clicks"),
             Input("btn-caloff", "n_clicks"),
         ],
-        [State("recording-alert", "is_open")]
     )
     def cmd_button_pressed(
         n_clicks_stow,
