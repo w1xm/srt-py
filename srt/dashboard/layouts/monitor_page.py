@@ -37,7 +37,6 @@ from .graphs import (
     generate_spectrum_graph,
     generate_zoom_graph,
     generate_npoint_raw,
-    generate_npoint_interpolated,
     emptygraph,
 )
 
@@ -95,39 +94,6 @@ def generate_first_row():
     )
 
 
-def generate_npointlayout():
-    """Generates N Point Display
-
-    Returns
-    -------
-    Div containing n point graph if srt
-    """
-    return html.Div(
-        [
-            html.Div(
-                [
-                    dcc.Store(id="npoint_info", storage_type="session"),
-                    html.Div(
-                        [dcc.Graph(id="npoint-graph-1")],
-                        className="pretty_container six columns",
-                    ),
-                    html.Div(
-                         [dcc.Graph(id="npoint-graph-2")],
-                         className="pretty_container six columns",
-                     ),
-                    # html.Div(
-                    #     [dcc.Graph(id="beamsswitch-graph")],
-                    #     className="pretty_container six columns",
-                    # ),
-                ],
-                className="flex-display",
-                style={
-                    "justify-content": "left",
-                    "margin": "5px",
-                },
-            ),
-        ]
-    )
 
 
 def generate_second_row():
@@ -154,6 +120,41 @@ def generate_second_row():
             style={"margin": dict(l=10, r=5, t=5, b=5)},
         ),
     )
+
+def generate_npointlayout():
+    """Generates N Point Display
+
+    Returns
+    -------
+    Div containing n point graph if srt
+    """
+    return html.Div(
+        [
+            html.Div(
+                [
+                    dcc.Store(id="npoint_info", storage_type="session"),
+                    html.Div(
+                        [dcc.Graph(id="npoint-graph-1")],
+                        className="pretty_container six columns",
+                    ),
+                    #html.Div(
+                    #     [dcc.Graph(id="npoint-graph-2")],
+                    #     className="pretty_container six columns",
+                    # ),
+                    # html.Div(
+                    #     [dcc.Graph(id="beamsswitch-graph")],
+                    #     className="pretty_container six columns",
+                    # ),
+                ],
+                className="flex-display",
+                style={
+                    "justify-content": "left",
+                    "margin": "5px",
+                },
+            ),
+        ]
+    )
+
 
 
 def generate_third_row():
@@ -855,8 +856,8 @@ def generate_layout(software):
         layout = html.Div(
             [
                 generate_navbar(drop_down_buttons_vsrt),
-                dbc.Alert("Recording", color="danger",
-                          id="recording-alert", is_open=False),
+                #dbc.Alert("Recording", color="danger",
+                #          id="recording-alert", is_open=False),
                 generate_first_row(),
                 generate_second_row(),
                 generate_third_row(),
@@ -868,8 +869,8 @@ def generate_layout(software):
         layout = html.Div(
             [
                 generate_navbar(drop_down_buttons_srt),
-                dbc.Alert("Recording", color="danger",
-                          id="recording-alert", is_open=False),
+                #dbc.Alert("Recording", color="danger",
+                #          id="recording-alert", is_open=False),
                 generate_first_row(),
                 generate_npointlayout(),
                 generate_second_row(),
@@ -1041,46 +1042,46 @@ def register_callbacks(
         ofig = generate_npoint_raw(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
         return ofig
         
-    @app.callback(
-        Output("npoint-graph-2", "figure"),
-        [Input("npoint_info", "modified_timestamp")],
-        [State("npoint_info", "data")],
-    )
-    def update_n_point_interpolated(ts, npdata):
-        """Update the npoint track info
+    # @app.callback(
+    #     Output("npoint-graph-2", "figure"),
+    #     [Input("npoint_info", "modified_timestamp")],
+    #     [State("npoint_info", "data")],
+    # )
+    # def update_n_point_interpolated(ts, npdata):
+    #     """Update the npoint track info
 
-        Parameters
-        ----------
-        ts : int
-            modified time stamp
-        npdata : dict
-            will hold N- point data.
+    #     Parameters
+    #     ----------
+    #     ts : int
+    #         modified time stamp
+    #     npdata : dict
+    #         will hold N- point data.
 
-        Returns
-        -------
-        ofig : plotly.fig
-            Plotly figure
-        """
+    #     Returns
+    #     -------
+    #     ofig : plotly.fig
+    #         Plotly figure
+    #     """
 
-        if ts is None:
-            raise PreventUpdate
-        if npdata is None:
-            return emptygraph("x", "y", "N-Point Scan")
+    #     if ts is None:
+    #         raise PreventUpdate
+    #     if npdata is None:
+    #         return emptygraph("x", "y", "N-Point Scan")
 
-        if npdata.get("scan_center", [1, 1])[0] == 0:
-            return emptygraph("x", "y", "N-Point Scan")
+    #     if npdata.get("scan_center", [1, 1])[0] == 0:
+    #         return emptygraph("x", "y", "N-Point Scan")
 
-        az_a = []
-        el_a = []
-        for irot in npdata["rotor_loc"]:
-            az_a.append(irot[0])
-            el_a.append(irot[1])
-        mdiff = npdata["maxdiff"]
-        sc = npdata["scan_center"]
-        plist = npdata["pwr"]
-        sd = npdata["sides"]
-        ofig = generate_npoint_interpolated(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
-        return ofig
+    #     az_a = []
+    #     el_a = []
+    #     for irot in npdata["rotor_loc"]:
+    #         az_a.append(irot[0])
+    #         el_a.append(irot[1])
+    #     mdiff = npdata["maxdiff"]
+    #     sc = npdata["scan_center"]
+    #     plist = npdata["pwr"]
+    #     sd = npdata["sides"]
+    #     ofig = generate_npoint_interpolated(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
+    #     return ofig
         
 
     @app.callback(
