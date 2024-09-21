@@ -176,7 +176,9 @@ class EphemerisTracker:
         result = start_frame.transform_to(end_frame)
         sk1 = SkyCoord(result)
         f1 = AltAz(obstime=time,location=self.location)
-        vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        #vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        vbary = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        vlsr = sk1.transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km/u.s).value
     
