@@ -27,6 +27,7 @@ from .radio_control.radio_task_starter import (
 )
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
+from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
 
 
 class SmallRadioTelescopeDaemon:
@@ -458,26 +459,25 @@ class SmallRadioTelescopeDaemon:
             cold_sky_name = "cold_sky.fits"
 
             #erase prior calibration files if present
-            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
+            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
             if os.path.exists(cold_sky_file):
                 os.remove(cold_sky_file)
 
+            self.log_message("Starting cold calibration reference measurement")
+
             #start saving new calibration file
-            self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    self.config_directory,
-                    cold_sky_name,
-                )
-            self.radio_save_task.start()
-
-            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
-
+            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            self.start_recording(name=cold_sky_name, file_dir=self.config_dir)
+            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
-            ####
+            
+            ### compute calibration corrections
 
-            #goto calibration calculation program
+            cal_values, cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, 20)
+
+
+
 
         '''
         if we have a noise diode to use for calibration we need to make multiple measurements
@@ -489,8 +489,8 @@ class SmallRadioTelescopeDaemon:
             cal_ref_name = "cold_sky_plus_cal.fits"
 
             #erase prior calibration files if present
-            cold_sky_file=str(Path(config_directory, cold_sky_name).absolute())
-            cal_ref_file=str(Path(config_directory, cal_ref_name).absolute())
+            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
+            cal_ref_file=str(Path(self.config_directory, cal_ref_name).absolute())
 
             if os.path.exists(cold_sky_file):
                 os.remove(cold_sky_file)
@@ -501,66 +501,60 @@ class SmallRadioTelescopeDaemon:
             #enable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
+            self.log_message("Starting hot calibration reference measurement")
+
             self.set_calibrator_state(True)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-
-            #save new cold sky calibration file
-            self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    self.config_directory,
-                    cold_sky_name,
-                )
-            self.radio_save_task.start()
-
-            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
-
+            self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
+            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
             #disable calibrator and wait for the idiotically long settling time the filters currently have 
             #(need to fix that eventually so integration intervals are fully independent like they should be)
 
+            self.log_message("Starting cold calibration reference measurement")
+
             self.set_calibrator_state(False)
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-
-            #save new calibration reference file
-            self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    self.config_directory,
-                    cold_sky_name,
-                )
-            self.radio_save_task.start()
-
-            sleep((self.cal_cycles+1)*self.radio_num_bins/ self.radio_sample_frequency)
-
+            self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
+            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
+            cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20)
 
 
-        #radio_cal_task = RadioCalibrateTask(
-        #     self.radio_num_bins,
-        #     self.config_directory,
-        # )
-        # radio_cal_task.start()
-        # radio_cal_task.join(30)
-        # sleep(0.1)
+        #erase old cal file to prevent wierdness
 
-        cal_data = {
-            "cal_values": self.cal_values,
-            "cal_powers": self.cal_powers
+        calibration_path = Path(self.config_directory, "calibration.json")
+        if os.path.exists(calibration_path):
+                os.remove(calibration_path)
+
+        #save result
+
+        file_output = {
+            "cal_pwr": cal_power,
+            "cal_values": cal_values.tolist(),
         }
+        with open(calibration_path, "w") as outfile:
+            json.dump(file_output, outfile)
 
+        #write corrections back to processing
+
+        #readback from file is to circumvent a wierd formatting issue I can't figure out
+
+        sleep(0.1)
         path = Path(self.config_directory, "calibration.json")
-        with open(path, "w") as input_file:
-            json.dump(cal_data, input_file)
+        with open(path, "r") as input_file:
+            cal_data = json.load(input_file)
+            self.cal_values = cal_data["cal_values"]
+            self.cal_power = cal_data["cal_pwr"]
         self.radio_queue.put(("cal_pwr", self.cal_power))
         self.radio_queue.put(("cal_values", self.cal_values))
     
-        # #disable calibration source and return
+
         self.log_message("Calibration Done")
 
-    def start_recording(self, name):
+    def start_recording(self, name, file_dir):
         """Starts Recording Data
 
         Parameters
@@ -575,14 +569,14 @@ class SmallRadioTelescopeDaemon:
         if self.radio_save_task is None:
             if name is None:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, self.save_dir, name
+                    self.radio_sample_frequency, file_dir, name
                 )
             elif name.endswith(".rad"):
                 name = None if name == "*.rad" else name
                 self.radio_save_task = RadioSaveSpecRadTask(
                     self.radio_sample_frequency,
                     self.radio_num_bins,
-                    self.save_dir,
+                    file_dir,
                     name,
                 )
             elif name.endswith(".fits"):
@@ -590,12 +584,12 @@ class SmallRadioTelescopeDaemon:
                 self.radio_save_task = RadioSaveSpecFitsTask(
                     self.radio_sample_frequency,
                     self.radio_num_bins,
-                    self.save_dir,
+                    file_dir,
                     name,
                 )
             else:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, self.save_dir, name
+                    self.radio_sample_frequency, file_dir, name
                 )
             self.radio_save_task.start()
         else:
@@ -1060,8 +1054,7 @@ class SmallRadioTelescopeDaemon:
                     self.quit()
                 elif command_name == "record":
                     self.start_recording(
-                        name=(None if len(command_parts)
-                              <= 1 else command_parts[1])
+                        name=(None if len(command_parts) <= 1 else command_parts[1]), file_dir=self.save_dir
                     )
                 elif command_name == "roff":
                     self.stop_recording()
