@@ -1532,24 +1532,24 @@ def register_callbacks(
                 return not is_open
             return is_open
 
-    @ app.callback(
-        Output("recording-alert", "is_open"),
-        [Input("record-btn-yes", "n_clicks"),
-         Input("btn-stop-record", "n_clicks")],
-        [],
-    )
-    def record_alert_func(n_clicks_start, n_clicks_stop):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return False
-        else:
-            if not n_clicks_start:
-                return False
-            if not n_clicks_stop:
-                return True
-            if n_clicks_start == n_clicks_stop:
-                return False
-            return True
+    #@ app.callback(
+    #    Output("recording-alert", "is_open"),
+    #    [Input("record-btn-yes", "n_clicks"),
+    #     Input("btn-stop-record", "n_clicks")],
+    #    [],
+    #)
+    #def record_alert_func(n_clicks_start, n_clicks_stop):
+    #    ctx = dash.callback_context
+    #    if not ctx.triggered:
+    #        return False
+    #    else:
+    #        if not n_clicks_start:
+    #            return False
+    #        if not n_clicks_stop:
+    #            return True
+    #        if n_clicks_start == n_clicks_stop:
+    #            return False
+    #        return True
 
     @ app.callback(
         Output("cmd-file-modal", "is_open"),
@@ -1631,7 +1631,6 @@ def register_callbacks(
         n_clicks_calibrate,
         n_clicks_calon,
         n_clicks_caloff,
-        is_open
     ):
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -1642,7 +1641,6 @@ def register_callbacks(
                 command_thread.add_to_queue("stow")
             if button_id == "btn-stop-record":
                 command_thread.add_to_queue("roff")
-                return not is_open
             elif button_id == "btn-quit":
                 command_thread.add_to_queue("quit")
             elif button_id == "btn-calibrate":
