@@ -45,15 +45,20 @@ from astropy.table import Table
 from srt import config_loader
 
 
-root_folder = Path(__file__).parent.parent.parent.parent
+#root_folder = Path(__file__).parent.parent.parent.parent
+#the above appears to be broken
+root_folder = "$HOME/srt-py"
 
-
-def get_all_objects(config_file="config/sky_coords.csv",):
-    table = Table.read(Path(root_folder, config_file), format="ascii.csv")
+def get_all_objects(coords_file="config/sky_coords.csv",):
     all_objects = ["Sun", "Moon"]
-    for index, row in enumerate(table):
-        name = row["name"]
-        all_objects.append(name)
+    try:
+        table = Table.read(Path(root_folder, coords_file), format="ascii.csv")
+
+        for index, row in enumerate(table):
+            name = row["name"]
+            all_objects.append(name)
+    except:
+        table = all_objects #just to do something
     return all_objects
 
 
