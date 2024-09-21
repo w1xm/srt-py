@@ -117,41 +117,6 @@ def generate_srt_azel():
         ),
     )
 
-def generate_npointlayout():
-    """Generates N Point Display
-
-    Returns
-    -------
-    Div: html.Div 
-        containing n point graph if srt
-    """
-    return html.Div(
-        [
-            html.Div(
-                [
-                    dcc.Store(id="npoint_info", storage_type="session"),
-                    html.Div(
-                        [dcc.Graph(id="npoint-graph-1")],
-                        className="pretty_container six columns",
-                    ),
-                    #html.Div(
-                    #     [dcc.Graph(id="npoint-graph-2")],
-                    #     className="pretty_container six columns",
-                    # ),
-                    # html.Div(
-                    #     [dcc.Graph(id="beamsswitch-graph")],
-                    #     className="pretty_container six columns",
-                    # ),
-                ],
-                className="flex-display",
-                style={
-                    "justify-content": "left",
-                    "margin": "5px",
-                },
-            ),
-        ]
-    )
-
 
 def generate_srt_second_row():
     """Generates N Point Display and zoomed in map
@@ -167,7 +132,7 @@ def generate_srt_second_row():
                 [
                     dcc.Store(id="npoint_info", storage_type="session"),
                     html.Div(
-                        [dcc.Graph(id="npoint-graph")],
+                        [dcc.Graph(id="npoint-graph-1")],
                         className="pretty_container six columns",
                     ),
                     html.Div(
