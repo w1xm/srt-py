@@ -4,7 +4,7 @@ Module for Tracking and Caching the Azimuth-Elevation Coords of Celestial Object
 
 """
 from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
-from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz
+from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz, LSR
 from astropy.utils.iers.iers import conf
 from astropy.table import Table
 from astropy.time import Time
