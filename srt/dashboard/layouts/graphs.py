@@ -295,13 +295,13 @@ def generate_zoom_graph(
         )
     )
     fig.add_shape(
-        type="rect",
+        type="circle",
         xref="x",
         yref="y",
-        x0=current_location[0]-beam_width,
-        y0=current_location[1]-beam_width,
-        x1=current_location[0]+beam_width,
-        y1=current_location[1]+beam_width,
+        x0=current_location[0]-beam_width/2,
+        y0=current_location[1]-beam_width/2,
+        x1=current_location[0]+beam_width/2,
+        y1=current_location[1]+beam_width/2,
         fillcolor="lightgrey",
         layer="below",
         label=dict(text="Beamwidth", textposition="top center",
