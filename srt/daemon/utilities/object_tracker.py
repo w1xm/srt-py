@@ -140,15 +140,15 @@ class EphemerisTracker:
         if name == "Sun":
             tframe = get_sun(time).transform_to(frame)
             vbary = tframe.radial_velocity_correction(obstime=time)
-            vlsr = tframe.transform_to(LSR(obstime=time)).radial_velocity
+            vlsr = tframe.transform_to(LSR()).radial_velocity
         elif name == "Moon":
             tframe = get_moon(time).transform_to(frame)
             vbary = tframe.radial_velocity_correction(obstime=time)
-            vlsr = tframe.transform_to(LSR(obstime=time)).radial_velocity
+            vlsr = tframe.transform_to(LSR()).radial_velocity
         else:
             tframe = self.sky_coord_names[name].transform_to(frame)
             bary = tframe.radial_velocity_correction(obstime=time)
-            vlsr = self.self.sky_coord_names[name].transform_to(LSR(obstime=time)).radial_velocity
+            vlsr = self.self.sky_coord_names[name].transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km / u.s).value
 
