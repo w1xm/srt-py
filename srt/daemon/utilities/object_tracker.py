@@ -200,8 +200,15 @@ class EphemerisTracker:
         sk1 = SkyCoord(result)
         f1 = AltAz(obstime=time,location=self.location)
         #vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
-        vbary = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
-        vlsr = sk1.transform_to(LSR()).radial_velocity
+        v_bary = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+
+        sky_coord_radec = sk1.transform_to('icrs')
+        my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
+                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
+        vlsr = my_observation.transform_to(LSR()).radial_velocity
+        
+        # vlsr = sk1.transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km/u.s).value
     
