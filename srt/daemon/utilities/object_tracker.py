@@ -145,7 +145,7 @@ class EphemerisTracker:
             sky_coord_radec = tframe.transform_to('icrs')
             my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
                 pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary*u.km/u.s, distance = 1*u.pc) #distance does not matter. 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
             vlsr = my_observation.transform_to(LSR()).radial_velocity
         
         elif name == "Moon":
@@ -156,7 +156,7 @@ class EphemerisTracker:
             sky_coord_radec = tframe.transform_to('icrs')
             my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
                 pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary*u.km/u.s, distance = 1*u.pc) #distance does not matter. 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
             vlsr = my_observation.transform_to(LSR()).radial_velocity
             
         else:
@@ -167,7 +167,7 @@ class EphemerisTracker:
             sky_coord_radec = tframe.transform_to('icrs')
             my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
                 pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary*u.km/u.s, distance = 1*u.pc) #distance does not matter. 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
             vlsr = my_observation.transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km / u.s).value
