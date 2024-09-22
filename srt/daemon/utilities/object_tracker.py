@@ -4,7 +4,7 @@ Module for Tracking and Caching the Azimuth-Elevation Coords of Celestial Object
 
 """
 from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
-from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz
+from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz, LSR
 from astropy.utils.iers.iers import conf
 from astropy.table import Table
 from astropy.time import Time
@@ -146,13 +146,36 @@ class EphemerisTracker:
         """
         if name == "Sun":
             tframe = get_sun(time).transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
+            v_bary = tframe.radial_velocity_correction(obstime=time)
+            # vlsr = tframe.transform_to(LSR()).radial_velocity
+
+            sky_coord_radec = tframe.transform_to('icrs')
+            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
+                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
+            vlsr = my_observation.transform_to(LSR()).radial_velocity
+            
         elif name == "Moon":
             tframe = get_moon(time).transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
+            v_bary = tframe.radial_velocity_correction(obstime=time)
+            # vlsr = tframe.transform_to(LSR()).radial_velocity
+
+            sky_coord_radec = tframe.transform_to('icrs')
+            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
+                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
+            vlsr = my_observation.transform_to(LSR()).radial_velocity
+            
         else:
             tframe = self.sky_coord_names[name].transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
+            v_bary = tframe.radial_velocity_correction(obstime=time)
+            # vlsr = self.sky_coord_names[name].transform_to(LSR()).radial_velocity
+
+            sky_coord_radec = tframe.transform_to('icrs')
+            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
+                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
+                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
+            vlsr = my_observation.transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km / u.s).value
 
@@ -183,7 +206,9 @@ class EphemerisTracker:
         result = start_frame.transform_to(end_frame)
         sk1 = SkyCoord(result)
         f1 = AltAz(obstime=time, location=self.location)
-        vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        #vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        vbary = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+        vlsr = sk1.transform_to(LSR()).radial_velocity
 
         return vlsr.to(u.km/u.s).value
 
