@@ -126,7 +126,7 @@ class EphemerisTracker:
             )
         return alt_az.az.degree, alt_az.alt.degree
 
-    def calculate_vlsr(self, name, time, frame):
+   def calculate_vlsr(self, name, time, frame):
         """Calculates the velocity in the local standard of rest.
 
         Parameters
@@ -146,36 +146,13 @@ class EphemerisTracker:
         """
         if name == "Sun":
             tframe = get_sun(time).transform_to(frame)
-            v_bary = tframe.radial_velocity_correction(obstime=time)
-            # vlsr = tframe.transform_to(LSR()).radial_velocity
-
-            sky_coord_radec = tframe.transform_to('icrs')
-            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
-                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
-            vlsr = my_observation.transform_to(LSR()).radial_velocity
-            
+            vlsr = tframe.radial_velocity_correction(obstime=time)
         elif name == "Moon":
             tframe = get_moon(time).transform_to(frame)
-            v_bary = tframe.radial_velocity_correction(obstime=time)
-            # vlsr = tframe.transform_to(LSR()).radial_velocity
-
-            sky_coord_radec = tframe.transform_to('icrs')
-            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
-                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
-            vlsr = my_observation.transform_to(LSR()).radial_velocity
-            
+            vlsr = tframe.radial_velocity_correction(obstime=time)
         else:
             tframe = self.sky_coord_names[name].transform_to(frame)
-            v_bary = tframe.radial_velocity_correction(obstime=time)
-            # vlsr = self.sky_coord_names[name].transform_to(LSR()).radial_velocity
-
-            sky_coord_radec = tframe.transform_to('icrs')
-            my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
-                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
-            vlsr = my_observation.transform_to(LSR()).radial_velocity
+            vlsr = tframe.radial_velocity_correction(obstime=time)
 
         return vlsr.to(u.km / u.s).value
 
@@ -185,7 +162,7 @@ class EphemerisTracker:
         Parameters
         ----------
         az_el : (float, float)
-            Azimuth and Elevation 
+            Azimuth and Elevation
         time : AstroPy Time Obj
             Time of Conversion
 
@@ -197,7 +174,7 @@ class EphemerisTracker:
 
         if time is None:
             time = Time.now()
-        
+
         az, el = az_el
         start_frame = AltAz(
             obstime=time, location=self.location, alt=el * u.deg, az=az * u.deg
@@ -205,20 +182,11 @@ class EphemerisTracker:
         end_frame = Galactic()
         result = start_frame.transform_to(end_frame)
         sk1 = SkyCoord(result)
-        f1 = AltAz(obstime=time,location=self.location)
-        #vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
-        v_bary = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
-
-        sky_coord_radec = sk1.transform_to('icrs')
-        my_observation = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
-                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
-                radial_velocity=v_bary, distance = 1*u.pc) #distance does not matter. 
-        vlsr = my_observation.transform_to(LSR()).radial_velocity
-        
-        # vlsr = sk1.transform_to(LSR()).radial_velocity
+        f1 = AltAz(obstime=time, location=self.location)
+        vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
 
         return vlsr.to(u.km/u.s).value
-
+        
     def convert_to_gal_coord(self, az_el, time=None):
         """Converts an AzEl Tuple into a Galactic Tuple from Location
 
