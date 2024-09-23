@@ -93,6 +93,7 @@ class SmallRadioTelescopeDaemon:
         self.temp_sys = config_dict["TSYS"]
         self.temp_cal = config_dict["TCAL"]
         self.save_dir = config_dict["SAVE_DIRECTORY"]
+        self.dashboard_refresh_rate = config_dict["DASHBOARD_REFRESH_MS"]/1000.0
         
         self.npoints = 5 #default size of grid for npoint scan
         self.radio_calibrator_state = False
@@ -824,7 +825,7 @@ class SmallRadioTelescopeDaemon:
                 ):
                     self.rotor.set_azimuth_elevation(
                         *current_rotor_cmd_location)
-                    sleep(1)
+                    sleep(0.1)
                     start_time = time()
                     while (
                         not azel_within_range(
@@ -846,7 +847,7 @@ class SmallRadioTelescopeDaemon:
                             )
                             self.radio_queue.put(("glat", g_lat))
                             self.radio_queue.put(("glon", g_lon))
-                        sleep(0.5)
+                        sleep(0.1)
                 else:
                     past_rotor_location = self.rotor_location
                     self.rotor_location = self.rotor.get_azimuth_elevation()

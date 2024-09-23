@@ -928,7 +928,7 @@ def generate_layout(software):
                 generate_first_row(),
                 generate_srt_azel(),
                 generate_srt_second_row(),
-                generate_third_row(),
+                #generate_third_row(),
                 generate_popups(software),
                 html.Div(id="signal", style={"display": "none"}),
             ]

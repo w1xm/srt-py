@@ -276,8 +276,12 @@ def generate_zoom_graph(
     """
     fig = go.Figure()
 
-    az_lower_display_lim = current_location[0]-beam_width*2
-    az_upper_display_lim = current_location[0]+beam_width*2
+    #correct for azel coordinates distortion on sky
+    #el_bw = beam_width
+    az_bw = beam_width/np.cos(current_location[1] * np.pi / 180.0)
+
+    az_lower_display_lim = current_location[0]-az_bw*2
+    az_upper_display_lim = current_location[0]+az_bw*2
     el_lower_display_lim = current_location[1]-beam_width*2
     el_upper_display_lim = current_location[1]+beam_width*2
 
@@ -298,9 +302,9 @@ def generate_zoom_graph(
         type="circle",
         xref="x",
         yref="y",
-        x0=current_location[0]-beam_width/2,
+        x0=current_location[0]-az_bw/2,
         y0=current_location[1]-beam_width/2,
-        x1=current_location[0]+beam_width/2,
+        x1=current_location[0]+az_bw/2,
         y1=current_location[1]+beam_width/2,
         fillcolor="lightgrey",
         layer="below",
