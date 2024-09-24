@@ -1116,16 +1116,19 @@ class SmallRadioTelescopeDaemon:
                     ).total_seconds()
                     self.log_message(f'sleeping for {time_delta} seconds')
                     sleep(time_delta)
-                # Wait until next time Y:D:H:M:S
-                # command format is "wait_utc_ydhms year:day:hour:minute:second" with utc time
-                elif command_name == "wait_utc_ydhms":
-                    time_val = datetime.strptime(
-                        command_parts[1], "%Y:%j:%H:%M:%S")
+                # Wait until next iso time 
+                # command format is "wait_utc_iso %Y-%m-%dT%H:%M:%S.%f%z" with utc time
+                elif command_name == "wait_utc_iso":
+                    time_val = datetime.fromisoformat(
+                        command_parts[1])
                     time_delta = (
                         time_val - datetime.utcfromtimestamp(time())
                     ).total_seconds()
-                    self.log_message(f'sleeping for {time_delta} seconds')
-                    sleep(time_delta)
+                    if time_delta > 0:
+                        self.log_message(f'sleeping for {time_delta} seconds')
+                        sleep(time_delta)
+                    else:
+                        self.log_message('target command time past. skipping wait')
                 else:
                     self.log_message(f"Command Not Identified '{command}'")
                 self.command_queue.task_done()
