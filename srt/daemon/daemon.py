@@ -1105,21 +1105,26 @@ class SmallRadioTelescopeDaemon:
                 elif command_name == "wait":
                     sleep(float(command_parts[1]))
                 # Wait Until Next Time H:M:S
-                elif command_name.split(":")[0] == "lst":
-                    time_string = command_name.replace("LST:", "")
+                # command format is "wait_utc_hms hour:minute:second" with utc time
+                elif command_name == "wait_utc_hms":
+                    time_string = command_parts[1]
                     time_val = datetime.strptime(time_string, "%H:%M:%S")
                     while time_val < datetime.utcfromtimestamp(time()):
                         time_val += timedelta(days=1)
                     time_delta = (
                         time_val - datetime.utcfromtimestamp(time())
                     ).total_seconds()
+                    self.log_message(f'sleeping for {time_delta} seconds')
                     sleep(time_delta)
-                elif len(command_name.split(":")) == 5:  # Wait Until Y:D:H:M:S
+                # Wait until next time Y:D:H:M:S
+                # command format is "wait_utc_ydhms year:day:hour:minute:second" with utc time
+                elif command_name == "wait_utc_ydhms":
                     time_val = datetime.strptime(
-                        command_name, "%Y:%j:%H:%M:%S")
+                        command_parts[1], "%Y:%j:%H:%M:%S")
                     time_delta = (
                         time_val - datetime.utcfromtimestamp(time())
                     ).total_seconds()
+                    self.log_message(f'sleeping for {time_delta} seconds')
                     sleep(time_delta)
                 else:
                     self.log_message(f"Command Not Identified '{command}'")
