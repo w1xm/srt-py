@@ -126,7 +126,7 @@ class EphemerisTracker:
             )
         return alt_az.az.degree, alt_az.alt.degree
 
-   def calculate_vlsr(self, name, time, frame):
+    def calculate_vlsr(self, name, time, frame):
         """Calculates the velocity in the local standard of rest.
 
         Parameters

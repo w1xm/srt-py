@@ -67,31 +67,24 @@ def generate_az_el_graph(
         )
     )
 
-    # Marker for visability, basicaslly beamwidth  with azimuth stretched out for high elevation angles.
+    # Marker for visibility, basicaslly beamwidth  with azimuth stretched out for high elevation angles.
 
     az_l = current_location[0]
     el_l = current_location[1]
-    el_u = el_l + .5*beam_width
-    el_d = el_l - .5*beam_width
+    az_bw = beam_width/np.cos(el_l * np.pi / 180.0)
 
-    azu = .5*beam_width/np.cos(el_u * np.pi / 180.0)
-    azd = .5*beam_width/np.cos(el_d * np.pi / 180.0)
-    x_vec = [max(az_l-azd, 0), min(az_l-azu, 360),
-             max(az_l+azu, 0), min(az_l+azd, 360), max(az_l-azd, 0)]
-    y_vec = [max(el_d, 0), min(el_u, 90), min(
-        el_u, 90), min(el_d, 90), max(el_d, 0)]
-
-    fig.add_trace(
-        go.Scatter(
-            x=x_vec,
-            y=y_vec,
-            fill="toself",
-            fillcolor="rgba(147,112,219,0.1)",
-            text=["Visability"],
-            name='Visability',
-            mode="markers",
-            marker_color=["rgba(147,112,219, .8)" for _ in x_vec]
-        )
+    fig.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=az_l-az_bw/2,
+        y0=el_l-beam_width/2,
+        x1=az_l+az_bw/2,
+        y1=el_l+beam_width/2,
+        fillcolor="grey",
+        layer="below",
+        #label=dict(text="Beamwidth", textposition="top center",
+        #           font=dict(color="White"))
     )
 
     fig.add_trace(

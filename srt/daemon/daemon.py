@@ -916,7 +916,7 @@ class SmallRadioTelescopeDaemon:
                 "cal_state": self.radio_calibrator_state,
             }
             status_socket.send_json(status)
-            sleep(0.1)
+            sleep(0.2)
 
     def update_radio_settings(self):
         """Coordinates Sending XMLRPC Commands to the GNU Radio Script
