@@ -282,6 +282,7 @@ class SmallRadioTelescopeDaemon:
         self.ephemeris_cmd_location = object_id
         self.beam_switch_data = [rotor_loc, pwr_list]
 
+    def point_at_object(self, object_id):
         """Points Antenna Directly at Object, and Sets Up Tracking to Follow it
 
         Parameters
