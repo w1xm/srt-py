@@ -796,27 +796,21 @@ class SmallRadioTelescopeDaemon:
             if last_updated_time is None or time() - last_updated_time > 10:
                 last_updated_time = time()
                 self.ephemeris_tracker.update_all_az_el()
-                self.ephemeris_locations = (
-                    self.ephemeris_tracker.get_all_azimuth_elevation()
-                )
-            #only update vlsr when we care and only at cadence we update celestial coordinates
-            #do this in rotor update loop, not here
-            #self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
+                self.ephemeris_locations = (self.ephemeris_tracker.get_all_azimuth_elevation())
 
-            self.ephemeris_time_locs = (
-                self.ephemeris_tracker.get_all_azel_time()
-            )
+                #only update vlsr when we care and only at cadence we update celestial coordinates
+                #do this in rotor update loop, not here
+                #self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
+
+                self.ephemeris_time_locs = (self.ephemeris_tracker.get_all_azel_time())
+
             if self.ephemeris_cmd_location is not None:
-                new_rotor_destination = self.ephemeris_locations[
-                    self.ephemeris_cmd_location
-                ]
+                new_rotor_destination = self.ephemeris_locations[self.ephemeris_cmd_location]
                 #self.current_vlsr = self.ephemeris_vlsr[self.ephemeris_cmd_location]
-                new_rotor_cmd_location = tuple(
-                    map(add, new_rotor_destination, self.rotor_offsets)
-                )
+                new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
+
                 if self.rotor.angles_within_bounds(
-                    *new_rotor_destination
-                ) and self.rotor.angles_within_bounds(*new_rotor_cmd_location):
+                    *new_rotor_destination) and self.rotor.angles_within_bounds(*new_rotor_cmd_location):
                     self.rotor_destination = new_rotor_destination
                     self.rotor_cmd_location = new_rotor_cmd_location
                 else:
@@ -825,7 +819,9 @@ class SmallRadioTelescopeDaemon:
                     )
                     self.ephemeris_cmd_location = None
 
-            sleep(1)
+                sleep(1) 
+
+            sleep(0.1)
 
     def update_rotor_status(self):
         """Periodically Sets Rotor Azimuth and Elevation and Fetches New Antenna Position
