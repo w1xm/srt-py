@@ -89,7 +89,7 @@ class EphemerisTracker:
             ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS, location=self.location
         )
 
-        self.bodies = ["Sun, Moon"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
+        self.bodies = ["Sun", "Moon"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
 
         self.latest_time = None
         self.refresh_time = refresh_time * u.second
@@ -273,15 +273,15 @@ class EphemerisTracker:
                 transformed.az[index].degree,
                 transformed.alt[index].degree,
             )
-            vlsr = calculate_vlsr(transformed[index], time)
+            vlsr = self.calculate_vlsr(transformed[index], time)
             self.vlsr_dict[name] = vlsr.to(u.km / u.s).value
 
         #deal with annoying things that move against the sky
 
         for body in self.bodies:
             body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
-            self.az_el_dict[body] = body_coords.az.degree, body_coords.alt.degree
-            self.vlsr_dict[body] = calculate_vlsr(body_coords, time)
+            self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
+            self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time).to(u.km/u.s).value
 
         #and prepredict things (do we actually need this?)
 
@@ -300,7 +300,7 @@ class EphemerisTracker:
 
             for body in self.bodies:
                 body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
-                self.time_interval_dict[time_passed][body] = body_coords.az.degree, body_coords.alt.degree
+                self.time_interval_dict[time_passed][body] = (body_coords.az.degree, body_coords.alt.degree)
 
         self.latest_time = time
 

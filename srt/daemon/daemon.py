@@ -374,7 +374,7 @@ class SmallRadioTelescopeDaemon:
 
         #define a skycoord object with galactic coord info
 
-        sky_coord = SkyCoord(l_pos, b_pos, frame='galactic', unit=u.deg, location=EphemerisTracker.location)
+        sky_coord = SkyCoord(l_pos, b_pos, frame='galactic', unit=u.deg, location=self.ephemeris_tracker.location)
         
         if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
             #rotor is smart enough to directly handle the command
@@ -404,7 +404,7 @@ class SmallRadioTelescopeDaemon:
 
         #define a skycoord object with galactic coord info
 
-        sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=EphemerisTracker.location) 
+        sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=self.ephemeris_tracker.location) 
         
         if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
             #rotor is smart enough to directly handle the command
@@ -807,7 +807,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_locations = (
                 self.ephemeris_tracker.get_all_azimuth_elevation()
             )
-            self.ephemeris_vlsr = self.c.get_all_vlsr()
+            self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
             self.ephemeris_time_locs = (
                 self.ephemeris_tracker.get_all_azel_time()
             )
@@ -831,10 +831,10 @@ class SmallRadioTelescopeDaemon:
                     self.ephemeris_cmd_location = None
             else: #compute vlsr for where we're actually pointed
                 obstime = Time.now()
-                azel_frame = AltAz(obstime=obstime, location=EphemerisTracker.location, alt=el * u.deg, az=az * u.deg)
+                azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
                 sky_coord = SkyCoord(azel_frame)
                 self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
-                self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+                self.radio_queue.put(("vlsr", float(self.current_vlsr.to(u.km/u.s).value)))
             sleep(1)
 
     def update_rotor_status(self):
