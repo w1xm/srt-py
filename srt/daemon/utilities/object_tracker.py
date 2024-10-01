@@ -95,7 +95,7 @@ class EphemerisTracker:
         self.refresh_time = refresh_time * u.second
 
         self.az_el_dict = {}
-        self.vlsr_dict = {}
+        # self.vlsr_dict = {}
         # self.time_interval_dict = {}
         self.time_interval_dict = self.inital_azeltime()
 
@@ -163,67 +163,6 @@ class EphemerisTracker:
         
         return (v_bary+v_sun).to(u.km/u.s).value
 
-
-    # def calculate_object_vlsr(self, name, time, frame):
-    #     """Calculates the velocity in the local standard of rest.
-
-    #     Parameters
-    #     ----------
-    #     name : str
-    #         Name of the Object being Tracked
-    #     time : Time
-    #         Current Time (only necessary for Sun/Moon Ephemeris)
-    #     alt_az_frame : AltAz
-    #         AltAz Frame Object
-
-
-    #     Returns
-    #     -------
-    #     float
-    #         vlsr in km/s.
-    #     """
-    #     if name == "Sun":
-    #         tframe = get_sun(time).transform_to(frame)
-    #         vlsr = tframe.radial_velocity_correction(obstime=time)
-    #     elif name == "Moon":
-    #         tframe = get_moon(time).transform_to(frame)
-    #         vlsr = tframe.radial_velocity_correction(obstime=time)
-    #     else:
-    #         tframe = self.sky_coord_names[name].transform_to(frame)
-    #         vlsr = tframe.radial_velocity_correction(obstime=time)
-
-    #     return vlsr.to(u.km / u.s).value
-
-    # def calculate_vlsr_azel(self, az_el, time=None):
-    #     """Takes an AzEl tuple and derives the vlsr from  Location
-
-    #     Parameters
-    #     ----------
-    #     az_el : (float, float)
-    #         Azimuth and Elevation
-    #     time : AstroPy Time Obj
-    #         Time of Conversion
-
-    #     Returns
-    #     -------
-    #     float
-    #         vlsr in km/s.
-    #     """
-
-    #     if time is None:
-    #         time = Time.now()
-
-    #     az, el = az_el
-    #     start_frame = AltAz(
-    #         obstime=time, location=self.location, alt=el * u.deg, az=az * u.deg
-    #     )
-    #     end_frame = Galactic()
-    #     result = start_frame.transform_to(end_frame)
-    #     sk1 = SkyCoord(result)
-    #     f1 = AltAz(obstime=time, location=self.location)
-    #     vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
-
-    #     return vlsr.to(u.km/u.s).value
         
     def convert_to_gal_coord(self, az_el, time=None):
         """Converts an AzEl Tuple into a Galactic Tuple from Location
@@ -273,15 +212,15 @@ class EphemerisTracker:
                 transformed.az[index].degree,
                 transformed.alt[index].degree,
             )
-            vlsr = self.calculate_vlsr(transformed[index], time)
-            self.vlsr_dict[name] = vlsr
+            #vlsr = self.calculate_vlsr(transformed[index], time)
+            #self.vlsr_dict[name] = vlsr
 
         #deal with annoying things that move against the sky
 
         for body in self.bodies:
             body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
             self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
-            self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time)
+            #self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time)
 
         #and prepredict things (do we actually need this?)
 
@@ -345,8 +284,8 @@ class EphemerisTracker:
     #             name, time, AltAz(obstime=time, location=self.location)
     #         )
 
-    def get_all_vlsr(self):
-        return self.vlsr_dict
+    #def get_all_vlsr(self):
+    #    return self.vlsr_dict
 
     # def get_vlsr(self, name, time_offset=0): #not used
 

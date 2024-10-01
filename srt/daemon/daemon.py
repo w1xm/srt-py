@@ -131,7 +131,6 @@ class SmallRadioTelescopeDaemon:
                 Path(config_directory, "sky_coords.csv").absolute()),
         )
         self.ephemeris_locations = self.ephemeris_tracker.get_all_azimuth_elevation()
-        self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
         self.ephemeris_time_locs = self.ephemeris_tracker.get_all_azel_time()
         self.current_vlsr = 0.0
         self.ephemeris_cmd_location = None
@@ -198,15 +197,18 @@ class SmallRadioTelescopeDaemon:
         """
         self.ephemeris_cmd_location = None
         self.radio_queue.put(("soutrack", object_id))
+
+        scan_center = self.ephemeris_locations[object_id]
+
         # Send vlsr to radio queue
-        cur_vlsr = self.ephemeris_vlsr[object_id]
-        self.radio_queue.put(("vlsr", float(cur_vlsr)))
-        self.current_vlsr = cur_vlsr
+        #cur_vlsr = self.ephemeris_vlsr[object_id]
+        #self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+        #self.current_vlsr = cur_vlsr
         N_pnt_default = grid_size**2
         rotor_loc = []
         pwr_list = []
         #
-        scan_center = self.ephemeris_locations[object_id]
+        
         np_sides = [grid_size, grid_size]
         for scan in range(N_pnt_default):
             scan_center = self.ephemeris_locations[object_id] #recompute target position for every iteration
@@ -255,10 +257,7 @@ class SmallRadioTelescopeDaemon:
         """
         self.ephemeris_cmd_location = None
         self.radio_queue.put(("soutrack", object_id))
-        # Send vlsr to radio queue
-        cur_vlsr = self.ephemeris_vlsr[object_id]
-        self.radio_queue.put(("vlsr", float(cur_vlsr)))
-        self.current_vlsr = cur_vlsr
+
         new_rotor_destination = self.ephemeris_locations[object_id]
         rotor_loc = []
         pwr_list = []
@@ -283,7 +282,6 @@ class SmallRadioTelescopeDaemon:
         self.ephemeris_cmd_location = object_id
         self.beam_switch_data = [rotor_loc, pwr_list]
 
-    def point_at_object(self, object_id):
         """Points Antenna Directly at Object, and Sets Up Tracking to Follow it
 
         Parameters
@@ -297,10 +295,7 @@ class SmallRadioTelescopeDaemon:
         """
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", object_id))
-        # Send vlsr to radio queue
-        cur_vlsr = self.ephemeris_vlsr[object_id]
-        self.radio_queue.put(("vlsr", float(cur_vlsr)))
-        self.current_vlsr = cur_vlsr
+       
         new_rotor_cmd_location = self.ephemeris_locations[object_id]
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
             self.ephemeris_cmd_location = object_id
@@ -329,20 +324,16 @@ class SmallRadioTelescopeDaemon:
 
         #define a skycoord object with az el position info
 
-        obstime = Time.now()
+        #obstime = Time.now()
 
-        azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=el * u.deg, az=az * u.deg)
-        sky_coord = SkyCoord(azel_frame)
+        #azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=el * u.deg, az=az * u.deg)
+        #sky_coord = SkyCoord(azel_frame)
 
 
         self.ephemeris_cmd_location = None
         self.rotor_offsets = (0.0, 0.0)
         # Send az and el angles to sources track for the radio
         self.radio_queue.put(("soutrack", f"azel_{az}_{el}"))
-        # Send vlsr to radio queue
-        cur_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord, obstime)
-        self.current_vlsr = cur_vlsr
-        self.radio_queue.put(("vlsr", float(cur_vlsr)))
 
         new_rotor_destination = (az, el)
         new_rotor_cmd_location = new_rotor_destination
@@ -804,10 +795,13 @@ class SmallRadioTelescopeDaemon:
             if last_updated_time is None or time() - last_updated_time > 10:
                 last_updated_time = time()
                 self.ephemeris_tracker.update_all_az_el()
-            self.ephemeris_locations = (
-                self.ephemeris_tracker.get_all_azimuth_elevation()
-            )
-            self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
+                self.ephemeris_locations = (
+                    self.ephemeris_tracker.get_all_azimuth_elevation()
+                )
+            #only update vlsr when we care and only at cadence we update celestial coordinates
+            #do this in rotor update loop, not here
+            #self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
+
             self.ephemeris_time_locs = (
                 self.ephemeris_tracker.get_all_azel_time()
             )
@@ -815,7 +809,7 @@ class SmallRadioTelescopeDaemon:
                 new_rotor_destination = self.ephemeris_locations[
                     self.ephemeris_cmd_location
                 ]
-                self.current_vlsr = self.ephemeris_vlsr[self.ephemeris_cmd_location]
+                #self.current_vlsr = self.ephemeris_vlsr[self.ephemeris_cmd_location]
                 new_rotor_cmd_location = tuple(
                     map(add, new_rotor_destination, self.rotor_offsets)
                 )
@@ -829,12 +823,7 @@ class SmallRadioTelescopeDaemon:
                         f"Object {self.ephemeris_cmd_location} moved out of motor bounds"
                     )
                     self.ephemeris_cmd_location = None
-            else: #compute vlsr for where we're actually pointed
-                obstime = Time.now()
-                azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
-                sky_coord = SkyCoord(azel_frame)
-                self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
-                self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+
             sleep(1)
 
     def update_rotor_status(self):
@@ -850,8 +839,8 @@ class SmallRadioTelescopeDaemon:
             try:
                 current_rotor_cmd_location = self.rotor_cmd_location
                 if not azel_within_range(
-                    self.rotor_location, current_rotor_cmd_location
-                ):
+                    self.rotor_location, current_rotor_cmd_location):
+                    
                     self.rotor.set_azimuth_elevation(
                         *current_rotor_cmd_location)
                     sleep(0.1)
@@ -865,36 +854,46 @@ class SmallRadioTelescopeDaemon:
                         self.rotor_location = self.rotor.get_azimuth_elevation()
                         #print(past_rotor_location, self.rotor_location)
                         if not self.rotor_location == past_rotor_location:
-                            g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(
-                                self.rotor_location
-                            )
-                            self.radio_queue.put(
-                                ("motor_az", float(self.rotor_location[0]))
-                            )
-                            self.radio_queue.put(
-                                ("motor_el", float(self.rotor_location[1]))
-                            )
+
+                            obstime = Time.now()
+
+                            g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(self.rotor_location)
+                            self.radio_queue.put(("motor_az", float(self.rotor_location[0])))
+                            self.radio_queue.put(("motor_el", float(self.rotor_location[1])))
                             self.radio_queue.put(("glat", g_lat))
                             self.radio_queue.put(("glon", g_lon))
+
+                            #compute vlsr for where we're actually pointed. we don't really care if it's theoretically different for the target object
+                            
+                            azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
+                            sky_coord = SkyCoord(azel_frame)
+                            self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
+                            self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+
                         sleep(0.1)
                 else:
                     past_rotor_location = self.rotor_location
                     self.rotor_location = self.rotor.get_azimuth_elevation()
                     #print(self.rotor_location)
-                    if not self.rotor_location == past_rotor_location:
-                        g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(
-                            self.rotor_location
-                        )
-                        self.radio_queue.put(
-                            ("motor_az", float(self.rotor_location[0]))
-                        )
-                        self.radio_queue.put(
-                            ("motor_el", float(self.rotor_location[1]))
-                        )
-                        self.radio_queue.put(("glat", g_lat))
-                        self.radio_queue.put(("glon", g_lon))
+                    #if not self.rotor_location == past_rotor_location: #we should not do this check, still want to update galactic lat and lon at reasonable cadence
+
+                    obstime = Time.now()
+
+                    g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(self.rotor_location)
+                    self.radio_queue.put(("motor_az", float(self.rotor_location[0])))
+                    self.radio_queue.put(("motor_el", float(self.rotor_location[1])))
+                    self.radio_queue.put(("glat", g_lat))
+                    self.radio_queue.put(("glon", g_lon))
+
+                    #compute vlsr for where we're actually pointed. we don't really care if it's theoretically different for the target object
+                            
+                    azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
+                    sky_coord = SkyCoord(azel_frame)
+                    self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
+                    self.radio_queue.put(("vlsr", float(self.current_vlsr)))
 
                     sleep(1)
+
             except AssertionError as e:
                 self.log_message(str(e))
             except ValueError as e:
