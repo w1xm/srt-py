@@ -835,7 +835,11 @@ class SmallRadioTelescopeDaemon:
         Returns
         -------
         None
+
         """
+
+        last_time = time()
+
         while True:
             try:
                 current_rotor_cmd_location = self.rotor_cmd_location
@@ -850,7 +854,7 @@ class SmallRadioTelescopeDaemon:
                         not azel_within_range(
                             self.rotor_location, current_rotor_cmd_location
                         )
-                    ) and (time() - start_time) < 10:
+                    ) and (time() - start_time) < 15:
                         past_rotor_location = self.rotor_location
                         self.rotor_location = self.rotor.get_azimuth_elevation()
                         #print(past_rotor_location, self.rotor_location)
@@ -873,27 +877,30 @@ class SmallRadioTelescopeDaemon:
 
                         sleep(0.1)
                 else:
+
                     past_rotor_location = self.rotor_location
                     self.rotor_location = self.rotor.get_azimuth_elevation()
-                    #print(self.rotor_location)
-                    #if not self.rotor_location == past_rotor_location: #we should not do this check, still want to update galactic lat and lon at reasonable cadence
 
-                    obstime = Time.now()
+                    if (time() - last_time) > 5 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
 
-                    g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(self.rotor_location)
-                    self.radio_queue.put(("motor_az", float(self.rotor_location[0])))
-                    self.radio_queue.put(("motor_el", float(self.rotor_location[1])))
-                    self.radio_queue.put(("glat", g_lat))
-                    self.radio_queue.put(("glon", g_lon))
+                        obstime = Time.now()
 
-                    #compute vlsr for where we're actually pointed. we don't really care if it's theoretically different for the target object
-                            
-                    azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
-                    sky_coord = SkyCoord(azel_frame)
-                    self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
-                    self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+                        g_lat, g_lon = self.ephemeris_tracker.convert_to_gal_coord(self.rotor_location)
+                        self.radio_queue.put(("motor_az", float(self.rotor_location[0])))
+                        self.radio_queue.put(("motor_el", float(self.rotor_location[1])))
+                        self.radio_queue.put(("glat", g_lat))
+                        self.radio_queue.put(("glon", g_lon))
 
-                    sleep(1)
+                        #compute vlsr for where we're actually pointed. we don't really care if it's theoretically different for the target object
+                                
+                        azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
+                        sky_coord = SkyCoord(azel_frame)
+                        self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
+                        self.radio_queue.put(("vlsr", float(self.current_vlsr)))
+
+                        last_time = time()
+
+                    sleep(0.05) #make it much more responsive to commands
 
             except AssertionError as e:
                 self.log_message(str(e))
