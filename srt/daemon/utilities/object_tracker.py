@@ -161,7 +161,7 @@ class EphemerisTracker:
         #solar motion wrt galactic center
         v_sun = sky_coord_no_vel.transform_to(LSR()).radial_velocity
         
-        return (v_bary+v_sun).to(u.km/u.s)
+        return (v_bary+v_sun).to(u.km/u.s).value
 
 
     # def calculate_object_vlsr(self, name, time, frame):
@@ -274,14 +274,14 @@ class EphemerisTracker:
                 transformed.alt[index].degree,
             )
             vlsr = self.calculate_vlsr(transformed[index], time)
-            self.vlsr_dict[name] = vlsr.to(u.km / u.s).value
+            self.vlsr_dict[name] = vlsr
 
         #deal with annoying things that move against the sky
 
         for body in self.bodies:
             body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
             self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
-            self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time).to(u.km/u.s).value
+            self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time)
 
         #and prepredict things (do we actually need this?)
 
