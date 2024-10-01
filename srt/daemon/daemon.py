@@ -834,7 +834,7 @@ class SmallRadioTelescopeDaemon:
                 azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
                 sky_coord = SkyCoord(azel_frame)
                 self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
-                self.radio_queue.put(("vlsr", float(self.current_vlsr.to(u.km/u.s).value)))
+                self.radio_queue.put(("vlsr", float(self.current_vlsr)))
             sleep(1)
 
     def update_rotor_status(self):
