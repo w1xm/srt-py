@@ -323,27 +323,27 @@ class EphemerisTracker:
         # return
         return self.time_interval_dict
 
-    def get_azimuth_elevation(self, name, time_offset):
-        """Returns Individual Object AzEl at Specified Time Offset
+    # def get_azimuth_elevation(self, name, time_offset):
+    #     """Returns Individual Object AzEl at Specified Time Offset
 
-        Parameters
-        ----------
-        name : str
-            Object Name
-        time_offset : Time
-            Any Offset from the Current Time
-        Returns
-        -------
-        (float, float)
-            (az, el) Tuple
-        """
-        if time_offset == 0:
-            return self.get_all_azimuth_elevation()[name]
-        else:
-            time = Time.now() + time_offset
-            return self.calculate_az_el(
-                name, time, AltAz(obstime=time, location=self.location)
-            )
+    #     Parameters
+    #     ----------
+    #     name : str
+    #         Object Name
+    #     time_offset : Time
+    #         Any Offset from the Current Time
+    #     Returns
+    #     -------
+    #     (float, float)
+    #         (az, el) Tuple
+    #     """
+    #     if time_offset == 0:
+    #         return self.get_all_azimuth_elevation()[name]
+    #     else:
+    #         time = Time.now() + time_offset
+    #         return self.calculate_az_el(
+    #             name, time, AltAz(obstime=time, location=self.location)
+    #         )
 
     def get_all_vlsr(self):
         return self.vlsr_dict
