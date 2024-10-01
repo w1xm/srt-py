@@ -3,7 +3,7 @@
 Module for Tracking and Caching the Azimuth-Elevation Coords of Celestial Objects
 
 """
-from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
+from astropy.coordinates import SkyCoord, EarthLocation, get_body #get_sun, get_moon
 from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz, LSR
 from astropy.utils.iers.iers import conf
 from astropy.table import Table
@@ -60,6 +60,7 @@ class EphemerisTracker:
         sky_coords_ra = np.zeros(len(table))
         sky_coords_dec = np.zeros(len(table))
 
+
         for index, row in enumerate(table):
             coordinate_system = row["coordinate_system"]
             coordinate_a = row["coordinate_a"]
@@ -78,14 +79,18 @@ class EphemerisTracker:
             sky_coords_dec[index] = sky_coord_transformed.dec.degree
             self.sky_coord_names[name] = index
 
-        self.sky_coords = SkyCoord(
-            ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS
-        )
         self.location = EarthLocation.from_geodetic(
             lat=observer_lat * u.deg,
             lon=observer_lon * u.deg,
             height=observer_elevation * u.m,
         )
+
+        self.sky_coords = SkyCoord(
+            ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS, location=self.location
+        )
+
+        self.bodies = ["Sun, Moon"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
+
         self.latest_time = None
         self.refresh_time = refresh_time * u.second
 
@@ -98,6 +103,7 @@ class EphemerisTracker:
 
         # self.update_azeltime()
         conf.auto_download = auto_download
+
 
     def calculate_az_el(self, name, time, alt_az_frame):
         """Calculates Azimuth and Elevation of the Specified Object at the Specified Time
@@ -116,76 +122,108 @@ class EphemerisTracker:
         (float, float)
             (az, el) Tuple
         """
-        if name == "Sun":
-            alt_az = get_sun(time).transform_to(alt_az_frame)
-        elif name == "Moon":
-            alt_az = get_moon(time, self.location).transform_to(alt_az_frame)
+        if (name == "Sun") or (name =="Moon"):
+            alt_az = get_body(time=time, body=name,location=self.location).transform_to(alt_az_frame)
         else:
             alt_az = self.sky_coords[self.sky_coord_names[name]].transform_to(
                 alt_az_frame
             )
         return alt_az.az.degree, alt_az.alt.degree
 
-    def calculate_vlsr(self, name, time, frame):
-        """Calculates the velocity in the local standard of rest.
+
+
+    def calculate_vlsr(self, sky_coord, time):
+
+        """
+        Calculates observer velocity correction in the local standard of rest 
+        (e.g. relative to galactic center) along telescope line of sight.
+        Note we do not actuially care about the details of the object and are not attempting to 
+        correct for target motion. We only care about where we are pointing.
 
         Parameters
         ----------
-        name : str
-            Name of the Object being Tracked
+        sky_coord : SkyCoord
+            Sky cordinate object
+            note: must contain location attribute
         time : Time
-            Current Time (only necessary for Sun/Moon Ephemeris)
-        alt_az_frame : AltAz
-            AltAz Frame Object
-
-
-        Returns
-        -------
-        float
-            vlsr in km/s.
+            Time for conversion
         """
-        if name == "Sun":
-            tframe = get_sun(time).transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
-        elif name == "Moon":
-            tframe = get_moon(time).transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
-        else:
-            tframe = self.sky_coord_names[name].transform_to(frame)
-            vlsr = tframe.radial_velocity_correction(obstime=time)
+            
+        #cast anything into icrs to make life easy (note this means AltAz frames must contain a time)
+        sky_coord_radec = sky_coord.transform_to('icrs')
+        
+        #barycentric correction
+        v_bary = sky_coord_radec.radial_velocity_correction(obstime=time)
 
-        return vlsr.to(u.km / u.s).value
+        sky_coord_no_vel = ICRS(ra=sky_coord_radec.ra.deg*u.deg, dec=sky_coord_radec.dec.deg*u.deg, 
+                pm_ra_cosdec=0*u.mas/u.yr, pm_dec=0*u.mas/u.yr, 
+                radial_velocity=0*u.km/u.yr, distance = 10*u.pc)
+        #solar motion wrt galactic center
+        v_sun = sky_coord_no_vel.transform_to(LSR()).radial_velocity
+        
+        return (v_bary+v_sun).to(u.km/u.s)
 
-    def calculate_vlsr_azel(self, az_el, time=None):
-        """Takes an AzEl tuple and derives the vlsr from  Location
 
-        Parameters
-        ----------
-        az_el : (float, float)
-            Azimuth and Elevation
-        time : AstroPy Time Obj
-            Time of Conversion
+    # def calculate_object_vlsr(self, name, time, frame):
+    #     """Calculates the velocity in the local standard of rest.
 
-        Returns
-        -------
-        float
-            vlsr in km/s.
-        """
+    #     Parameters
+    #     ----------
+    #     name : str
+    #         Name of the Object being Tracked
+    #     time : Time
+    #         Current Time (only necessary for Sun/Moon Ephemeris)
+    #     alt_az_frame : AltAz
+    #         AltAz Frame Object
 
-        if time is None:
-            time = Time.now()
 
-        az, el = az_el
-        start_frame = AltAz(
-            obstime=time, location=self.location, alt=el * u.deg, az=az * u.deg
-        )
-        end_frame = Galactic()
-        result = start_frame.transform_to(end_frame)
-        sk1 = SkyCoord(result)
-        f1 = AltAz(obstime=time, location=self.location)
-        vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+    #     Returns
+    #     -------
+    #     float
+    #         vlsr in km/s.
+    #     """
+    #     if name == "Sun":
+    #         tframe = get_sun(time).transform_to(frame)
+    #         vlsr = tframe.radial_velocity_correction(obstime=time)
+    #     elif name == "Moon":
+    #         tframe = get_moon(time).transform_to(frame)
+    #         vlsr = tframe.radial_velocity_correction(obstime=time)
+    #     else:
+    #         tframe = self.sky_coord_names[name].transform_to(frame)
+    #         vlsr = tframe.radial_velocity_correction(obstime=time)
 
-        return vlsr.to(u.km/u.s).value
+    #     return vlsr.to(u.km / u.s).value
+
+    # def calculate_vlsr_azel(self, az_el, time=None):
+    #     """Takes an AzEl tuple and derives the vlsr from  Location
+
+    #     Parameters
+    #     ----------
+    #     az_el : (float, float)
+    #         Azimuth and Elevation
+    #     time : AstroPy Time Obj
+    #         Time of Conversion
+
+    #     Returns
+    #     -------
+    #     float
+    #         vlsr in km/s.
+    #     """
+
+    #     if time is None:
+    #         time = Time.now()
+
+    #     az, el = az_el
+    #     start_frame = AltAz(
+    #         obstime=time, location=self.location, alt=el * u.deg, az=az * u.deg
+    #     )
+    #     end_frame = Galactic()
+    #     result = start_frame.transform_to(end_frame)
+    #     sk1 = SkyCoord(result)
+    #     f1 = AltAz(obstime=time, location=self.location)
+    #     vlsr = sk1.transform_to(f1).radial_velocity_correction(obstime=time)
+
+    #     return vlsr.to(u.km/u.s).value
         
     def convert_to_gal_coord(self, az_el, time=None):
         """Converts an AzEl Tuple into a Galactic Tuple from Location
@@ -221,26 +259,31 @@ class EphemerisTracker:
         -------
         None
         """
-        if (
-            self.latest_time is not None
-            and Time.now() < self.latest_time + self.refresh_time
-        ):
+        if (self.latest_time is not None
+            and Time.now() < self.latest_time + self.refresh_time):
             return
+
         time = Time.now()
         frame = AltAz(obstime=time, location=self.location)
         transformed = self.sky_coords.transform_to(frame)
+
         for name in self.sky_coord_names:
             index = self.sky_coord_names[name]
             self.az_el_dict[name] = (
                 transformed.az[index].degree,
                 transformed.alt[index].degree,
             )
-            vlsr = transformed[index].radial_velocity_correction(obstime=time)
+            vlsr = calculate_vlsr(transformed[index], time)
             self.vlsr_dict[name] = vlsr.to(u.km / u.s).value
-        self.az_el_dict["Sun"] = self.calculate_az_el("Sun", time, frame)
-        self.vlsr_dict["Sun"] = self.calculate_vlsr("Sun", time, frame)
-        self.az_el_dict["Moon"] = self.calculate_az_el("Moon", time, frame)
-        self.vlsr_dict["Moon"] = self.calculate_vlsr("Moon", time, frame)
+
+        #deal with annoying things that move against the sky
+
+        for body in self.bodies:
+            body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
+            self.az_el_dict[body] = body_coords.az.degree, body_coords.alt.degree
+            self.vlsr_dict[body] = calculate_vlsr(body_coords, time)
+
+        #and prepredict things (do we actually need this?)
 
         for time_passed in range(0, 61, 5):
 
@@ -254,10 +297,10 @@ class EphemerisTracker:
                     transformed.az[index].degree,
                     transformed.alt[index].degree,
                 )
-            self.time_interval_dict[time_passed]["Sun"] = self.calculate_az_el(
-                "Sun", time, frame)
-            self.time_interval_dict[time_passed]["Moon"] = self.calculate_az_el(
-                "Moon", time, frame)
+
+            for body in self.bodies:
+                body_coords = get_body(time=time, body=body,location=self.location).transform_to(frame)
+                self.time_interval_dict[time_passed][body] = body_coords.az.degree, body_coords.alt.degree
 
         self.latest_time = time
 
@@ -305,14 +348,14 @@ class EphemerisTracker:
     def get_all_vlsr(self):
         return self.vlsr_dict
 
-    def get_vlsr(self, name, time_offset=0):
+    # def get_vlsr(self, name, time_offset=0): #not used
 
-        if time_offset == 0:
-            return self.get_all_vlsr()[name]
-        else:
-            time = Time.now() + time_offset
-            frame = AltAz(obstime=time, location=self.location)
-            return self.calculate_vlsr(name, time, frame)
+    #     if time_offset == 0:
+    #         return self.get_all_vlsr()[name]
+    #     else:
+    #         time = Time.now() + time_offset
+    #         frame = AltAz(obstime=time, location=self.location)
+    #         return self.calculate_object_vlsr(name, time, frame)
 
     def inital_azeltime(self):
         new_dict = {}

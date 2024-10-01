@@ -29,6 +29,14 @@ from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
 from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
 
+#pull astropy things into the daemon too for now so we can create skycoord objects here more easily
+
+from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
+from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz, LSR
+from astropy.utils.iers.iers import conf
+from astropy.table import Table
+from astropy.time import Time
+import astropy.units as u
 
 class SmallRadioTelescopeDaemon:
     """
@@ -318,15 +326,21 @@ class SmallRadioTelescopeDaemon:
         -------
         None
         """
-        # cur_vlsr = self.ephemeris_tracker.calculate_vlsr_azel((az,el))
-        # self.radio_queue.put(("vlsr",cur_vlsr))
-        # self.current_vlsr = cur_vlsr
+
+        #define a skycoord object with az el position info
+
+        obstime = Time.now()
+
+        azel_frame = AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=el * u.deg, az=az * u.deg)
+        sky_coord = SkyCoord(azel_frame)
+
+
         self.ephemeris_cmd_location = None
         self.rotor_offsets = (0.0, 0.0)
         # Send az and el angles to sources track for the radio
         self.radio_queue.put(("soutrack", f"azel_{az}_{el}"))
         # Send vlsr to radio queue
-        cur_vlsr = self.ephemeris_tracker.calculate_vlsr_azel((az, el))
+        cur_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord, obstime)
         self.current_vlsr = cur_vlsr
         self.radio_queue.put(("vlsr", float(cur_vlsr)))
 
@@ -356,10 +370,15 @@ class SmallRadioTelescopeDaemon:
         Returns
         -------
         None
-        """
+        """        
+
+        #define a skycoord object with galactic coord info
+
+        sky_coord = SkyCoord(l_pos, b_pos, frame='galactic', unit=u.deg, location=EphemerisTracker.location)
         
         if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
             #rotor is smart enough to directly handle the command
+
             self.log_message("direct ra dec coordinate commands not yet supported for your rotor") 
         else:
             #rotor needs command converted to az-el
@@ -382,6 +401,10 @@ class SmallRadioTelescopeDaemon:
         -------
         None
         """
+
+        #define a skycoord object with galactic coord info
+
+        sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=EphemerisTracker.location) 
         
         if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
             #rotor is smart enough to directly handle the command
@@ -784,7 +807,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_locations = (
                 self.ephemeris_tracker.get_all_azimuth_elevation()
             )
-            self.ephemeris_vlsr = self.ephemeris_tracker.get_all_vlsr()
+            self.ephemeris_vlsr = self.c.get_all_vlsr()
             self.ephemeris_time_locs = (
                 self.ephemeris_tracker.get_all_azel_time()
             )
@@ -806,6 +829,12 @@ class SmallRadioTelescopeDaemon:
                         f"Object {self.ephemeris_cmd_location} moved out of motor bounds"
                     )
                     self.ephemeris_cmd_location = None
+            else: #compute vlsr for where we're actually pointed
+                obstime = Time.now()
+                azel_frame = AltAz(obstime=obstime, location=EphemerisTracker.location, alt=el * u.deg, az=az * u.deg)
+                sky_coord = SkyCoord(azel_frame)
+                self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
+                self.radio_queue.put(("vlsr", float(self.current_vlsr)))
             sleep(1)
 
     def update_rotor_status(self):
