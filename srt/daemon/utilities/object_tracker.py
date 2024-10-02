@@ -86,8 +86,7 @@ class EphemerisTracker:
         )
 
         self.sky_coords = SkyCoord(
-            ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS, location=self.location
-        )
+            ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS, location=self.location)
 
         self.bodies = ["Sun", "Moon"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
 
@@ -100,6 +99,11 @@ class EphemerisTracker:
         self.time_interval_dict = self.inital_azeltime()
 
         self.update_all_az_el()
+
+
+        ##variable to hold a target skycoord object
+
+        self.target = SkyCoord(ra= 0*u.deg, dec= 0*u.deg,frame='icrs', location=self.location)
 
         # self.update_azeltime()
         conf.auto_download = auto_download
@@ -222,6 +226,14 @@ class EphemerisTracker:
             self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
             #self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time)
 
+        #and add in an arbitrary target skycoord for wherever we want
+
+        transformed = self.target.transform_to(frame)
+            self.az_el_dict[object_id] = (
+                transformed.az.degree,
+                transformed.alt.degree,
+            )
+
         #and prepredict things (do we actually need this?)
 
         for time_passed in range(0, 61, 5):
@@ -242,6 +254,45 @@ class EphemerisTracker:
                 self.time_interval_dict[time_passed][body] = (body_coords.az.degree, body_coords.alt.degree)
 
         self.latest_time = time
+
+    def update_track(self, object_id):
+
+        time = Time.now()
+        frame = AltAz(obstime=time, location=self.location)
+
+        if object_id == "target":
+            transformed = self.target.transform_to(frame)
+            self.az_el_dict[object_id] = (
+                transformed.az.degree,
+                transformed.alt.degree,
+            )
+
+        else if object_id in self.sky_coord_names: #then this is a normal programmed object and we'll just rerun the usual calculation only for that point
+            index = self.sky_coord_names[object_id]
+            transformed = self.sky_coords[index].transform_to(frame) 
+            self.az_el_dict[object_id] = (
+                transformed.az.degree,
+                transformed.alt.degree,
+            )
+
+        else if object_id in self.bodies:
+            body_coords = get_body(time=time, body=object_id,location=self.location).transform_to(frame)
+            self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
+
+        else:
+            return
+
+    def get_single_azimuth_elevation(self,object_id):
+        if object_id == "target":
+            return self.az_el_dict["target"]
+        else if object_id in self.sky_coord_names:
+            index = self.sky_coord_names[object_id]
+            return self.az_el_dict[object_id]
+        else if object_id in self.bodies:
+            return self.az_el_dict[body]
+        else:
+            return (0,0) #just so it doesn't throw an error right now. 
+
 
     def get_all_azimuth_elevation(self):
         """Returns Dictionary Mapping the Objects to their Current AzEl Coordinates
