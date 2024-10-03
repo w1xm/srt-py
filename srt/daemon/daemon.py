@@ -373,7 +373,7 @@ class SmallRadioTelescopeDaemon:
         object_id = "target"
 
         
-        if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
+        if (self.motor_type == "W1XM_BIG_DISH"):
             #rotor is smart enough to directly handle the command, need to eventually restructure so we can pass it nicely
 
             self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking") 
@@ -419,7 +419,7 @@ class SmallRadioTelescopeDaemon:
         self.ephemeris_tracker.target=sky_coord
         object_id = "target" 
         
-        if (motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value):
+        if (self.motor_type == "W1XM_BIG_DISH"):
             #rotor is smart enough to directly handle the command
             self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
         else:
@@ -856,7 +856,7 @@ class SmallRadioTelescopeDaemon:
                     self.rotor_cmd_location = new_rotor_cmd_location
 
                     #always write new values to rotor while tracking a moving point. do not wait for a minimum step
-                    self.rotor.set_azimuth_elevation(*new_rotor_cmd_location)
+                    #self.rotor.set_azimuth_elevation(*new_rotor_cmd_location)
 
                 else:
                     self.log_message(
@@ -919,10 +919,15 @@ class SmallRadioTelescopeDaemon:
                         sleep(0.1)
                 else:
 
-                    past_rotor_location = self.rotor_location
-                    self.rotor_location = self.rotor.get_azimuth_elevation()
+                    #past_rotor_location = self.rotor_location
+                    #self.rotor_location = self.rotor.get_azimuth_elevation()
 
                     if (time() - last_time) > 5 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
+                        self.rotor.set_azimuth_elevation(*current_rotor_cmd_location) #always reissue pointing commands periodically and let rotor decide whether to adjust
+                        sleep(0.1)
+
+                        past_rotor_location = self.rotor_location
+                        self.rotor_location = self.rotor.get_azimuth_elevation()
 
                         obstime = Time.now()
 
@@ -941,7 +946,9 @@ class SmallRadioTelescopeDaemon:
 
                         last_time = time()
 
-                    sleep(0.05) #make it much more responsive to commands
+                    sleep(0.1) #make it much more responsive to commands
+                    #aparrently making this loop too fast causes stability issues. prolly need to tweak rotor level code a bit to not 
+                    #crash and burn ir a read comes in before it has a status update request comes before it has new data
 
             except AssertionError as e:
                 self.log_message(str(e))
