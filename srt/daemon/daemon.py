@@ -376,13 +376,13 @@ class SmallRadioTelescopeDaemon:
         object_id = "target"
 
         
-        if (self.motor_type == "W1XM_BIG_DISH"):
+        #if (self.motor_type == "W1XM_BIG_DISH"):
             #rotor is smart enough to directly handle the command, need to eventually restructure so we can pass it nicely
 
-            self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking") 
-        else:
+        #    self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking") 
+        #else:
             #rotor needs command converted to az-el
-            self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking")
+        #    self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking")
 
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{l_pos}_{b_pos}"))
@@ -429,12 +429,12 @@ class SmallRadioTelescopeDaemon:
         object_id = "target" 
         
         
-        if (self.motor_type == "W1XM_BIG_DISH"):
+        #if (self.motor_type == "W1XM_BIG_DISH"):
             #rotor is smart enough to directly handle the command
-            self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
-        else:
+        #    self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
+        #else:
             #rotor needs command converted to az-el
-            self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
+        #    self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
 
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{ra_pos}_{dec_pos}"))
