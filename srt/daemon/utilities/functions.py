@@ -24,7 +24,7 @@ def angle_within_range(actual_angle, desired_angle, bounds=0.1):
     bool
         Whether Angles Were Within Threshold
     """
-    return abs(actual_angle - desired_angle) < bounds
+    return abs(actual_angle - desired_angle) <= bounds
 
 
 def azel_within_range(actual_azel, desired_azel, bounds=(0.1, 0.1)):
