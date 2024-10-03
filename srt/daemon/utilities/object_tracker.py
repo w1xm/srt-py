@@ -88,7 +88,7 @@ class EphemerisTracker:
         self.sky_coords = SkyCoord(
             ra=sky_coords_ra * u.deg, dec=sky_coords_dec * u.deg, frame=CIRS, location=self.location)
 
-        self.bodies = ["Sun", "Moon"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
+        self.bodies = ["Sun", "Moon", "Jupiter"] #list bodies we want to track so other functions can grab these (really should pull in from config file)
         ##variable to hold a target skycoord object
 
         self.target = SkyCoord(ra= 0*u.deg, dec= 0*u.deg,frame='icrs', location=self.location)
@@ -98,6 +98,7 @@ class EphemerisTracker:
         self.refresh_time = refresh_time * u.second
 
         self.az_el_dict = {}
+        self.target_dict = {} #separate thing just to store target to so we don't display the point in the gui
         # self.vlsr_dict = {}
         # self.time_interval_dict = {}
         self.time_interval_dict = self.inital_azeltime()
@@ -228,7 +229,7 @@ class EphemerisTracker:
         #and add in an arbitrary target skycoord for wherever we want
 
         transformed = self.target.transform_to(frame)
-        self.az_el_dict["target"] = (
+        self.target_dict["target"] = (
             transformed.az.degree,
             transformed.alt.degree)
 
@@ -260,7 +261,7 @@ class EphemerisTracker:
 
         if object_id == "target":
             transformed = self.target.transform_to(frame)
-            self.az_el_dict[object_id] = (
+            self.target_dict[object_id] = (
                 transformed.az.degree,
                 transformed.alt.degree,
             )
@@ -273,7 +274,7 @@ class EphemerisTracker:
                 transformed.alt.degree,
             )
 
-        elif object_id in self.bodies:
+        elif object_id in self.bodies: #annoying things like planets
             body_coords = get_body(time=time, body=object_id,location=self.location).transform_to(frame)
             self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
 
@@ -282,7 +283,7 @@ class EphemerisTracker:
 
     def get_single_azimuth_elevation(self,object_id):
         if object_id == "target":
-            return self.az_el_dict["target"]
+            return self.target_dict["target"]
         elif object_id in self.sky_coord_names:
             index = self.sky_coord_names[object_id]
             return self.az_el_dict[object_id]

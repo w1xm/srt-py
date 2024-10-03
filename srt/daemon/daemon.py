@@ -382,9 +382,12 @@ class SmallRadioTelescopeDaemon:
             self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking")
 
         self.rotor_offsets = (0.0, 0.0)
-        self.radio_queue.put(("soutrack", object_id))
-       
-        new_rotor_cmd_location = self.ephemeris_locations[object_id]
+        self.radio_queue.put(("soutrack", f"radec_{l_pos}_{b_pos}"))
+
+        self.ephemeris_tracker.update_track(self.ephemeris_cmd_location) #force update before commanding the antenna
+        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(self.ephemeris_cmd_location)
+        new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
+        
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
             self.ephemeris_cmd_location = object_id
             self.rotor_destination = new_rotor_cmd_location
@@ -413,11 +416,10 @@ class SmallRadioTelescopeDaemon:
         None
         """
 
-        #define a skycoord object with galactic coord info
-
         sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=self.ephemeris_tracker.location)
         self.ephemeris_tracker.target=sky_coord
         object_id = "target" 
+        
         
         if (self.motor_type == "W1XM_BIG_DISH"):
             #rotor is smart enough to directly handle the command
@@ -427,9 +429,12 @@ class SmallRadioTelescopeDaemon:
             self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
 
         self.rotor_offsets = (0.0, 0.0)
-        self.radio_queue.put(("soutrack", object_id))
+        self.radio_queue.put(("soutrack", f"radec_{ra_pos}_{dec_pos}"))
        
-        new_rotor_cmd_location = self.ephemeris_locations[object_id]
+        self.ephemeris_tracker.update_track(self.ephemeris_cmd_location) #force update before commanding the antenna
+        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(self.ephemeris_cmd_location)
+        new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
+
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
             self.ephemeris_cmd_location = object_id
             self.rotor_destination = new_rotor_cmd_location
