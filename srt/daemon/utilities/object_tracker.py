@@ -98,7 +98,7 @@ class EphemerisTracker:
         self.refresh_time = refresh_time * u.second
 
         self.az_el_dict = {}
-        self.target_dict = {} #separate thing just to store target to so we don't display the point in the gui
+        self.target_coords =(0,0) #separate thing just to store target to so we don't display the point in the gui
         # self.vlsr_dict = {}
         # self.time_interval_dict = {}
         self.time_interval_dict = self.inital_azeltime()
@@ -254,36 +254,29 @@ class EphemerisTracker:
 
         if object_id == "target":
             transformed = self.target.transform_to(frame)
-            self.target_dict[object_id] = (
+            self.target_coords = (
                 transformed.az.degree,
-                transformed.alt.degree,
+                transformed.alt.degree
             )
 
         elif object_id in self.sky_coord_names: #then this is a normal programmed object and we'll just rerun the usual calculation only for that point
             index = self.sky_coord_names[object_id]
             transformed = self.sky_coords[index].transform_to(frame) 
-            self.target_dict[object_id] = (
+            self.target_coords = (
                 transformed.az.degree,
-                transformed.alt.degree,
+                transformed.alt.degree
             )
 
         elif object_id in self.bodies: #annoying things like planets
             body_coords = get_body(time=time, body=object_id,location=self.location).transform_to(frame)
-            self.target_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
+            self.target_coords = (body_coords.az.degree, body_coords.alt.degree)
 
         else:
             return
 
-    def get_single_azimuth_elevation(self,object_id): #for tracking updates
-        if object_id == "target":
-            return self.target_dict["target"]
-        elif object_id in self.sky_coord_names:
-            index = self.sky_coord_names[object_id]
-            return self.target_dict[object_id]
-        elif object_id in self.bodies:
-            return self.target_dict[body]
-        else:
-            return (0,0) #just so it doesn't throw an error right now. 
+    def get_track_azimuth_elevation(self,object_id): #for tracking updates
+
+            return self.target_coords 
 
 
     def get_all_azimuth_elevation(self):

@@ -199,6 +199,7 @@ class SmallRadioTelescopeDaemon:
         self.radio_queue.put(("soutrack", object_id))
 
         scan_center = self.ephemeris_locations[object_id]
+        self.ephemeris_cmd_location = object_id #tell tracking process to follow scan center
 
         # Send vlsr to radio queue
         #cur_vlsr = self.ephemeris_vlsr[object_id]
@@ -226,7 +227,7 @@ class SmallRadioTelescopeDaemon:
             new_rotor_offsets = (az_dif, el_dif)
 
             if self.rotor.angles_within_bounds(*scan_center):
-                self.rotor_destination = scan_center
+                #self.rotor_destination = self.ephemeris_locations[object_id] #this line is probably redundant
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
             sleep(5)
@@ -374,6 +375,7 @@ class SmallRadioTelescopeDaemon:
         sky_coord = SkyCoord(l_pos, b_pos, frame='galactic', unit=u.deg, location=self.ephemeris_tracker.location)
         self.ephemeris_tracker.target=sky_coord
         object_id = "target"
+        sleep(0.05)
 
         
         #if (self.motor_type == "W1XM_BIG_DISH"):
@@ -387,10 +389,9 @@ class SmallRadioTelescopeDaemon:
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{l_pos}_{b_pos}"))
 
-
-
-        self.ephemeris_tracker.update_track(object_id) #force update before commanding the antenna
-        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(object_id)
+        azel_frame = AltAz(obstime=Time.now(), location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
+        target_azel = sky_coord.transform_to(azel_frame)
+        new_rotor_destination = (target_azel.az.degree, target_azel.alt.degree)
         new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
         
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
@@ -427,20 +428,13 @@ class SmallRadioTelescopeDaemon:
         sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=self.ephemeris_tracker.location)
         self.ephemeris_tracker.target=sky_coord
         object_id = "target" 
-        
-        
-        #if (self.motor_type == "W1XM_BIG_DISH"):
-            #rotor is smart enough to directly handle the command
-        #    self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
-        #else:
-            #rotor needs command converted to az-el
-        #    self.log_message("direct ra dec coordinate commands not yet supported for your rotor. using standard tracking") 
 
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{ra_pos}_{dec_pos}"))
-       
-        self.ephemeris_tracker.update_track(object_id) #force update before commanding the antenna
-        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(object_id)
+
+        azel_frame = AltAz(obstime=Time.now(), location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
+        target_azel = sky_coord.transform_to(azel_frame)
+        new_rotor_destination = (target_azel.az.degree, target_azel.alt.degree)
         new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
 
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
@@ -855,31 +849,43 @@ class SmallRadioTelescopeDaemon:
 
                 self.ephemeris_time_locs = (self.ephemeris_tracker.get_all_azel_time())
 
+            #sleep(0.1)
+
+    def update_target_position(self): 
+        """Update position of point we are tracking separately from the display ephemeris
+
+        Is Operated as an Infinite Looping Thread Function
+
+        Returns
+        -------
+        None
+        """
+        last_updated_time = None
+        last_ephemeris_cmd_location = None
+        tracking_update_time = 5
+
+
+        while True:
             if self.ephemeris_cmd_location is not None:
 
-                #rapidly recompute target coordinates and send to rotor
+                if ((last_updated_time is None) or(time() - last_updated_time > tracking_update_time) or (last_ephemeris_cmd_location is not self.ephemeris_cmd_location)):
+                    last_ephemeris_cmd_location = self.ephemeris_cmd_location
+                    last_updated_time = time()
 
-                self.ephemeris_tracker.update_track(self.ephemeris_cmd_location)
-                new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(self.ephemeris_cmd_location)
-                new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
+                    self.ephemeris_tracker.update_track(self.ephemeris_cmd_location)
+                    new_rotor_destination = self.ephemeris_tracker.get_track_azimuth_elevation(self.ephemeris_cmd_location)
+                    new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
 
-                if self.rotor.angles_within_bounds(
-                    *new_rotor_destination) and self.rotor.angles_within_bounds(*new_rotor_cmd_location):
-                    self.rotor_destination = new_rotor_destination
-                    self.rotor_cmd_location = new_rotor_cmd_location
+                    if self.rotor.angles_within_bounds(
+                        *new_rotor_destination) and self.rotor.angles_within_bounds(*new_rotor_cmd_location):
+                        self.rotor_destination = new_rotor_destination
+                        self.rotor_cmd_location = new_rotor_cmd_location
 
-                    #always write new values to rotor while tracking a moving point. do not wait for a minimum step
-                    #self.rotor.set_azimuth_elevation(*new_rotor_cmd_location)
+                    else:
+                        self.log_message(f"Object {self.ephemeris_cmd_location} moved out of motor bounds")
+                        self.ephemeris_cmd_location = None
 
-                else:
-                    self.log_message(
-                        f"Object {self.ephemeris_cmd_location} moved out of motor bounds"
-                    )
-                    self.ephemeris_cmd_location = None
 
-                sleep(0.5) 
-
-            #sleep(0.1)
 
     def update_rotor_status(self):
         """Periodically Sets Rotor Azimuth and Elevation and Fetches New Antenna Position
@@ -1058,8 +1064,9 @@ class SmallRadioTelescopeDaemon:
 
         # Create Infinite Looping Threads
         ephemeris_tracker_thread = Thread(
-            target=self.update_ephemeris_location, daemon=True
-        )
+            target=self.update_ephemeris_location, daemon=True)
+        target_tracking_thread = Thread(
+            target=self.update_target_position, daemon=True)
         rotor_pointing_thread = Thread(
             target=self.update_rotor_status, daemon=True)
         command_queueing_thread = Thread(
@@ -1108,6 +1115,7 @@ class SmallRadioTelescopeDaemon:
 
         # Start Infinite Looping Update Threads
         ephemeris_tracker_thread.start()
+        target_tracking_thread.start()
         rotor_pointing_thread.start()
         command_queueing_thread.start()
         status_thread.start()
