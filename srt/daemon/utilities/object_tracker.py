@@ -226,13 +226,6 @@ class EphemerisTracker:
             self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
             #self.vlsr_dict[body] = self.calculate_vlsr(body_coords, time)
 
-        #and add in an arbitrary target skycoord for wherever we want
-
-        transformed = self.target.transform_to(frame)
-        self.target_dict["target"] = (
-            transformed.az.degree,
-            transformed.alt.degree)
-
         #and prepredict things (do we actually need this?)
 
         for time_passed in range(0, 61, 5):
@@ -269,26 +262,26 @@ class EphemerisTracker:
         elif object_id in self.sky_coord_names: #then this is a normal programmed object and we'll just rerun the usual calculation only for that point
             index = self.sky_coord_names[object_id]
             transformed = self.sky_coords[index].transform_to(frame) 
-            self.az_el_dict[object_id] = (
+            self.target_dict[object_id] = (
                 transformed.az.degree,
                 transformed.alt.degree,
             )
 
         elif object_id in self.bodies: #annoying things like planets
             body_coords = get_body(time=time, body=object_id,location=self.location).transform_to(frame)
-            self.az_el_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
+            self.target_dict[body] = (body_coords.az.degree, body_coords.alt.degree)
 
         else:
             return
 
-    def get_single_azimuth_elevation(self,object_id):
+    def get_single_azimuth_elevation(self,object_id): #for tracking updates
         if object_id == "target":
             return self.target_dict["target"]
         elif object_id in self.sky_coord_names:
             index = self.sky_coord_names[object_id]
-            return self.az_el_dict[object_id]
+            return self.target_dict[object_id]
         elif object_id in self.bodies:
-            return self.az_el_dict[body]
+            return self.target_dict[body]
         else:
             return (0,0) #just so it doesn't throw an error right now. 
 

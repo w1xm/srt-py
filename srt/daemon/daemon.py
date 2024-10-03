@@ -364,7 +364,10 @@ class SmallRadioTelescopeDaemon:
         Returns
         -------
         None
-        """        
+        """   
+
+        #clear preexisting track (prevents target update collisions)
+        self.ephemeris_cmd_location = None 
 
         #define a skycoord object with galactic coord info
 
@@ -384,8 +387,10 @@ class SmallRadioTelescopeDaemon:
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{l_pos}_{b_pos}"))
 
-        self.ephemeris_tracker.update_track(self.ephemeris_cmd_location) #force update before commanding the antenna
-        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(self.ephemeris_cmd_location)
+
+
+        self.ephemeris_tracker.update_track(object_id) #force update before commanding the antenna
+        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(object_id)
         new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
         
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
@@ -416,6 +421,9 @@ class SmallRadioTelescopeDaemon:
         None
         """
 
+        #clear preexisting track (prevents target update collisions)
+        self.ephemeris_cmd_location = None
+
         sky_coord = SkyCoord(ra_pos, dec_pos, frame='icrs', unit=u.deg, location=self.ephemeris_tracker.location)
         self.ephemeris_tracker.target=sky_coord
         object_id = "target" 
@@ -431,8 +439,8 @@ class SmallRadioTelescopeDaemon:
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("soutrack", f"radec_{ra_pos}_{dec_pos}"))
        
-        self.ephemeris_tracker.update_track(self.ephemeris_cmd_location) #force update before commanding the antenna
-        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(self.ephemeris_cmd_location)
+        self.ephemeris_tracker.update_track(object_id) #force update before commanding the antenna
+        new_rotor_destination = self.ephemeris_tracker.get_single_azimuth_elevation(object_id)
         new_rotor_cmd_location = tuple(map(add, new_rotor_destination, self.rotor_offsets))
 
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
@@ -871,7 +879,7 @@ class SmallRadioTelescopeDaemon:
 
                 sleep(0.5) 
 
-            sleep(0.1)
+            #sleep(0.1)
 
     def update_rotor_status(self):
         """Periodically Sets Rotor Azimuth and Elevation and Fetches New Antenna Position
