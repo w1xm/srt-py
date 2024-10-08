@@ -331,8 +331,10 @@ class SmallRadioTelescopeDaemon:
         #sky_coord = SkyCoord(AltAz(obstime=obstime, location=self.ephemeris_tracker.location, alt=el * u.deg, az=az * u.deg))
         #self.ephemeris_tracker.target=sky_coord
 
+        if self.ephemeris_cmd_location is not None:
+            self.ephemeris_cmd_location = None #clear tracking command
+            sleep(0.05) #give the ephemeris tracker time to finish and stop causing trouble
 
-        self.ephemeris_cmd_location = None #clear tracking command
         self.rotor_offsets = (0.0, 0.0)
         # Send az and el angles to sources track for the radio
         self.radio_queue.put(("soutrack", f"azel_{az}_{el}"))
@@ -474,13 +476,13 @@ class SmallRadioTelescopeDaemon:
             self.log_message(f"Offset {new_rotor_offsets} Out of Bounds")
 
     def stow(self):
-        """Moves the Antenna Back to Its Stow Location
+        """Moves the Antenna Back to its Stow Location
 
         Returns
         -------
         None
         """
-        self.ephemeris_cmd_location = None
+
         self.point_at_azel(self.stow_location[0], self.stow_location[1])
         
         #self.ephemeris_cmd_location = None
@@ -861,15 +863,15 @@ class SmallRadioTelescopeDaemon:
         None
         """
         last_updated_time = None
-        last_ephemeris_cmd_location = None
+        #last_ephemeris_cmd_location = None
         tracking_update_time = 5
 
 
         while True:
             if self.ephemeris_cmd_location is not None:
 
-                if ((last_updated_time is None) or(time() - last_updated_time > tracking_update_time) or (last_ephemeris_cmd_location is not self.ephemeris_cmd_location)):
-                    last_ephemeris_cmd_location = self.ephemeris_cmd_location
+                if ((last_updated_time is None) or (time() - last_updated_time > tracking_update_time)):
+                    #last_ephemeris_cmd_location = self.ephemeris_cmd_location
                     last_updated_time = time()
 
                     self.ephemeris_tracker.update_track(self.ephemeris_cmd_location)
@@ -884,6 +886,10 @@ class SmallRadioTelescopeDaemon:
                     else:
                         self.log_message(f"Object {self.ephemeris_cmd_location} moved out of motor bounds")
                         self.ephemeris_cmd_location = None
+
+            sleep(0.1)
+
+
 
 
 
