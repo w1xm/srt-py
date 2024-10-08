@@ -331,7 +331,7 @@ class SmallRadioTelescopeDaemon:
         #sky_coord = SkyCoord(azel_frame)
 
 
-        self.ephemeris_cmd_location = None
+        self.ephemeris_cmd_location = None #clear tracking command
         self.rotor_offsets = (0.0, 0.0)
         # Send az and el angles to sources track for the radio
         self.radio_queue.put(("soutrack", f"azel_{az}_{el}"))
@@ -342,6 +342,8 @@ class SmallRadioTelescopeDaemon:
             self.rotor_destination = new_rotor_destination
             self.rotor_cmd_location = new_rotor_cmd_location
             while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+                self.rotor_destination = new_rotor_destination
+                self.rotor_cmd_location = new_rotor_cmd_location
                 sleep(0.1)
         else:
 
@@ -439,12 +441,15 @@ class SmallRadioTelescopeDaemon:
         None
         """
         self.ephemeris_cmd_location = None
-        self.radio_queue.put(("soutrack", "at_stow"))
-        self.rotor_offsets = (0.0, 0.0)
-        self.rotor_destination = self.stow_location
-        self.rotor_cmd_location = self.stow_location
-        while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
-            sleep(0.1)
+        self.point_at_azel(self.stow_location[0], self.stow_location[1])
+        
+        #self.ephemeris_cmd_location = None
+        #self.radio_queue.put(("soutrack", "at_stow"))
+        #self.rotor_offsets = (0.0, 0.0)
+        #self.rotor_destination = self.stow_location
+        #self.rotor_cmd_location = self.stow_location
+        #while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+        #    sleep(0.1)
 
     def calibrate(self):
         """Runs Calibration Processing and Pushes New Values to Processing Script
