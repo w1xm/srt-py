@@ -1567,11 +1567,13 @@ def register_callbacks(
             Input("record-btn-yes", "n_clicks"),
             Input("record-btn-no", "n_clicks"),
         ],
-        [State("record-modal", "is_open"), State("record-options",
-                                                 "value"), State("recording-alert", "is_open")],
+        [
+            State("record-modal", "is_open"), 
+            State("record-options","value"), 
+            #State("recording-alert", "is_open")],
     )
     def record_click_func(
-        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option, is_open_alert
+        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option#, is_open_alert
     ):
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -1580,10 +1582,10 @@ def register_callbacks(
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
             if button_id == "record-btn-yes":
                 command_thread.add_to_queue(f"record {record_option}")
-                print("alert")
+                #print("alert")
 
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
-                print("open")
+                #print("open")
                 return not is_open
             return is_open
 
