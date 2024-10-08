@@ -1570,7 +1570,8 @@ def register_callbacks(
         [
             State("record-modal", "is_open"), 
             State("record-options","value"), 
-            #State("recording-alert", "is_open")],
+            #State("recording-alert", "is_open")
+        ],
     )
     def record_click_func(
         n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option#, is_open_alert
