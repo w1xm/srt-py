@@ -1574,7 +1574,7 @@ def register_callbacks(
         ],
     )
     def record_click_func(
-        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option#, is_open_alert
+        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option #, is_open_alert
     ):
         ctx = dash.callback_context
         if not ctx.triggered:
