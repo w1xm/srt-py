@@ -499,23 +499,40 @@ def generate_popups(software):
 
             dbc.Modal(
                 [
-                    dbc.ModalHeader("Enter Azimuth and Elevation"),
+                    dbc.ModalHeader("Enter Pointing Coordinates"),
                     dbc.ModalBody(
                         [
                             dcc.Input(
-                                id="azimuth",
+                                id="val1",
                                 type="number",
                                 debounce=True,
-                                placeholder="Azimuth",
+                                placeholder="Az/RA/l",
                             ),
                             dcc.Input(
-                                id="elevation",
+                                id="val2",
                                 type="number",
                                 debounce=True,
-                                placeholder="Elevation",
+                                placeholder="El/Dec/b",
+                            ),
+                            dcc.RadioItems(
+                                options=[
+                                    {"label": "Az/El",
+                                     "value": "AzEl"},
+                                    {
+                                        "label": "Ra/Dec",
+                                        "value": "RaDec",
+                                    },
+                                    {
+                                        "label": "Galactic",
+                                        "value": "Galactic",
+                                    },
+                                ],
+                                id="coord-options",
+                                value="",
                             ),
                         ]
                     ),
+
                     dbc.ModalFooter(
                         [
                             dbc.Button(
@@ -882,7 +899,8 @@ def generate_layout(software):
         # ],
         "Antenna": [
             dbc.DropdownMenuItem("Stow", id="btn-stow"),
-            dbc.DropdownMenuItem("Set AzEl", id="btn-point-azel"),
+            #dbc.DropdownMenuItem("Set AzEl", id="btn-point-azel"),
+            dbc.DropdownMenuItem("Set Coordinates", id="btn-point-coords"),
             dbc.DropdownMenuItem("Set Offsets", id="btn-set-offset"),
             dbc.DropdownMenuItem("Set N-point size", id="btn-set-npoint"),
         ],
@@ -1412,32 +1430,61 @@ def register_callbacks(
                 return not is_open
             return is_open
 
+    # @ app.callback(
+    #     Output("point-modal", "is_open"),
+    #     [
+    #         Input("btn-point-azel", "n_clicks"),
+    #         Input("point-btn-yes", "n_clicks"),
+    #         Input("point-btn-no", "n_clicks"),
+    #     ],
+    #     [
+    #         State("point-modal", "is_open"),
+    #         State("azimuth", "value"),
+    #         State("elevation", "value"),
+    #     ],
+    # )
+    # def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, az, el):
+    #     ctx = dash.callback_context
+    #     if not ctx.triggered:
+    #         return is_open
+    #     else:
+    #         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    #         if button_id == "point-btn-yes":
+    #             command_thread.add_to_queue(f"azel {az} {el}")
+    #         if n_clicks_yes or n_clicks_no or n_clicks_btn:
+    #             return not is_open
+    #         return is_open
+            
     @ app.callback(
         Output("point-modal", "is_open"),
         [
-            Input("btn-point-azel", "n_clicks"),
+            Input("btn-point-coords", "n_clicks"),
             Input("point-btn-yes", "n_clicks"),
             Input("point-btn-no", "n_clicks"),
         ],
         [
             State("point-modal", "is_open"),
-            State("azimuth", "value"),
-            State("elevation", "value"),
+            State("val1", "value"),
+            State("val2", "value"),
+            State("coord-options", "value"),
         ],
     )
-    def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, az, el):
+    def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, val1, val2, coord_option):
         ctx = dash.callback_context
         if not ctx.triggered:
             return is_open
         else:
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
             if button_id == "point-btn-yes":
-                command_thread.add_to_queue(f"azel {az} {el}")
+                if coord_option == "RaDec":
+                    command_thread.add_to_queue(f"radec {val1} {val2}")
+                elif coord_option == "Galactic":
+                    command_thread.add_to_queue(f"galactic {val1} {val2}")
+                else: #coord_option == "AzEl":
+                    command_thread.add_to_queue(f"azel {val1} {val2}")
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
                 return not is_open
             return is_open
-            
-    
     
     @app.callback(
         Output("n-point-modal", "is_open"),
