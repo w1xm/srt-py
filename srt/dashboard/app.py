@@ -306,12 +306,12 @@ def generate_app(config_dir, config_dict):
         else:
             status_string = f"""
             #### {status_string}
-            - Location Lat, Long: {lat:.1f}, {lon:.1f} deg
-            - Motor Az, El: {az:.1f}, {el:.1f} deg
-            - Motor Offsets: {az_offset:.1f}, {el_offset:.1f} deg
+            - Location Lat, Long: {lat:.2f}, {lon:.2f} deg
+            - Motor Az, El: {az:.2f}, {el:.2f} deg
+            - Motor Offsets: {az_offset:.2f}, {el_offset:.2f} deg
             - Center Frequency: {cf / pow(10, 6)} MHz
             - Bandwidth: {bandwidth / pow(10, 6)} MHz
-            - VLSR: {vlsr:.1f} km/s
+            - VLSR: {vlsr:.2f} km/s
             """
 
         return status_string
