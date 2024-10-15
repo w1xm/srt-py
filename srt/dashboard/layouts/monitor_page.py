@@ -1469,7 +1469,7 @@ def register_callbacks(
             State("coord-options", "value"),
         ],
     )
-    def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, val1, val2, coord-options):
+    def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, val1, val2, coord_option):
         ctx = dash.callback_context
         if not ctx.triggered:
             return is_open
