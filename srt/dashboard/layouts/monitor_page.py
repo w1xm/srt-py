@@ -928,8 +928,8 @@ def generate_layout(software):
         layout = html.Div(
             [
                 generate_navbar(drop_down_buttons_vsrt),
-                #dbc.Alert("Recording", color="danger",
-                #          id="recording-alert", is_open=False),
+                dbc.Alert("Recording", color="danger",
+                          id="recording-alert", is_open=False),
                 generate_first_row(),
                 generate_second_row(),
                 generate_third_row(),
@@ -941,8 +941,8 @@ def generate_layout(software):
         layout = html.Div(
             [
                 generate_navbar(drop_down_buttons_srt),
-                #dbc.Alert("Recording", color="danger",
-                #          id="recording-alert", is_open=False),
+                dbc.Alert("Recording", color="danger",
+                          id="recording-alert", is_open=False),
                 generate_first_row(),
                 generate_srt_azel(),
                 generate_srt_second_row(),
@@ -1429,31 +1429,6 @@ def register_callbacks(
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
                 return not is_open
             return is_open
-
-    # @ app.callback(
-    #     Output("point-modal", "is_open"),
-    #     [
-    #         Input("btn-point-azel", "n_clicks"),
-    #         Input("point-btn-yes", "n_clicks"),
-    #         Input("point-btn-no", "n_clicks"),
-    #     ],
-    #     [
-    #         State("point-modal", "is_open"),
-    #         State("azimuth", "value"),
-    #         State("elevation", "value"),
-    #     ],
-    # )
-    # def point_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, az, el):
-    #     ctx = dash.callback_context
-    #     if not ctx.triggered:
-    #         return is_open
-    #     else:
-    #         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    #         if button_id == "point-btn-yes":
-    #             command_thread.add_to_queue(f"azel {az} {el}")
-    #         if n_clicks_yes or n_clicks_no or n_clicks_btn:
-    #             return not is_open
-    #         return is_open
             
     @ app.callback(
         Output("point-modal", "is_open"),
@@ -1617,11 +1592,11 @@ def register_callbacks(
         [
             State("record-modal", "is_open"), 
             State("record-options","value"), 
-            #State("recording-alert", "is_open")
+            State("recording-alert", "is_open")
         ],
     )
     def record_click_func(
-        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option #, is_open_alert
+        n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, record_option, is_open_alert
     ):
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -1637,24 +1612,26 @@ def register_callbacks(
                 return not is_open
             return is_open
 
-    #@ app.callback(
-    #    Output("recording-alert", "is_open"),
-    #    [Input("record-btn-yes", "n_clicks"),
-    #     Input("btn-stop-record", "n_clicks")],
-    #    [],
-    #)
-    #def record_alert_func(n_clicks_start, n_clicks_stop):
-    #    ctx = dash.callback_context
-    #    if not ctx.triggered:
-    #        return False
-    #    else:
-    #        if not n_clicks_start:
-    #            return False
-    #        if not n_clicks_stop:
-    #            return True
-    #        if n_clicks_start == n_clicks_stop:
-    #            return False
-    #        return True
+    @ app.callback(
+        Output("recording-alert", "is_open"),
+        [
+            Input("record-btn-yes", "n_clicks"),
+            Input("btn-stop-record", "n_clicks")
+        ],
+        [],
+    )
+    def record_alert_func(n_clicks_start, n_clicks_stop):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return False
+        else:
+            if not n_clicks_start:
+                return False
+            if not n_clicks_stop:
+                return True
+            if n_clicks_start == n_clicks_stop:
+                return False
+            return True
 
     @ app.callback(
         Output("cmd-file-modal", "is_open"),
@@ -1727,6 +1704,9 @@ def register_callbacks(
             Input("btn-calon", "n_clicks"),
             Input("btn-caloff", "n_clicks"),
         ],
+        [
+            State("recording-alert", "is_open")
+        ]
     )
     def cmd_button_pressed(
         n_clicks_stow,
@@ -1735,6 +1715,7 @@ def register_callbacks(
         n_clicks_calibrate,
         n_clicks_calon,
         n_clicks_caloff,
+        is_open,
     ):
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -1745,6 +1726,7 @@ def register_callbacks(
                 command_thread.add_to_queue("stow")
             if button_id == "btn-stop-record":
                 command_thread.add_to_queue("roff")
+                return not is_open
             elif button_id == "btn-quit":
                 command_thread.add_to_queue("quit")
             elif button_id == "btn-calibrate":
