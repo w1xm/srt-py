@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: no_gui
     hier_block_src_path: '.:'
-    id: radio_save_raw
+    id: radio_save_raw_dual_channel
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -22,7 +22,7 @@ options:
     run_options: run
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: radio_save_raw
+    title: radio_save_raw_dual_channel
     window_size: ''
   states:
     bus_sink: false
@@ -33,6 +33,24 @@ options:
     state: enabled
 
 blocks:
+- name: blocks_vector_to_streams_0
+  id: blocks_vector_to_streams
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 96.0]
+    rotation: 0
+    state: enabled
 - name: directory_name
   id: parameter
   parameters:
@@ -99,7 +117,7 @@ blocks:
     marching_periods: 'True'
     metadata: '{}'
     min_chunksize: '0'
-    nchan: '1'
+    nchan: '2'
     sample_rate_denominator: '1'
     sample_rate_numerator: int(samp_rate)
     start: '''now'''
@@ -113,7 +131,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [616, 132.0]
+    coordinate: [712, 68.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -148,17 +166,19 @@ blocks:
     pass_tags: 'True'
     timeout: '100'
     type: complex
-    vlen: '1'
+    vlen: '2'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [328, 119]
+    coordinate: [208, 76.0]
     rotation: 0
     state: true
 
 connections:
-- [zeromq_sub_source_0, '0', gr_digital_rf_digital_rf_sink_0, '0']
+- [blocks_vector_to_streams_0, '0', gr_digital_rf_digital_rf_sink_0, '0']
+- [blocks_vector_to_streams_0, '1', gr_digital_rf_digital_rf_sink_0, '1']
+- [zeromq_sub_source_0, '0', blocks_vector_to_streams_0, '0']
 
 metadata:
   file_format: 1

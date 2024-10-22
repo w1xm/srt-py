@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: no_gui
     hier_block_src_path: '.:'
-    id: radio_save_spec_fits
+    id: radio_save_spec_fits_dual_channel
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -22,7 +22,7 @@ options:
     run_options: run
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: radio_save_spec_fits
+    title: radio_save_spec_fits_dual_channel
     window_size: ''
   states:
     bus_sink: false
@@ -33,6 +33,24 @@ options:
     state: enabled
 
 blocks:
+- name: blocks_vector_to_streams_0
+  id: blocks_vector_to_streams
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '2'
+    type: float
+    vlen: num_bins
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 152.0]
+    rotation: 0
+    state: enabled
 - name: directory_name
   id: parameter
   parameters:
@@ -115,32 +133,40 @@ blocks:
       \  # only default arguments here\n        \"\"\"arguments to this function show\
       \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
       \   self,\n            name=\"Embedded Python Block\",  # will show up in GRC\n\
-      \            in_sig=[(np.float32, vec_length)],\n            out_sig=None,\n\
-      \        )\n        # if an attribute with the same name as a parameter is found,\n\
-      \        # a callback is registered (properties work, too).\n        self.directory\
-      \ = directory\n        self.filename = filename\n        self.vec_length = vec_length\n\
-      \n    def work(self, input_items, output_items):\n        \"\"\"Saving Spectrum\
-      \ Data to a FITS File\"\"\"\n        file_path = pathlib.Path(self.directory,\
-      \ self.filename)\n        for i, input_array in enumerate(input_items[0]):\n\
-      \            file = open(file_path, \"ab+\")\n            tags = self.get_tags_in_window(0,\
-      \ 0, len(input_items[0]))\n            tags_dict = {\n                pmt.to_python(tag.key):\
-      \ pmt.to_python(tag.value) for tag in tags\n            }\n            time_since_epoch\
-      \ = tags_dict[\"rx_time\"][0] + tags_dict[\"rx_time\"][1]\n            date\
-      \ = datetime.fromtimestamp(time_since_epoch, timezone.utc)\n            metadata\
-      \ = tags_dict[\"metadata\"]\n            samp_rate = metadata[\"samp_rate\"\
-      ]\n            num_integrations = metadata[\"num_integrations\"]\n         \
-      \   freq = metadata[\"freq\"]\n            num_bins = metadata[\"num_bins\"\
-      ]\n            soutrack = metadata[\"soutrack\"]\n\n            hdr = fits.Header()\n\
-      \            hdr[\"BUNIT\"] = \"K\"\n            hdr[\"CTYPE1\"] = \"Freq\"\n\
-      \            hdr[\"CRPIX1\"] = num_bins / float(2)  # Reference pixel (center)\n\
-      \            hdr[\"CRVAL1\"] = freq  # Center, USRP, frequency\n           \
-      \ hdr[\"CDELT1\"] = samp_rate / (1 * num_bins)  # Channel width\n          \
-      \  hdr[\"CUNIT1\"] = \"Hz\"\n\n            hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\
-      \n            hdr[\"OBJECT\"] = soutrack\n            hdr[\"OBSTIME\"] = (num_bins\
-      \ * num_integrations) / samp_rate\n\n            hdr[\"DATE-OBS\"] = date.strftime(\"\
-      %Y-%m-%d\")\n            hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n    \
-      \        hdr[\"METADATA\"] = json.dumps(metadata)\n\n            fits.append(file,\
-      \ input_array, hdr)\n            file.close()\n            # p = np.sum(input_array)\n\
+      \            in_sig=[(np.float32, vec_length),(np.float32, vec_length)],\n \
+      \           out_sig=None,\n        )\n        # if an attribute with the same\
+      \ name as a parameter is found,\n        # a callback is registered (properties\
+      \ work, too).\n        self.directory = directory\n        self.filename = filename\n\
+      \        self.vec_length = vec_length\n\n    def work(self, input_items, output_items):\n\
+      \        \"\"\"Saving Spectrum Data to a FITS File\"\"\"\n        # we're just\
+      \ going to assume the inputs are the same length because they will be, and for\
+      \ now assume they share the same metadata \n        #not too worried babout\
+      \ getting this perfect because I'll need to rewrite this later anyway\n    \
+      \    file_path = pathlib.Path(self.directory, self.filename)\n        #for i,\
+      \ input_array in enumerate(input_items[0]):\n        for input_array_0, input_array_1\
+      \ in zip(input_items[0],input_items[1]): #idk why enoumerate was involved here.\
+      \ not needed\n            file = open(file_path, \"ab+\")\n            tags_0\
+      \ = self.get_tags_in_window(0, 0, len(input_items[0]))\n            tags_1 =\
+      \ self.get_tags_in_window(0, 0, len(input_items[1]))\n            tags_dict_0\
+      \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}\n \
+      \           tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value)\
+      \ for tag in tags_1}\n\n            time_since_epoch = tags_dict_0[\"rx_time\"\
+      ][0] + tags_dict_0[\"rx_time\"][1]\n            date = datetime.fromtimestamp(time_since_epoch,\
+      \ timezone.utc)\n            metadata = tags_dict_0[\"metadata\"]\n        \
+      \    samp_rate = metadata[\"samp_rate\"]\n            num_integrations = metadata[\"\
+      num_integrations\"]\n            freq = metadata[\"freq\"]\n            num_bins\
+      \ = metadata[\"num_bins\"]\n            soutrack = metadata[\"soutrack\"]\n\n\
+      \            hdr = fits.Header()\n            hdr[\"BUNIT\"] = \"K\"\n     \
+      \       hdr[\"CTYPE1\"] = \"Freq\"\n            hdr[\"CRPIX1\"] = num_bins /\
+      \ float(2)  # Reference pixel (center)\n            hdr[\"CRVAL1\"] = freq \
+      \ # Center, USRP, frequency\n            hdr[\"CDELT1\"] = samp_rate / (1 *\
+      \ num_bins)  # Channel width\n            hdr[\"CUNIT1\"] = \"Hz\"\n\n     \
+      \       hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\n            hdr[\"OBJECT\"\
+      ] = soutrack\n            hdr[\"OBSTIME\"] = (num_bins * num_integrations) /\
+      \ samp_rate\n\n            hdr[\"DATE-OBS\"] = date.strftime(\"%Y-%m-%d\")\n\
+      \            hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n            hdr[\"\
+      METADATA\"] = json.dumps(metadata)\n\n            fits.append(file, [input_array_0,input_array_1],\
+      \ hdr) #append both spectra.\n            file.close()\n            # p = np.sum(input_array)\n\
       \            # a = len(input_array)\n            # pwr = (tsys + tcal) * p /\
       \ (a * calpwr)\n            # ppwr = pwr - tsys\n        return len(input_items[0])\n"
     affinity: ''
@@ -153,12 +179,12 @@ blocks:
     vec_length: num_bins
   states:
     _io_cache: ('Embedded Python Block', 'blk', [('directory', "'.'"), ('filename',
-      "'test.fits'"), ('vec_length', '4096')], [('0', 'float', 4096)], [], 'Embedded
-      Python Block - Saving ', ['directory', 'filename', 'vec_length'])
+      "'test.fits'"), ('vec_length', '4096')], [('0', 'float', 4096), ('1', 'float',
+      4096)], [], 'Embedded Python Block - Saving ', ['directory', 'filename', 'vec_length'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [648, 148.0]
+    coordinate: [872, 148.0]
     rotation: 0
     state: true
 - name: zeromq_sub_source_0
@@ -176,17 +202,19 @@ blocks:
     pass_tags: 'True'
     timeout: '100'
     type: float
-    vlen: num_bins
+    vlen: 2*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [328, 119]
+    coordinate: [328, 124.0]
     rotation: 0
     state: true
 
 connections:
-- [zeromq_sub_source_0, '0', save_fits_file, '0']
+- [blocks_vector_to_streams_0, '0', save_fits_file, '0']
+- [blocks_vector_to_streams_0, '1', save_fits_file, '1']
+- [zeromq_sub_source_0, '0', blocks_vector_to_streams_0, '0']
 
 metadata:
   file_format: 1
