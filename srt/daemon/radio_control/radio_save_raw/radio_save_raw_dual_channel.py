@@ -5,9 +5,10 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: radio_save_raw
+# Title: radio_save_raw_dual_channel
 # GNU Radio version: 3.10.9.2
 
+from gnuradio import blocks
 from gnuradio import gr
 from gnuradio.filter import firdes
 from gnuradio.fft import window
@@ -22,10 +23,10 @@ import numpy as np; import gr_digital_rf
 
 
 
-class radio_save_raw(gr.top_block):
+class radio_save_raw_dual_channel(gr.top_block):
 
     def __init__(self, directory_name="./rf_data", samp_rate=2400000):
-        gr.top_block.__init__(self, "radio_save_raw", catch_exceptions=True)
+        gr.top_block.__init__(self, "radio_save_raw_dual_channel", catch_exceptions=True)
 
         ##################################################
         # Parameters
@@ -37,11 +38,12 @@ class radio_save_raw(gr.top_block):
         # Blocks
         ##################################################
 
-        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5558', 100, True, (-1), '', False)
+        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_gr_complex, 2, 'tcp://127.0.0.1:5558', 100, True, (-1), '', False)
         self.gr_digital_rf_digital_rf_sink_0 = gr_digital_rf.digital_rf_sink(
             directory_name,
             channels=[
                 'ch0',
+                'ch1',
             ],
             dtype=np.complex64,
             subdir_cadence_secs=3600,
@@ -66,12 +68,15 @@ class radio_save_raw(gr.top_block):
             debug=False,
             min_chunksize=None,
         )
+        self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_gr_complex*1, 2)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.zeromq_sub_source_0, 0), (self.gr_digital_rf_digital_rf_sink_0, 0))
+        self.connect((self.blocks_vector_to_streams_0, 0), (self.gr_digital_rf_digital_rf_sink_0, 0))
+        self.connect((self.blocks_vector_to_streams_0, 1), (self.gr_digital_rf_digital_rf_sink_0, 1))
+        self.connect((self.zeromq_sub_source_0, 0), (self.blocks_vector_to_streams_0, 0))
 
 
     def get_directory_name(self):
@@ -99,7 +104,7 @@ def argument_parser():
     return parser
 
 
-def main(top_block_cls=radio_save_raw, options=None):
+def main(top_block_cls=radio_save_raw_dual_channel, options=None):
     if options is None:
         options = argument_parser().parse_args()
     tb = top_block_cls(directory_name=options.directory_name, samp_rate=options.samp_rate)
