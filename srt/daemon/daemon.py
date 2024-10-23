@@ -88,7 +88,7 @@ class SmallRadioTelescopeDaemon:
         self.motor_type = config_dict["MOTOR_TYPE"]
         self.motor_port = config_dict["MOTOR_PORT"]
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
-
+        self.radio_num_channels = config_dict["RADIO_NUM_CHANNELS"]
         self.radio_center_frequency = config_dict["RADIO_CF"]
         self.radio_sample_frequency = config_dict["RADIO_SF"]
         self.radio_rf_gain = config_dict["RADIO_RF_GAIN"]
