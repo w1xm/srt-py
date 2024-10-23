@@ -10,7 +10,7 @@
 
 import os
 import sys
-sys.path.append(os.environ.get('GRC_HIER_PATH', os.path.expanduser('~/.grc_gnuradio')))
+#sys.path.append(os.environ.get('GRC_HIER_PATH', os.path.expanduser('~/.grc_gnuradio')))
 
 from filter_integrate import filter_integrate  # grc-generated hier_block
 from gnuradio import blocks
@@ -29,20 +29,11 @@ from xmlrpc.server import SimpleXMLRPCServer
 import threading
 import math
 import numpy as np
-import radio_process_dual_channel_add_clock_tags as add_clock_tags  # embedded python block
-import radio_process_dual_channel_add_clock_tags_0 as add_clock_tags_0  # embedded python block
-import radio_process_dual_channel_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
-
-
-def snipfcn_snippet_0(self):
-    calibrator_control_mask = self.calibrator_mask
-    self.usrp0.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_control_mask)  #set pins 2 and 3 manual
-    self.usrp0.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_control_mask) #set pins 2 and 3 as output
-    self.usrp0.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_control_mask)
-
-
-def snippets_main_after_init(tb):
-    snipfcn_snippet_0(tb)
+#import radio_process_dual_channel_add_clock_tags as add_clock_tags  # embedded python block
+from . import add_clock_tags
+#import radio_process_dual_channel_add_clock_tags_0 as add_clock_tags_0  # embedded python block
+#import radio_process_dual_channel_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
+from . import calibrator_control_strobe
 
 
 class radio_process_dual_channel(gr.top_block):
@@ -68,7 +59,7 @@ class radio_process_dual_channel(gr.top_block):
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
         self.samp_rate = samp_rate = 2000000
-        self.rf_gain = rf_gain = 20
+        self.rf_gain = rf_gain = 15
         self.rf_freq = rf_freq = freq
         self.motor_el = motor_el = np.nan
         self.motor_az = motor_az = np.nan
@@ -98,6 +89,12 @@ class radio_process_dual_channel(gr.top_block):
         self.xmlrpc_server_0_thread = threading.Thread(target=self.xmlrpc_server_0.serve_forever)
         self.xmlrpc_server_0_thread.daemon = True
         self.xmlrpc_server_0_thread.start()
+
+        #blocks_tags_strobe blocks need to come before slow radio startup commands for some silly reason
+        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
+        self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
+
+
         self.uhd_usrp_source_1 = uhd.usrp_source(
             ",".join(("addr=172.25.14.11", '')),
             uhd.stream_args(
@@ -106,11 +103,16 @@ class radio_process_dual_channel(gr.top_block):
                 channels=list(range(0,2)),
             ),
         )
+
         self.uhd_usrp_source_1.set_samp_rate(samp_rate)
-        # Set the time to GPS time on next PPS
-        # get_mboard_sensor("gps_time") returns just after the PPS edge,
-        # thus add one second and set the time on the next PPS
-        self.uhd_usrp_source_1.set_time_next_pps(uhd.time_spec(self.uhd_usrp_source_1.get_mboard_sensor("gps_time").to_int() + 1.0))
+        self.uhd_usrp_source_1.set_clock_source("external")
+        self.uhd_usrp_source_1.set_time_source("external")
+        _last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
+        # Poll get_time_last_pps() every 50 ms until a change is seen
+        while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
+            time.sleep(0.05)
+        # Set the time to PC time on next PPS
+        self.uhd_usrp_source_1.set_time_next_pps(uhd.time_spec(int(time.time()) + 1.0))
         # Sleep 1 second to ensure next PPS has come
         time.sleep(1)
 
@@ -128,19 +130,26 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 1)
         self.uhd_usrp_source_1.set_auto_iq_balance(True, 1)
         self.uhd_usrp_source_1.set_block_alias("usrp0")
+
+        ##### Manually Configure USRP GPIO
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
+
+
+
         self.filter_integrate_0_0 = filter_integrate(
-            fft_window=0,
-            num_bins=256,
-            num_integrations=100000,
+            fft_window=fft_window,
+            num_bins=num_bins,
+            num_integrations=num_integrations,
         )
         self.filter_integrate_0 = filter_integrate(
-            fft_window=0,
-            num_bins=256,
-            num_integrations=100000,
+            fft_window=fft_window,
+            num_bins=num_bins,
+            num_integrations=num_integrations,
         )
+
         self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
-        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
-        self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
         self.blocks_streams_to_vector_0_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
         self.blocks_streams_to_vector_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
         self.blocks_streams_to_vector_0 = blocks.streams_to_vector(gr.sizeof_gr_complex*1, 2)
@@ -149,7 +158,7 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), 100)
         self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         self.blocks_add_xx_0_0 = blocks.add_vcc(1)
-        self.add_clock_tags_0 = add_clock_tags_0.clk(nsamps=tag_period)
+        self.add_clock_tags_0 = add_clock_tags.clk(nsamps=tag_period)
         self.add_clock_tags = add_clock_tags.clk(nsamps=tag_period)
 
 
@@ -195,6 +204,8 @@ class radio_process_dual_channel(gr.top_block):
         self.set_sinc_sample_locations(np.arange(-np.pi*4/2.0, np.pi*4/2.0, np.pi/self.num_bins))
         self.set_tag_period(self.num_bins*self.num_integrations)
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.filter_integrate_0.set_num_bins(self.num_bins)
+        self.filter_integrate_0_0.set_num_bins(self.num_bins)
 
     def get_num_integrations(self):
         return self.num_integrations
@@ -203,6 +214,8 @@ class radio_process_dual_channel(gr.top_block):
         self.num_integrations = num_integrations
         self.set_tag_period(self.num_bins*self.num_integrations)
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.filter_integrate_0.set_num_integrations(self.num_integrations)
+        self.filter_integrate_0_0.set_num_integrations(self.num_integrations)
 
     def get_sinc_sample_locations(self):
         return self.sinc_sample_locations
@@ -273,11 +286,14 @@ class radio_process_dual_channel(gr.top_block):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
+        #note that we are not yet implementing phase locking of the channels here. X300 with UBX cards can do that so need to return to this
         self.samp_rate = samp_rate
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 0)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 1)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
 
     def get_rf_gain(self):
         return self.rf_gain
@@ -292,8 +308,10 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_rf_freq(self, rf_freq):
         self.rf_freq = rf_freq
-        self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
-        self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
 
     def get_motor_el(self):
         return self.motor_el
@@ -335,6 +353,8 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_fft_window(self, fft_window):
         self.fft_window = fft_window
+        self.filter_integrate_0.set_fft_window(self.fft_window)
+        self.filter_integrate_0_0.set_fft_window(self.fft_window)
 
     def get_custom_window(self):
         return self.custom_window
@@ -348,6 +368,10 @@ class radio_process_dual_channel(gr.top_block):
     def set_calibrator_mask(self, calibrator_mask):
         self.calibrator_mask = calibrator_mask
         self.calibrator_control_strobe.calibrator_mask = self.calibrator_mask
+        ##### Configure USRP GPIO
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
 
     def get_cal_values(self):
         return self.cal_values

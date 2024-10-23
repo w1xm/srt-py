@@ -618,11 +618,11 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    fft_window: '0'
+    fft_window: fft_window
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_bins: '256'
-    num_integrations: '100000'
+    num_bins: num_bins
+    num_integrations: num_integrations
   states:
     bus_sink: false
     bus_source: false
@@ -636,16 +636,16 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    fft_window: '0'
+    fft_window: fft_window
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_bins: '256'
-    num_integrations: '100000'
+    num_bins: num_bins
+    num_integrations: num_integrations
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1864, 684.0]
+    coordinate: [1832, 676.0]
     rotation: 0
     state: enabled
 - name: import_0
