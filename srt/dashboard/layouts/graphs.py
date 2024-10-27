@@ -557,7 +557,7 @@ def generate_el_time_graph(
     return fig
 
 
-def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history):
+def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, channel=None):
     """Generates a Graph of the Power History
 
     Parameters
@@ -584,12 +584,18 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history):
     if power_history is None or len(power_history) == 0:
         return ""
     power_time, power_vals = zip(*power_history)
+
+    if channel == None:
+        channel_title = "Power vs Time"
+    else:
+        channel_title = f'Channel {channel} Power vs Time'
+
     fig = go.Figure(
         data=go.Scatter(
             x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals
         ),
         layout={
-            "title": "Power vs Time",
+            "title": channel_title,
             "xaxis_title": "Time (UTC)",
             "yaxis_title": "Calibrated Power",
             "height": 300,
@@ -606,7 +612,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history):
     return fig
 
 
-def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal):
+def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, channel=None):
     """Generates a Graph of Spectrum Data
 
     Parameters
@@ -625,8 +631,14 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal):
     Plotly Graph Object of Spectrum Histogram
     """
     max_histogram_size = 2048
-    title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+
+    if channel == None:
+        title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+    else:
+        title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
+    
     yaxis = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
+
     if cf > pow(10, 9):
         cf /= pow(10, 9)
         bandwidth /= pow(10, 9)

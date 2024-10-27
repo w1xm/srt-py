@@ -49,6 +49,7 @@ def generate_app(config_dir, config_dict):
     """
     config_dict["CONFIG_DIR"] = config_dir
     software = config_dict["SOFTWARE"]
+    radio_num_channels = config_dict["RADIO_NUM_CHANNELS"]
 
     # Set Up Flash and Dash Objects
     server = flask.Flask(__name__)
