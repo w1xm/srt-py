@@ -17,7 +17,7 @@ class SpectrumThread(Thread):
     """
 
     def __init__(
-        self, group=None, target=None, name=None, port=5560, history_length=1000
+        self, group=None, target=None, name=None, port=5560, history_length=1000, num_channels=1
     ):
         """Initializer for the SpectrumThread
 
@@ -35,6 +35,7 @@ class SpectrumThread(Thread):
             Max Length of Spectrum Data History List
         """
         super().__init__(group=group, target=target, name=name, daemon=True)
+        self.num_channels = num_channels
         self.history_length = history_length
         self.spectrum = None
         self.history = []
@@ -53,7 +54,7 @@ class SpectrumThread(Thread):
         socket.subscribe("")
         while True:
             rec = socket.recv()
-            var = np.frombuffer(rec, dtype="float32")
+            var = np.frombuffer(rec, dtype="float32").reshape((num_channels,-1))
             if len(self.history) >= self.history_length:
                 self.history.pop()
             self.history.insert(0, (time.time(), var))
