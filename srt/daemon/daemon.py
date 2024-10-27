@@ -18,13 +18,14 @@ import json
 import numpy as np
 
 from .rotor_control.rotors import Rotor
-from .radio_control.radio_task_starter import (
-    RadioProcessTask,
-    RadioSaveRawTask,
-    RadioCalibrateTask,
-    RadioSaveSpecRadTask,
-    RadioSaveSpecFitsTask,
-)
+#import the below after a conditional check on number of channels
+# from .radio_control.radio_task_starter import (
+#     RadioProcessTask,
+#     RadioSaveRawTask,
+#     RadioCalibrateTask,
+#     RadioSaveSpecRadTask,
+#     RadioSaveSpecFitsTask,
+# )
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
 from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
@@ -107,6 +108,27 @@ class SmallRadioTelescopeDaemon:
         
         self.npoints = 5 #default size of grid for npoint scan
         self.radio_calibrator_state = False
+
+
+        #conditional imports dependent on number of polarizations used
+
+        if self.radio_num_channels == 2:
+            from .radio_control.radio_task_starter_dual_channel import (
+                RadioProcessTask,
+                RadioSaveRawTask,
+                RadioCalibrateTask,
+                RadioSaveSpecRadTask,
+                RadioSaveSpecFitsTask,
+            )
+        else:
+            from .radio_control.radio_task_starter import (
+                RadioProcessTask,
+                RadioSaveRawTask,
+                RadioCalibrateTask,
+                RadioSaveSpecRadTask,
+                RadioSaveSpecFitsTask,
+            )
+
 
         # Generate Default Calibration Values
         # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
@@ -1069,7 +1091,26 @@ class SmallRadioTelescopeDaemon:
 
     def srt_daemon_main(self):
         """Starts and Processes Commands for the SRT
+Commands Coming in Over ZMQ PUSH/PULL
 
+        Is Operated as an Infinite Looping Thread Function
+
+        Returns
+        -------
+        None
+        """
+        context = zmq.Context()
+        command_port = 5556
+        command_socket = context.socket(zmq.PULL)
+        command_socket.bind("tcp://*:%s" % command_port)
+        while True:
+            cmd = command_socket.recv_string()
+            self.command_queue.put(cmd)
+
+    def srt_daemon_main(self):
+        """Starts and Processes Commands for the SRT
+
+        Returns
         Returns
         -------
         None
