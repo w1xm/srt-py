@@ -124,14 +124,12 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 0)
         self.uhd_usrp_source_1.set_gain(rf_gain, 0)
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 0)
-        self.uhd_usrp_source_1.set_auto_iq_balance(True, 0)
 
         self.uhd_usrp_source_1.set_center_freq(rf_freq, 1)
         self.uhd_usrp_source_1.set_antenna("RX2", 1)
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 1)
         self.uhd_usrp_source_1.set_gain(rf_gain, 1)
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 1)
-        self.uhd_usrp_source_1.set_auto_iq_balance(True, 1)
         self.uhd_usrp_source_1.set_block_alias("usrp0")
 
         ##### Manually Configure USRP GPIO
@@ -141,10 +139,10 @@ class radio_process_dual_channel(gr.top_block):
 
         ##### configure LO sharing
 
-        self.uhd_usrp_source_1.set_lo_source('internal', uhd.ALL_LOS, 0)
-        self.uhd_usrp_source_1.set_lo_export_enabled(True, uhd.ALL_LOS, 0)
-        self.uhd_usrp_source_1.set_lo_source('external', uhd.ALL_LOS, 1)
-        self.uhd_usrp_source_1.set_lo_export_enabled(False, uhd.ALL_LOS, 1)
+        #self.uhd_usrp_source_1.set_lo_source('internal', uhd.ALL_LOS, 0)
+        #self.uhd_usrp_source_1.set_lo_export_enabled(True, uhd.ALL_LOS, 0)
+        #self.uhd_usrp_source_1.set_lo_source('external', uhd.ALL_LOS, 1)
+        #self.uhd_usrp_source_1.set_lo_export_enabled(False, uhd.ALL_LOS, 1)
 
         ##### timed tuning command 
 
