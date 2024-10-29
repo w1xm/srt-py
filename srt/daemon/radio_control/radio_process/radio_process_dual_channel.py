@@ -31,7 +31,7 @@ import math
 import numpy as np
 #import radio_process_dual_channel_add_clock_tags as add_clock_tags  # embedded python block
 from . import add_clock_tags
-from . import filter_integrate  # grc-generated hier_block
+from .filter_integrate import filter_integrate  # grc-generated hier_block
 #import radio_process_dual_channel_add_clock_tags_0 as add_clock_tags_0  # embedded python block
 #import radio_process_dual_channel_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
 from . import calibrator_control_strobe
