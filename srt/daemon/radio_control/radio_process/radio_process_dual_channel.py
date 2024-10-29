@@ -463,7 +463,7 @@ def main(top_block_cls=radio_process_dual_channel, options=None):
     if options is None:
         options = argument_parser().parse_args()
     tb = top_block_cls(num_bins=options.num_bins, num_integrations=options.num_integrations)
-    snippets_main_after_init(tb)
+
     def sig_handler(sig=None, frame=None):
         tb.stop()
         tb.wait()
