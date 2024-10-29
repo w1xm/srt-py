@@ -611,7 +611,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
             return ""
         power_time, power_vals = zip(*power_history)
 
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals))
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals,name=f"ch{i}"))
 
     return fig
 
@@ -680,7 +680,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
             go.Scatter(
                 x=data_range,
                 y=spectrum[i],
-                name="Spectrum",
+                name=f"ch{i}",
                 mode="lines",
             )
         )
