@@ -25,7 +25,7 @@ import numpy as np
 
 
 class filter_integrate(gr.hier_block2):
-    def __init__(self, fft_window=0, num_bins=256, num_integrations=100000):
+    def __init__(self, fft_window, num_bins=256, num_integrations=100000):
         gr.hier_block2.__init__(
             self, "filter and integration",
                 gr.io_signature(1, 1, gr.sizeof_gr_complex*1),
@@ -50,7 +50,7 @@ class filter_integrate(gr.hier_block2):
         # Blocks
         ##################################################
 
-        self.fft_vxx_0 = fft.fft_vcc(num_bins, True, [fft_window], True, 3)
+        self.fft_vxx_0 = fft.fft_vcc(num_bins, True, fft_window, True, 3)
         self.dc_blocker_xx_0 = filter.dc_blocker_cc((num_bins*num_integrations), False)
         self.blocks_stream_to_vector_0_2 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
         self.blocks_stream_to_vector_0_1 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)

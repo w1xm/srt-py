@@ -161,14 +161,14 @@ class radio_process_dual_channel(gr.top_block):
 
 
         self.filter_integrate_0_0 = filter_integrate.filter_integrate(
-            fft_window=fft_window,
-            num_bins=num_bins,
-            num_integrations=num_integrations,
+            fft_window=self.fft_window,
+            num_bins=self.num_bins,
+            num_integrations=self.num_integrations,
         )
         self.filter_integrate_0 = filter_integrate.filter_integrate(
-            fft_window=fft_window,
-            num_bins=num_bins,
-            num_integrations=num_integrations,
+            fft_window=self.fft_window,
+            num_bins=self.num_bins,
+            num_integrations=self.num_integrations,
         )
 
         self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
