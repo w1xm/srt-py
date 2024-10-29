@@ -584,8 +584,9 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
     if power_history is None or len(power_history) == 0:
         return ""
     #power_time, power_vals = zip(*power_history)
-    power_time = power_history[0]
-    power_vals = power_history[1]
+    print(power_history)
+    power_time = power_history[:,0]
+    power_vals = power_history[:,1]
 
     #if channel == None:
     channel_title = "Power vs Time"
