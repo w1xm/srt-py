@@ -18,7 +18,7 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import zeromq
-import radio_save_spec_dual_channel_save_rad_file as save_rad_file  # embedded python block
+from . import save_rad_file  # embedded python block
 
 
 
