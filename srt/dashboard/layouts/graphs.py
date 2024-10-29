@@ -557,7 +557,7 @@ def generate_el_time_graph(
     return fig
 
 
-def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, channel=None):
+def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_channels=1):
     """Generates a Graph of the Power History
 
     Parameters
@@ -577,23 +577,23 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, channel=
     """
     power_history = []
     for t, spectrum in spectrum_history:
-        p = np.sum(spectrum)
-        a = len(spectrum)
-        pwr = (tsys + tcal) * p / (a * cal_pwr)
+        p = np.sum(spectrum,1)
+        a = np.shape(spectrum)[1]
+        pwr = (tsys + tcal) * p / (a * cal_pwr) #this will probably still just work when we switch to tuples for cal corrections
         power_history.insert(0, (t, pwr))
     if power_history is None or len(power_history) == 0:
         return ""
     power_time, power_vals = zip(*power_history)
 
-    if channel == None:
-        channel_title = "Power vs Time"
-    else:
-        channel_title = f'Channel {channel} Power vs Time'
+    #if channel == None:
+    channel_title = "Power vs Time"
+
+    traces = []
+    for i in range(num_channels):
+        traces.append(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals[i]))
 
     fig = go.Figure(
-        data=go.Scatter(
-            x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals
-        ),
+        data=traces,
         layout={
             "title": channel_title,
             "xaxis_title": "Time (UTC)",
@@ -612,7 +612,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, channel=
     return fig
 
 
-def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, channel=None):
+def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1):
     """Generates a Graph of Spectrum Data
 
     Parameters
@@ -632,10 +632,10 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, channel=None):
     """
     max_histogram_size = 2048
 
-    if channel == None:
-        title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
-    else:
-        title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
+    #if channel == None:
+    title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+    #else:
+    #    title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
     
     yaxis = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
 
@@ -671,29 +671,38 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, channel=None):
     )
     data_range = np.linspace(-bandwidth / 2, bandwidth /
                              2, num=len(spectrum)) + cf
-    if len(spectrum) > max_histogram_size:
+    for i in range(num_channels):
         fig.add_trace(
             go.Scatter(
                 x=data_range,
-                y=spectrum,
+                y=spectrum[i],
                 name="Spectrum",
                 mode="lines",
             )
         )
-    else:
-        fig.add_trace(
-            go.Histogram(
-                xbins={
-                    "size": bandwidth / len(spectrum),
-                    "start": -bandwidth / 2 + cf,
-                    "end": bandwidth / 2 + cf,
-                },
-                autobinx=False,
-                x=data_range,
-                y=spectrum,
-                histfunc="avg",
-            )
-        )
+    # if len(spectrum) > max_histogram_size:
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             x=data_range,
+    #             y=spectrum,
+    #             name="Spectrum",
+    #             mode="lines",
+    #         )
+    #     )
+    # else:
+    #     fig.add_trace(
+    #         go.Histogram(
+    #             xbins={
+    #                 "size": bandwidth / len(spectrum),
+    #                 "start": -bandwidth / 2 + cf,
+    #                 "end": bandwidth / 2 + cf,
+    #             },
+    #             autobinx=False,
+    #             x=data_range,
+    #             y=spectrum,
+    #             histfunc="avg",
+    #         )
+    #     )
     if is_spec_cal:
         fig.update_yaxes(range=[min(spectrum), max(spectrum)])
     return fig
