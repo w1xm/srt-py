@@ -588,12 +588,8 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
     #if channel == None:
     channel_title = "Power vs Time"
 
-    traces = []
-    for i in range(num_channels):
-        traces.append(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals[i]))
 
     fig = go.Figure(
-        data=traces,
         layout={
             "title": channel_title,
             "xaxis_title": "Time (UTC)",
@@ -609,6 +605,10 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
             "uirevision": True,
         },
     )
+
+    for i in range(num_channels):
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals[i]))
+
     return fig
 
 
@@ -670,7 +670,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
         },
     )
     data_range = np.linspace(-bandwidth / 2, bandwidth /
-                             2, num=len(spectrum)) + cf
+                             2, num=np.shape(spectrum)[1]) + cf
     for i in range(num_channels):
         fig.add_trace(
             go.Scatter(
