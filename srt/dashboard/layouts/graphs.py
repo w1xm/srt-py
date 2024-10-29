@@ -575,18 +575,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
     -------
     Plotly Figure of Power History Graph
     """
-    power_history = []
-    for t, spectrum in spectrum_history:
-        p = np.sum(spectrum,1)
-        a = np.shape(spectrum)[1]
-        pwr = (tsys + tcal) * p / (a * cal_pwr) #this will probably still just work when we switch to tuples for cal corrections
-        power_history.insert(0, (t, pwr))
-    if power_history is None or len(power_history) == 0:
-        return ""
-    #power_time, power_vals = zip(*power_history)
-    print(power_history)
-    power_time = power_history[:,0]
-    power_vals = power_history[:,1]
+
 
     #if channel == None:
     channel_title = "Power vs Time"
@@ -609,8 +598,20 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
         },
     )
 
-    for i in range(num_channels):
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals[i]))
+    for i in range(num_channels): #compute this one at a time for now because something is thoroughly screwy about this.
+        #note this won't work right once we have independent cal for each channel
+
+        power_history = []
+        for t, spectrum in spectrum_history:
+            p = np.sum(spectrum[i])
+            a = np.shape(spectrum)[1]
+            pwr = (tsys + tcal) * p / (a * cal_pwr) #this will probably still just work when we switch to tuples for cal corrections
+            power_history.insert(0, (t, pwr))
+        if power_history is None or len(power_history) == 0:
+            return ""
+        power_time, power_vals = zip(*power_history)
+
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals))
 
     return fig
 
