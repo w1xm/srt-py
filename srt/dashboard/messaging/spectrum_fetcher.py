@@ -54,7 +54,7 @@ class SpectrumThread(Thread):
         socket.subscribe("")
         while True:
             rec = socket.recv()
-            var = np.frombuffer(rec, dtype="float32").reshape((num_channels,-1))
+            var = np.frombuffer(rec, dtype="float32").reshape((self.num_channels,-1))
             if len(self.history) >= self.history_length:
                 self.history.pop()
             self.history.insert(0, (time.time(), var))
