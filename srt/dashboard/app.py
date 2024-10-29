@@ -70,10 +70,10 @@ def generate_app(config_dir, config_dict):
     command_thread = CommandThread(port=5556)
     command_thread.start()
 
-    raw_spectrum_thread = SpectrumThread(port=5561)
+    raw_spectrum_thread = SpectrumThread(port=5561, num_channels=radio_num_channels)
     raw_spectrum_thread.start()
 
-    cal_spectrum_thread = SpectrumThread(port=5563)
+    cal_spectrum_thread = SpectrumThread(port=5563, num_channels=radio_num_channels)
     cal_spectrum_thread.start()
 
     # Dictionary of Pages and matching URL prefixes
@@ -182,7 +182,8 @@ def generate_app(config_dir, config_dict):
         command_thread,
         raw_spectrum_thread,
         cal_spectrum_thread,
-        software
+        software,
+        radio_num_channels
     )
     # Create Callbacks for System Page Objects
     system_page.register_callbacks(app, config_dict, status_thread)

@@ -955,7 +955,7 @@ def generate_layout(software):
 
 
 def register_callbacks(
-    app, config, status_thread, command_thread, raw_spectrum_thread, cal_spectrum_thread, software
+    app, config, status_thread, command_thread, raw_spectrum_thread, cal_spectrum_thread, software, num_channels
 ):
     """Registers the Callbacks for the Monitor Page
 
@@ -997,7 +997,7 @@ def register_callbacks(
             return ""
         bandwidth = float(status["bandwidth"])
         cf = float(status["center_frequency"])
-        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=True)
+        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=True, num_channels=num_channels)
 
     @app.callback(
         Output("raw-spectrum-histogram", "figure"),
@@ -1011,7 +1011,7 @@ def register_callbacks(
             return ""
         bandwidth = float(status["bandwidth"])
         cf = float(status["center_frequency"])
-        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=False)
+        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=False, num_channels=num_channels)
 
     @app.callback(
         Output("power-graph",
@@ -1027,7 +1027,7 @@ def register_callbacks(
         spectrum_history = raw_spectrum_thread.get_history()
         if spectrum_history is None:
             return ""
-        return generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history)
+        return generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_channels=num_channels)
 
     @app.callback(
         Output("npoint_info", "data"),
