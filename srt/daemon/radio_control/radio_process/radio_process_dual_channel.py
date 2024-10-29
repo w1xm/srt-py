@@ -116,6 +116,8 @@ class radio_process_dual_channel(gr.top_block):
         # Sleep 1 second to ensure next PPS has come
         time.sleep(1)
 
+
+        ###### initial USRP channel Setup
         self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
         self.uhd_usrp_source_1.set_antenna("RX2", 0)
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 0)
@@ -135,6 +137,27 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
+
+        ##### configure LO sharing
+
+        self.uhd_usrp_source_1.set_lo_source('internal', uhd.ALL_LOS, 0)
+        self.uhd_usrp_source_1.set_lo_export_enabled(True, uhd.ALL_LOS, 0)
+        self.uhd_usrp_source_1.set_lo_source('external', uhd.ALL_LOS, 1)
+        self.uhd_usrp_source_1.set_lo_export_enabled(False, uhd.ALL_LOS, 1)
+
+        ##### timed tuning command 
+
+        self.uhd_usrp_source_1.clear_command_time()
+        now_time = self.uhd_usrp_source_1.get_time_last_pps()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) 
+
+        self.rf_freq = rf_freq
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
+
+        self.uhd_usrp_source_1.clear_command_time()
 
 
 
@@ -308,10 +331,20 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_rf_freq(self, rf_freq):
         self.rf_freq = rf_freq
+
+        ##### timed tuning command 
+
+        self.uhd_usrp_source_1.clear_command_time()
+        now_time = self.uhd_usrp_source_1.get_time_last_pps()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) 
+
+        self.rf_freq = rf_freq
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
+
+        self.uhd_usrp_source_1.clear_command_time()
 
     def get_motor_el(self):
         return self.motor_el
