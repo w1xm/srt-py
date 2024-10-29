@@ -704,7 +704,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     #         )
     #     )
     if is_spec_cal:
-        fig.update_yaxes(range=[min(spectrum), max(spectrum)])
+        fig.update_yaxes(range=[np.min(spectrum), np.max(spectrum)])
     return fig
 
 
