@@ -313,10 +313,19 @@ class radio_process_dual_channel(gr.top_block):
         self.samp_rate = samp_rate
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
+
+        ##### timed tuning command 
+
+        self.uhd_usrp_source_1.clear_command_time()
+        now_time = self.uhd_usrp_source_1.get_time_last_pps()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) 
+
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 0)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 1)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
+
+        self.uhd_usrp_source_1.clear_command_time()
 
     def get_rf_gain(self):
         return self.rf_gain
