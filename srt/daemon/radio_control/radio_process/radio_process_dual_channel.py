@@ -130,7 +130,6 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 1)
         self.uhd_usrp_source_1.set_gain(rf_gain, 1)
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 1)
-        self.uhd_usrp_source_1.set_block_alias("usrp0")
 
         ##### Manually Configure USRP GPIO
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
