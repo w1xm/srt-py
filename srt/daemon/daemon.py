@@ -101,8 +101,8 @@ class SmallRadioTelescopeDaemon:
         self.beamwidth = config_dict["BEAMWIDTH"]
         self.cal_type = config_dict["CAL_TYPE"]
         self.cal_cycles = config_dict["CAL_INTEGRATION_CYCLES"]
-        self.temp_sys = config_dict["TSYS"]
-        self.temp_cal = config_dict["TCAL"]
+        self.temp_sys = np.array(config_dict["TSYS"])
+        self.temp_cal = np.array(config_dict["TCAL"])
         self.save_dir = config_dict["SAVE_DIRECTORY"]
         self.dashboard_refresh_rate = config_dict["DASHBOARD_REFRESH_MS"]/1000.0
         
@@ -133,7 +133,9 @@ class SmallRadioTelescopeDaemon:
         # Generate Default Calibration Values
         # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
         # Unless there is a pre-exisiting calibration from a previous run
-        self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
+
+        # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
+        self.cal_values = np.ones((self.radio_num_channels, self.radio_num_bins))
         self.cal_power = 1.0 / (self.temp_sys + self.temp_cal)
         calibration_path = Path(config_directory, "calibration.json")
         if calibration_path.is_file():
@@ -141,7 +143,7 @@ class SmallRadioTelescopeDaemon:
                 try:
                     cal_data = json.load(input_file)
                     # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                    if len(cal_data["cal_values"]) == self.radio_num_bins:
+                    if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
                         self.cal_values = cal_data["cal_values"]
                         self.cal_power = cal_data["cal_pwr"]
                 except KeyError:
@@ -566,7 +568,7 @@ class SmallRadioTelescopeDaemon:
             
             ### compute calibration corrections
 
-            cal_values, cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, 20)
+            cal_values, cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
 
 
 
@@ -612,7 +614,7 @@ class SmallRadioTelescopeDaemon:
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
-            cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, 20)
+            cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
 
 
         #erase old cal file to prevent wierdness
