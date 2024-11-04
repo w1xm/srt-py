@@ -55,8 +55,8 @@ class radio_process_dual_channel(gr.top_block):
         self.sinc_samples = sinc_samples = np.sinc(sinc_sample_locations/np.pi)
         self.freq = freq = 1420000000
         self.vlsr = vlsr = np.nan
-        self.tsys = tsys = [171,171]
-        self.tcal = tcal = [290,290]
+        self.tsys = tsys = np.array([171,171])
+        self.tcal = tcal = np.array([290,290])
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
         self.samp_rate = samp_rate = 2000000
@@ -71,7 +71,7 @@ class radio_process_dual_channel(gr.top_block):
         self.custom_window = custom_window = sinc_samples*np.hamming(4*num_bins)
         self.calibrator_mask = calibrator_mask = 0b000000000011
         self.cal_values = cal_values = np.array([np.repeat(np.nan, num_bins),np.repeat(np.nan, num_bins)])
-        self.cal_pwr = cal_pwr = [1,1]
+        self.cal_pwr = cal_pwr = np.array([1,1])
         self.cal_on = cal_on = False
         self.beam_switch = beam_switch = 0
 
@@ -92,7 +92,7 @@ class radio_process_dual_channel(gr.top_block):
         self.xmlrpc_server_0_thread.start()
 
         #blocks_tags_strobe blocks need to come before slow radio startup commands for some silly reason
-        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
+        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
         self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
 
 
@@ -224,7 +224,7 @@ class radio_process_dual_channel(gr.top_block):
         self.set_fft_window(window.blackmanharris(self.num_bins))
         self.set_sinc_sample_locations(np.arange(-np.pi*4/2.0, np.pi*4/2.0, np.pi/self.num_bins))
         self.set_tag_period(self.num_bins*self.num_integrations)
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.filter_integrate_0.set_num_bins(self.num_bins)
         self.filter_integrate_0_0.set_num_bins(self.num_bins)
 
@@ -234,7 +234,7 @@ class radio_process_dual_channel(gr.top_block):
     def set_num_integrations(self, num_integrations):
         self.num_integrations = num_integrations
         self.set_tag_period(self.num_bins*self.num_integrations)
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.filter_integrate_0.set_num_integrations(self.num_integrations)
         self.filter_integrate_0_0.set_num_integrations(self.num_integrations)
 
@@ -259,14 +259,14 @@ class radio_process_dual_channel(gr.top_block):
         self.freq = freq
         self.set_rf_freq(self.freq)
         self.blocks_tags_strobe_0.set_value(pmt.to_pmt(float(self.freq)))
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_vlsr(self):
         return self.vlsr
 
     def set_vlsr(self, vlsr):
         self.vlsr = vlsr
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tsys(self):
         return self.tsys
@@ -275,7 +275,7 @@ class radio_process_dual_channel(gr.top_block):
         self.tsys = tsys
         self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
         self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tcal(self):
         return self.tcal
@@ -284,7 +284,7 @@ class radio_process_dual_channel(gr.top_block):
         self.tcal = tcal
         self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
         self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tag_period(self):
         return self.tag_period
@@ -301,7 +301,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_soutrack(self, soutrack):
         self.soutrack = soutrack
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -309,7 +309,7 @@ class radio_process_dual_channel(gr.top_block):
     def set_samp_rate(self, samp_rate):
         #note that we are not yet implementing phase locking of the channels here. X300 with UBX cards can do that so need to return to this
         self.samp_rate = samp_rate
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
 
         ##### timed tuning command 
@@ -358,14 +358,14 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_motor_el(self, motor_el):
         self.motor_el = motor_el
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_motor_az(self):
         return self.motor_az
 
     def set_motor_az(self, motor_az):
         self.motor_az = motor_az
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_is_running(self):
         return self.is_running
@@ -379,14 +379,14 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_glon(self, glon):
         self.glon = glon
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_glat(self):
         return self.glat
 
     def set_glat(self, glat):
         self.glat = glat
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_fft_window(self):
         return self.fft_window
@@ -428,14 +428,14 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_pwr = cal_pwr
         self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
         self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_cal_on(self):
         return self.cal_on
 
     def set_cal_on(self, cal_on):
         self.cal_on = cal_on
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.calibrator_control_strobe.cal_state = self.cal_on
 
     def get_beam_switch(self):
@@ -443,7 +443,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_beam_switch(self, beam_switch):
         self.beam_switch = beam_switch
-        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": self.tsys, "tcal": self.tcal, "cal_pwr": self.cal_pwr, "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
+        self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
 
 

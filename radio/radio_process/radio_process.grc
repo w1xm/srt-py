@@ -61,7 +61,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1'
+    value: np.array([1])
   states:
     bus_sink: false
     bus_source: false
@@ -277,7 +277,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '290'
+    value: np.array([290])
   states:
     bus_sink: false
     bus_source: false
@@ -289,7 +289,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '171'
+    value: np.array([171])
   states:
     bus_sink: false
     bus_source: false
@@ -569,7 +569,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: '[(tsys + tcal)/(value * cal_pwr) for value in cal_values]'
+    const: '[(tsys[0] + tcal[0])/(value * cal_pwr[0]) for value in cal_values]'
     maxoutbuf: '0'
     minoutbuf: '0'
     type: float
@@ -745,8 +745,9 @@ blocks:
     type: complex
     value: 'pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations":
       num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq,
-      "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat,
-      "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on})'
+      "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr":
+      [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack":
+      soutrack, "bsw": beam_switch, "cal_on":cal_on})'
     vlen: '1'
   states:
     bus_sink: false
@@ -817,7 +818,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1247, 348]
+    coordinate: [1260.0, 312]
     rotation: 270
     state: true
 - name: fft_vxx_0
@@ -1844,7 +1845,7 @@ blocks:
 - name: zeromq_pub_sink_2_0
   id: zeromq_pub_sink
   parameters:
-    address: tcp://127.0.0.1:5561 
+    address: tcp://127.0.0.1:5561
     affinity: ''
     alias: ''
     bind: 'True'
@@ -1904,4 +1905,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.9.2
+  grc_version: 3.10.10.0

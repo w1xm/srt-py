@@ -51,7 +51,7 @@ def azel_within_range(actual_azel, desired_azel, bounds=(0.1, 0.1)):
     )
 
 
-def get_spectrum(port=5561):
+def get_spectrum(port=5561, num_channels=1):
     """Quickly opens a zmq socket and gets a spectrum
 
     Parameters
@@ -71,7 +71,7 @@ def get_spectrum(port=5561):
     socket.subscribe("")
     try:
         rec = socket.recv()
-        var = np.frombuffer(rec, dtype="float32")
+        var = np.frombuffer(rec, dtype="float32").reshape((num_channels,-1))
     except:
         return None
 

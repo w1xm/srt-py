@@ -216,6 +216,7 @@ class SmallRadioTelescopeDaemon:
 
     def n_point_scan(self, object_id, grid_size=5):
         """Runs an N-Point (25) Scan About an Object
+            for now just average all channels together
 
         Parameters
         ----------
@@ -236,6 +237,7 @@ class SmallRadioTelescopeDaemon:
         #cur_vlsr = self.ephemeris_vlsr[object_id]
         #self.radio_queue.put(("vlsr", float(self.current_vlsr)))
         #self.current_vlsr = cur_vlsr
+        channel = 0
         N_pnt_default = grid_size**2
         rotor_loc = []
         pwr_list = []
@@ -258,16 +260,17 @@ class SmallRadioTelescopeDaemon:
             new_rotor_offsets = (az_dif, el_dif)
 
             if self.rotor.angles_within_bounds(*scan_center):
-                #self.rotor_destination = self.ephemeris_locations[object_id] #this line is probably redundant
                 self.point_at_offset(*new_rotor_offsets)
+
             rotor_loc.append(self.rotor_location)
             sleep(5)
-            raw_spec = get_spectrum(port=5561)
-            p = np.sum(raw_spec)
-            a = len(raw_spec)
+            raw_spec = get_spectrum(port=5561,num_channels=self.num_channels)
+            p = np.sum(raw_spec,axis=1)
+            a = np.shape(raw_spec)[1]
             pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
-            pwr_list.append(pwr)
+            pwr_list.append(np.mean(pwr))
         maxdiff = (az_dif, el_dif)
+
         self.n_point_data = [scan_center, maxdiff,
                              rotor_loc, pwr_list, np_sides]
 
@@ -304,11 +307,11 @@ class SmallRadioTelescopeDaemon:
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
             sleep(5)
-            raw_spec = get_spectrum(port=5561)
-            p = np.sum(raw_spec)
-            a = len(raw_spec)
+            raw_spec = get_spectrum(port=5561,num_channels=self.num_channels)
+            p = np.sum(raw_spec,axis=1)
+            a = np.shape(raw_spec)[1]
             pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
-            pwr_list.append(pwr)
+            pwr_list.append(np.mean(pwr))
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("beam_switch", 0))
         self.ephemeris_cmd_location = object_id

@@ -48,7 +48,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [600, 152.0]
+    coordinate: [600, 160.0]
     rotation: 0
     state: enabled
 - name: directory_name
@@ -129,12 +129,12 @@ blocks:
       from gnuradio import gr\nimport pmt\nimport json\n\nimport pathlib\nfrom datetime\
       \ import datetime, timezone\nfrom astropy.io import fits\n\n\nclass blk(gr.sync_block):\n\
       \    \"\"\"Embedded Python Block - Saving \"\"\"\n\n    def __init__(\n    \
-      \    self, directory=\".\", filename=\"test.fits\", vec_length=4096\n    ):\
-      \  # only default arguments here\n        \"\"\"arguments to this function show\
-      \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
-      \   self,\n            name=\"Embedded Python Block\",  # will show up in GRC\n\
-      \            in_sig=[(np.float32, vec_length),(np.float32, vec_length)],\n \
-      \           out_sig=None,\n        )\n        # if an attribute with the same\
+      \    self, directory=\".\", filename=\"test.fits\", vec_length=4096, num_channels=2\n\
+      \    ):  # only default arguments here\n        \"\"\"arguments to this function\
+      \ show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n    \
+      \        self,\n            name=\"Embedded Python Block\",  # will show up\
+      \ in GRC\n            in_sig=[(np.float32, vec_length) for i in range(num_channels)],\n\
+      \            out_sig=None,\n        )\n        # if an attribute with the same\
       \ name as a parameter is found,\n        # a callback is registered (properties\
       \ work, too).\n        self.directory = directory\n        self.filename = filename\n\
       \        self.vec_length = vec_length\n\n    def work(self, input_items, output_items):\n\
@@ -176,15 +176,17 @@ blocks:
     filename: file_name
     maxoutbuf: '0'
     minoutbuf: '0'
+    num_channels: '2'
     vec_length: num_bins
   states:
     _io_cache: ('Embedded Python Block', 'blk', [('directory', "'.'"), ('filename',
-      "'test.fits'"), ('vec_length', '4096')], [('0', 'float', 4096), ('1', 'float',
-      4096)], [], 'Embedded Python Block - Saving ', ['directory', 'filename', 'vec_length'])
+      "'test.fits'"), ('vec_length', '4096'), ('num_channels', '2')], [('0', 'float',
+      4096), ('1', 'float', 4096)], [], 'Embedded Python Block - Saving ', ['directory',
+      'filename', 'vec_length'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [872, 148.0]
+    coordinate: [864, 140.0]
     rotation: 0
     state: true
 - name: zeromq_sub_source_0

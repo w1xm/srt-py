@@ -61,7 +61,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '[1,1]'
+    value: np.array([1,1])
   states:
     bus_sink: false
     bus_source: false
@@ -277,7 +277,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '[290,290]'
+    value: np.array([290,290])
   states:
     bus_sink: false
     bus_source: false
@@ -289,7 +289,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '[171,171]'
+    value: np.array([171,171])
   states:
     bus_sink: false
     bus_source: false
@@ -501,7 +501,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2144, 472.0]
+    coordinate: [2080, 472.0]
     rotation: 0
     state: enabled
 - name: blocks_streams_to_vector_0_0_0
@@ -555,8 +555,9 @@ blocks:
     type: complex
     value: 'pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations":
       num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq,
-      "tsys": tsys, "tcal": tcal, "cal_pwr": cal_pwr, "vlsr": vlsr, "glat": glat,
-      "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on})'
+      "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr":
+      [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack":
+      soutrack, "bsw": beam_switch, "cal_on":cal_on})'
     vlen: '1'
   states:
     bus_sink: false

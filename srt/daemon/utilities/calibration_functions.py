@@ -44,7 +44,8 @@ def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal
         smoothed_cold_sky_spectrum[i] = polynomial_fit(relative_freq_values)
 
     average_value = np.mean(smoothed_cold_sky_spectrum, axis=1)
-    normalized_gain_spectrum = smoothed_cold_sky_spectrum/average_value
+    #following nonsense is needed because of handling pultiple channels
+    normalized_gain_spectrum = smoothed_cold_sky_spectrum/(average_value*np.ones_like(smoothed_cold_sky_spectrum).transpose()).transpose()
     average_gain_correction = average_value/(t_sys+t_cal)
 
 
@@ -57,7 +58,7 @@ def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_refer
     average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
     average_calibrator_spectrum = average_calibrator_plus_sky_spectrum - average_cold_sky_spectrum
 
-    smoothed_cold_sky_spectrum =np.ones_like(average_cold_sky_spectrum)
+    smoothed_calibrator_spectrum =np.ones_like(average_calibrator_spectrum)
 
     relative_freq_values = np.linspace(-1, 1, np.shape(average_cold_sky_spectrum)[1])
 
@@ -66,7 +67,8 @@ def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_refer
         smoothed_calibrator_spectrum[i] = polynomial_fit(relative_freq_values)
 
     average_value = np.mean(smoothed_calibrator_spectrum,axis=1)
-    normalized_gain_spectrum = smoothed_calibrator_spectrum/average_value
+    #following nonsense is needed because of handling pultiple channels
+    normalized_gain_spectrum = smoothed_calibrator_spectrum/(average_value*np.ones_like(smoothed_calibrator_spectrum).transpose()).transpose()
     average_gain_correction = average_value/t_cal
 
     return normalized_gain_spectrum, average_gain_correction
