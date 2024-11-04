@@ -136,6 +136,7 @@ class SmallRadioTelescopeDaemon:
         # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
         self.cal_values = np.ones((self.radio_num_channels, self.radio_num_bins))
         self.cal_power = 1.0 / (self.temp_sys + self.temp_cal)
+
         calibration_path = Path(config_directory, "calibration.json")
         if calibration_path.is_file():
             with open(calibration_path, "r") as input_file:
@@ -143,8 +144,8 @@ class SmallRadioTelescopeDaemon:
                     cal_data = json.load(input_file)
                     # If Calibration is of a Different Size Than The Current FFT Size, Discard
                     if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
-                        self.cal_values = cal_data["cal_values"]
-                        self.cal_power = cal_data["cal_pwr"]
+                        self.cal_values = np.array(cal_data["cal_values"])
+                        self.cal_power = np.array(cal_data["cal_pwr"])
                 except KeyError:
                     pass
 
@@ -1156,10 +1157,10 @@ Commands Coming in Over ZMQ PUSH/PULL
                     self.rotor_location)[1],
             ),
             "Object Tracking": ("soutrack", "at_stow"),
-            "System Temp": ("tsys", self.temp_sys),
-            "Calibration Temp": ("tcal", self.temp_cal),
-            "Calibration Power": ("cal_pwr", self.cal_power),
-            "Calibration Values": ("cal_values", self.cal_values),
+            "System Temp": ("tsys", self.temp_sys.tolist()),
+            "Calibration Temp": ("tcal", self.temp_cal.tolist()),
+            "Calibration Power": ("cal_pwr", self.cal_power.tolist()),
+            "Calibration Values": ("cal_values", [vals.tolist() for vals in self.cal_values] ),
             "Is Running": ("is_running", True),
         }
         for name in radio_params:
