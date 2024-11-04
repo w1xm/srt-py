@@ -1021,9 +1021,9 @@ def register_callbacks(
         status = status_thread.get_status()
         if status is None:
             return ""
-        tsys = float(status["temp_sys"])
-        tcal = float(status["temp_cal"])
-        cal_pwr = float(status["cal_power"])
+        tsys = np.array(status["temp_sys"])
+        tcal = np.array(status["temp_cal"])
+        cal_pwr = np.array(status["cal_power"])
         spectrum_history = raw_spectrum_thread.get_history()
         if spectrum_history is None:
             return ""
