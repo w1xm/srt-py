@@ -20,13 +20,13 @@ class blk(gr.sync_block):
     """Embedded Python Block - Saving """
 
     def __init__(
-        self, directory=".", filename="test.fits", vec_length=4096
+        self, directory=".", filename="test.fits", vec_length=4096, num_channels=2
     ):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
         gr.sync_block.__init__(
             self,
             name="Embedded Python Block",  # will show up in GRC
-            in_sig=[(np.float32, vec_length),(np.float32, vec_length)],
+            in_sig=[(np.float32, vec_length) for i in range(num_channels)],
             out_sig=None,
         )
         # if an attribute with the same name as a parameter is found,
@@ -41,7 +41,7 @@ class blk(gr.sync_block):
         #not too worried babout getting this perfect because I'll need to rewrite this later anyway
         file_path = pathlib.Path(self.directory, self.filename)
         #for i, input_array in enumerate(input_items[0]):
-        for input_array_0, input_array_1 in zip(input_items[0],input_items[1]): #idk why enoumerate was involved here. not needed
+        for input_array_0, input_array_1 in zip(input_items[0],input_items[1]): #idk why enumerate was involved here. not needed
             file = open(file_path, "ab+")
             tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
             tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
