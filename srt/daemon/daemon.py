@@ -109,6 +109,9 @@ class SmallRadioTelescopeDaemon:
         self.npoints = 5 #default size of grid for npoint scan
         self.radio_calibrator_state = False
 
+        print(f'tsys = {self.temp_sys}')
+        print(f'tcal = {self.temp_cal}')
+
 
         #conditional imports dependent on number of polarizations used
 
