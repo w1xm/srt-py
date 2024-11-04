@@ -545,8 +545,8 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = 1.0
+        self.cal_values = np.ones((self.radio_num_channels,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones_like(self.temp_cal)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
         self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
