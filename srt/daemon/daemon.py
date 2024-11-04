@@ -539,8 +539,8 @@ class SmallRadioTelescopeDaemon:
         self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
         self.cal_power = 1.0
         
-        self.radio_queue.put(("cal_pwr", self.cal_power))
-        self.radio_queue.put(("cal_values", self.cal_values))
+        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
 
         '''
         simple cold sky cal for the basic SRT
@@ -624,8 +624,8 @@ class SmallRadioTelescopeDaemon:
         #save result
 
         file_output = {
-            "cal_pwr": cal_power,
-            "cal_values": cal_values.tolist(),
+            "cal_pwr": cal_power.tolist(),
+            "cal_values": [vals.tolist() for vals in cal_values], #note this is not the global one
         }
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
@@ -638,10 +638,10 @@ class SmallRadioTelescopeDaemon:
         path = Path(self.config_directory, "calibration.json")
         with open(path, "r") as input_file:
             cal_data = json.load(input_file)
-            self.cal_values = cal_data["cal_values"]
-            self.cal_power = cal_data["cal_pwr"]
-        self.radio_queue.put(("cal_pwr", self.cal_power))
-        self.radio_queue.put(("cal_values", self.cal_values))
+            self.cal_values = np.array(cal_data["cal_values"])
+            self.cal_power = np.array(cal_data["cal_pwr"])
+        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
     
 
         self.log_message("Calibration Done")
@@ -1045,9 +1045,9 @@ class SmallRadioTelescopeDaemon:
                 "queue_size": self.command_queue.qsize(),
                 "emergency_contact": self.contact,
                 "error_logs": self.command_error_logs,
-                "temp_cal": self.temp_cal,
-                "temp_sys": self.temp_sys,
-                "cal_power": self.cal_power,
+                "temp_cal": self.temp_cal.tolist(),
+                "temp_sys": self.temp_sys.tolist(),
+                "cal_power": self.cal_power.tolist(),
                 "n_point_data": self.n_point_data,
                 "beam_switch_data": self.beam_switch_data,
                 "time": time(),
