@@ -18,14 +18,14 @@ import json
 import numpy as np
 
 from .rotor_control.rotors import Rotor
-#import the below after a conditional check on number of channels
-# from .radio_control.radio_task_starter import (
-#     RadioProcessTask,
-#     RadioSaveRawTask,
-#     RadioCalibrateTask,
-#     RadioSaveSpecRadTask,
-#     RadioSaveSpecFitsTask,
-# )
+#need to figure out how to let this be conditional
+from .radio_control.radio_task_starter_dual_channel import (
+    RadioProcessTask,
+    RadioSaveRawTask,
+    RadioCalibrateTask,
+    RadioSaveSpecRadTask,
+    RadioSaveSpecFitsTask,
+)
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
 from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
@@ -115,22 +115,22 @@ class SmallRadioTelescopeDaemon:
 
         #conditional imports dependent on number of polarizations used
 
-        if self.radio_num_channels == 2:
-            from .radio_control.radio_task_starter_dual_channel import (
-                RadioProcessTask,
-                RadioSaveRawTask,
-                RadioCalibrateTask,
-                RadioSaveSpecRadTask,
-                RadioSaveSpecFitsTask,
-            )
-        else:
-            from .radio_control.radio_task_starter import (
-                RadioProcessTask,
-                RadioSaveRawTask,
-                RadioCalibrateTask,
-                RadioSaveSpecRadTask,
-                RadioSaveSpecFitsTask,
-            )
+        #if self.radio_num_channels == 2:
+        #    from .radio_control.radio_task_starter_dual_channel import (
+        #        RadioProcessTask,
+        #        RadioSaveRawTask,
+        #        RadioCalibrateTask,
+        #        RadioSaveSpecRadTask,
+        #        RadioSaveSpecFitsTask,
+        #    )
+        #else:
+        #   from .radio_control.radio_task_starter import (
+        #        RadioProcessTask,
+        #        RadioSaveRawTask,
+        #        RadioCalibrateTask,
+        #       RadioSaveSpecRadTask,
+        #        RadioSaveSpecFitsTask,
+        #   )
 
 
         # Generate Default Calibration Values
