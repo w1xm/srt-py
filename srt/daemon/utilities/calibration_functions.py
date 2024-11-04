@@ -28,7 +28,7 @@ def get_averaged_spectrum(fits_file):
     return average_spectrum
 
 
-def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal=300, num_channels, polynomial_order=20):
+def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal=300, num_channels=1, polynomial_order=20):
     """
     very basic calibration for single point temperature reference measurement. 
     calculates a polynomial fit for the spectrum and appropriately normalizes it
@@ -52,7 +52,7 @@ def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal
     return normalized_gain_spectrum, average_gain_correction
 
     
-def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_reference_filepath, t_sys=300, t_cal=300, num_channels, polynomial_order=20):
+def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_reference_filepath, t_sys=300, t_cal=300, num_channels=1, polynomial_order=20):
 
     average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath)
     average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
