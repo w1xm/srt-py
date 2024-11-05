@@ -41,7 +41,7 @@ class radio_save_spec_fits_dual_channel(gr.top_block):
         ##################################################
 
         self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5562', 100, True, (-1), '', False)
-        self.save_fits_file = save_fits_file.blk(directory=directory_name, filename=file_name, vec_length=num_bins)
+        self.save_fits_file = save_fits_file.blk(directory=directory_name, filename=file_name, vec_length=num_bins, num_channels=2)
         self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_float*num_bins, 2)
 
 
