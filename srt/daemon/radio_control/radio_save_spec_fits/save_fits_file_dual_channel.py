@@ -80,7 +80,8 @@ class blk(gr.sync_block):
             hdr["UTC"] = date.strftime("%H:%M:00%s")
             hdr["METADATA"] = json.dumps(metadata)
 
-            fits.append(file, combined_data, hdr) #append both spectra.
+            fits.append(file, combined_data.reshape((self.num_channels, self.vec_length)), hdr) #need to explicitly reshape inline to force it to save array in correct shape
+            #fits.append(file, combined_data, hdr) #append both spectra.
             #file.close()
             # p = np.sum(input_array)
             # a = len(input_array)
