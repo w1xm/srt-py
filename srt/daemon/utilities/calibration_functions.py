@@ -17,6 +17,8 @@ def get_averaged_spectrum(fits_file):
     """
     spectrum_file = fits.open(fits_file)
     average_spectrum = np.zeros(np.shape(spectrum_file[0].data),dtype=np.float64)
+    #print(f'spectrum data shape: {np.shape(spectrum_file[0].data)}')
+    #print(f'spectrum file shape: {np.shape(average_spectrum)}')
 
     num_spectra = len(spectrum_file)
     for i in range(0,num_spectra):
@@ -53,6 +55,8 @@ def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal
 
     
 def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_reference_filepath, t_sys=300, t_cal=300, num_channels=1, polynomial_order=20):
+
+    """calibration using injected noise calibrator added to background signal"""
 
     average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath)
     average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
