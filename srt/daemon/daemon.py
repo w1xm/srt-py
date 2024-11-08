@@ -268,7 +268,7 @@ class SmallRadioTelescopeDaemon:
 
             rotor_loc.append(self.rotor_location)
             sleep(5)
-            raw_spec = get_spectrum(port=5561,num_channels=self.num_channels)
+            raw_spec = get_spectrum(port=5561,num_channels=self.radio_num_channels)
             p = np.sum(raw_spec,axis=1)
             a = np.shape(raw_spec)[1]
             pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
@@ -311,7 +311,7 @@ class SmallRadioTelescopeDaemon:
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
             sleep(5)
-            raw_spec = get_spectrum(port=5561,num_channels=self.num_channels)
+            raw_spec = get_spectrum(port=5561,num_channels=self.radio_num_channels)
             p = np.sum(raw_spec,axis=1)
             a = np.shape(raw_spec)[1]
             pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
@@ -622,7 +622,6 @@ class SmallRadioTelescopeDaemon:
             self.stop_recording()
 
             cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
-
 
         #erase old cal file to prevent wierdness
 
