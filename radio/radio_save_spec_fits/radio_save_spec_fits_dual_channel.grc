@@ -133,23 +133,27 @@ blocks:
       \    ):  # only default arguments here\n        \"\"\"arguments to this function\
       \ show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n    \
       \        self,\n            name=\"Embedded Python Block\",  # will show up\
-      \ in GRC\n            in_sig=[(np.float32, vec_length) for i in range(num_channels)],\n\
+      \ in GRC\n            in_sig=[(np.float32, vec_length)] * num_channels,\n  \
+      \          #in_sig=[(np.float32, vec_length) for i in range(num_channels)],\n\
       \            out_sig=None,\n        )\n        # if an attribute with the same\
       \ name as a parameter is found,\n        # a callback is registered (properties\
       \ work, too).\n        self.directory = directory\n        self.filename = filename\n\
-      \        self.vec_length = vec_length\n\n    def work(self, input_items, output_items):\n\
-      \        \"\"\"Saving Spectrum Data to a FITS File\"\"\"\n        # we're just\
-      \ going to assume the inputs are the same length because they will be, and for\
-      \ now assume they share the same metadata \n        #not too worried babout\
-      \ getting this perfect because I'll need to rewrite this later anyway\n    \
-      \    file_path = pathlib.Path(self.directory, self.filename)\n        #for i,\
-      \ input_array in enumerate(input_items[0]):\n        for input_array_0, input_array_1\
-      \ in zip(input_items[0],input_items[1]): #idk why enoumerate was involved here.\
-      \ not needed\n            file = open(file_path, \"ab+\")\n            tags_0\
-      \ = self.get_tags_in_window(0, 0, len(input_items[0]))\n            tags_1 =\
-      \ self.get_tags_in_window(0, 0, len(input_items[1]))\n            tags_dict_0\
+      \        self.vec_length = vec_length\n        self.num_channels = num_channels\n\
+      \n    def work(self, input_items, output_items):\n        \"\"\"Saving Spectrum\
+      \ Data to a FITS File\"\"\"\n        # we're just going to assume the inputs\
+      \ are the same length because they will be, and for now assume they share the\
+      \ same metadata \n        #not too worried babout getting this perfect because\
+      \ I'll need to rewrite this later anyway\n        file_path = pathlib.Path(self.directory,\
+      \ self.filename)\n\n        # Combine the input data from each channel into\
+      \ a single array\n        combined_data = np.stack(input_items[:self.num_channels],\
+      \ axis=0)\n\n        #for i, input_array in enumerate(input_items[0]):\n   \
+      \     #for input_array_0, input_array_1 in zip(input_items[0],input_items[1]):\
+      \ #idk why enumerate was involved here. not needed\n            #file = open(file_path,\
+      \ \"ab+\")\n        with open(file_path, \"ab+\") as file:\n            tags_0\
+      \ = self.get_tags_in_window(0, 0, len(input_items[0]))\n            #tags_1\
+      \ = self.get_tags_in_window(0, 0, len(input_items[1]))\n            tags_dict_0\
       \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}\n \
-      \           tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value)\
+      \           #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value)\
       \ for tag in tags_1}\n\n            time_since_epoch = tags_dict_0[\"rx_time\"\
       ][0] + tags_dict_0[\"rx_time\"][1]\n            date = datetime.fromtimestamp(time_since_epoch,\
       \ timezone.utc)\n            metadata = tags_dict_0[\"metadata\"]\n        \
@@ -165,8 +169,8 @@ blocks:
       ] = soutrack\n            hdr[\"OBSTIME\"] = (num_bins * num_integrations) /\
       \ samp_rate\n\n            hdr[\"DATE-OBS\"] = date.strftime(\"%Y-%m-%d\")\n\
       \            hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n            hdr[\"\
-      METADATA\"] = json.dumps(metadata)\n\n            fits.append(file, [input_array_0,input_array_1],\
-      \ hdr) #append both spectra.\n            file.close()\n            # p = np.sum(input_array)\n\
+      METADATA\"] = json.dumps(metadata)\n\n            fits.append(file, combined_data,\
+      \ hdr) #append both spectra.\n            #file.close()\n            # p = np.sum(input_array)\n\
       \            # a = len(input_array)\n            # pwr = (tsys + tcal) * p /\
       \ (a * calpwr)\n            # ppwr = pwr - tsys\n        return len(input_items[0])\n"
     affinity: ''
@@ -182,7 +186,7 @@ blocks:
     _io_cache: ('Embedded Python Block', 'blk', [('directory', "'.'"), ('filename',
       "'test.fits'"), ('vec_length', '4096'), ('num_channels', '2')], [('0', 'float',
       4096), ('1', 'float', 4096)], [], 'Embedded Python Block - Saving ', ['directory',
-      'filename', 'vec_length'])
+      'filename', 'num_channels', 'vec_length'])
     bus_sink: false
     bus_source: false
     bus_structure: null

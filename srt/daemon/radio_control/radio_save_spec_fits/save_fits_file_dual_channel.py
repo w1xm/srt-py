@@ -26,7 +26,8 @@ class blk(gr.sync_block):
         gr.sync_block.__init__(
             self,
             name="Embedded Python Block",  # will show up in GRC
-            in_sig=[(np.float32, vec_length) for i in range(num_channels)],
+            in_sig=[(np.float32, vec_length)] * num_channels,
+            #in_sig=[(np.float32, vec_length) for i in range(num_channels)],
             out_sig=None,
         )
         # if an attribute with the same name as a parameter is found,
@@ -34,19 +35,25 @@ class blk(gr.sync_block):
         self.directory = directory
         self.filename = filename
         self.vec_length = vec_length
+        self.num_channels = num_channels
 
     def work(self, input_items, output_items):
         """Saving Spectrum Data to a FITS File"""
         # we're just going to assume the inputs are the same length because they will be, and for now assume they share the same metadata 
         #not too worried babout getting this perfect because I'll need to rewrite this later anyway
         file_path = pathlib.Path(self.directory, self.filename)
+
+        # Combine the input data from each channel into a single array
+        combined_data = np.stack(input_items[:self.num_channels], axis=0)
+
         #for i, input_array in enumerate(input_items[0]):
-        for input_array_0, input_array_1 in zip(input_items[0],input_items[1]): #idk why enumerate was involved here. not needed
-            file = open(file_path, "ab+")
+        #for input_array_0, input_array_1 in zip(input_items[0],input_items[1]): #idk why enumerate was involved here. not needed
+            #file = open(file_path, "ab+")
+        with open(file_path, "ab+") as file:
             tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
-            tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
+            #tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
             tags_dict_0 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}
-            tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}
+            #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}
 
             time_since_epoch = tags_dict_0["rx_time"][0] + tags_dict_0["rx_time"][1]
             date = datetime.fromtimestamp(time_since_epoch, timezone.utc)
@@ -73,8 +80,8 @@ class blk(gr.sync_block):
             hdr["UTC"] = date.strftime("%H:%M:00%s")
             hdr["METADATA"] = json.dumps(metadata)
 
-            fits.append(file, [input_array_0,input_array_1], hdr) #append both spectra.
-            file.close()
+            fits.append(file, combined_data, hdr) #append both spectra.
+            #file.close()
             # p = np.sum(input_array)
             # a = len(input_array)
             # pwr = (tsys + tcal) * p / (a * calpwr)
