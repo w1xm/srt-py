@@ -138,7 +138,7 @@ class SmallRadioTelescopeDaemon:
 
         # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
         self.cal_values = np.ones((self.radio_num_channels, self.radio_num_bins))
-        self.cal_power = 1.0 / (self.temp_sys + self.temp_cal)
+        self.cal_power = np.ones_like(self.temp_sys)
 
         calibration_path = Path(config_directory, "calibration.json")
         if calibration_path.is_file():

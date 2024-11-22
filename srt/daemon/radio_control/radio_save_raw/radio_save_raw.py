@@ -37,7 +37,7 @@ class radio_save_raw(gr.top_block):
         # Blocks
         ##################################################
 
-        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5558', 100, True, (-1), '', False)
+        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5558', 100, True, (-1), '')
         self.gr_digital_rf_digital_rf_sink_0 = gr_digital_rf.digital_rf_sink(
             directory_name,
             channels=[

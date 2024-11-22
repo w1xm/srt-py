@@ -438,7 +438,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: '[(tsys[0] + tcal[0])/(value * cal_pwr[0]) for value in cal_values[0]]'
+    const: 1.0/(cal_values[0]*cal_pwr[0])
     maxoutbuf: '0'
     minoutbuf: '0'
     type: float
@@ -456,7 +456,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: '[(tsys[1] + tcal[1])/(value * cal_pwr[1]) for value in cal_values[1]]'
+    const: 1.0/(cal_values[1] * cal_pwr[1])
     maxoutbuf: '0'
     minoutbuf: '0'
     type: float
@@ -1188,7 +1188,6 @@ blocks:
     address: tcp://127.0.0.1:5558
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1210,7 +1209,6 @@ blocks:
     address: tcp://127.0.0.1:5559
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1232,7 +1230,6 @@ blocks:
     address: tcp://127.0.0.1:5563
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1254,7 +1251,6 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1276,7 +1272,6 @@ blocks:
     address: tcp://127.0.0.1:5560
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1298,7 +1293,6 @@ blocks:
     address: tcp://127.0.0.1:5561
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1345,4 +1339,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.9.2
+  grc_version: 3.10.5.0
