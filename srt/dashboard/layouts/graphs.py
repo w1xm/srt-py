@@ -605,7 +605,8 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
         for t, spectrum in spectrum_history:
             p = np.sum(spectrum[i])
             a = np.shape(spectrum)[1]
-            pwr = (tsys[i] + tcal[i]) * p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
+            pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
+            #pwr = p/a
             power_history.insert(0, (t, pwr))
         if power_history is None or len(power_history) == 0:
             return ""

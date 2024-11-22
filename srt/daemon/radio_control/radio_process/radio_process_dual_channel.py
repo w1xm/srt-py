@@ -174,8 +174,8 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_streams_to_vector_0_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
         self.blocks_streams_to_vector_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
         self.blocks_streams_to_vector_0 = blocks.streams_to_vector(gr.sizeof_gr_complex*1, 2)
-        self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vff([(tsys[1] + tcal[1])/(value * cal_pwr[1]) for value in cal_values[1]])
-        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff([(tsys[0] + tcal[0])/(value * cal_pwr[0]) for value in cal_values[0]])
+        self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vff(1.0/(self.cal_values[1]*self.cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff(1.0/(self.cal_values[0]*self.cal_pwr[0]))
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), 100)
         self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         self.blocks_add_xx_0_0 = blocks.add_vcc(1)
@@ -273,8 +273,8 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_tsys(self, tsys):
         self.tsys = tsys
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
-        self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
+        self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tcal(self):
@@ -282,8 +282,8 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_tcal(self, tcal):
         self.tcal = tcal
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
-        self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
+        self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tag_period(self):
@@ -417,17 +417,17 @@ class radio_process_dual_channel(gr.top_block):
         return self.cal_values
 
     def set_cal_values(self, cal_values):
-        self.cal_values = cal_values
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
-        self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
+        self.cal_values = np.array(cal_values)
+        self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
 
     def get_cal_pwr(self):
         return self.cal_pwr
 
     def set_cal_pwr(self, cal_pwr):
         self.cal_pwr = cal_pwr
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values[0]])
-        self.blocks_multiply_const_vxx_1_0.set_k([(self.tsys[1] + self.tcal[1])/(value * self.cal_pwr[1]) for value in self.cal_values[1]])
+        self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_cal_on(self):
