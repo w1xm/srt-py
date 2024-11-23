@@ -29,11 +29,8 @@ from xmlrpc.server import SimpleXMLRPCServer
 import threading
 import math
 import numpy as np
-#import radio_process_dual_channel_add_clock_tags as add_clock_tags  # embedded python block
 from . import add_clock_tags
 from . import filter_integrate  # grc-generated hier_block
-#import radio_process_dual_channel_add_clock_tags_0 as add_clock_tags_0  # embedded python block
-#import radio_process_dual_channel_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
 from . import calibrator_control_strobe
 
 
@@ -146,8 +143,8 @@ class radio_process_dual_channel(gr.top_block):
         ##### timed tuning command 
 
         self.uhd_usrp_source_1.clear_command_time()
-        now_time = self.uhd_usrp_source_1.get_time_last_pps()
-        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) 
+        now_time = self.uhd_usrp_source_1.get_time_now()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec_t(full_secs=2, frac_secs=0))
 
         self.rf_freq = rf_freq
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)

@@ -27,11 +27,10 @@ from xmlrpc.server import SimpleXMLRPCServer
 import threading
 import math
 import numpy as np
-#import radio_process_add_clock_tags as add_clock_tags  # embedded python block
 from . import add_clock_tags
-#import radio_process_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
+from . import filter_integrate  # grc-generated hier_block
 from . import calibrator_control_strobe
-from . import filter_integrate
+
 
 
 class radio_process(gr.top_block):
