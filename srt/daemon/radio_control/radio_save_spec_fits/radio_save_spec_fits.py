@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import zeromq
-from . import save_fits_file
+from . import save_fits_file_dual_channel as save_fits_file  # embedded python block
 
 
 class radio_save_spec_fits(gr.top_block):
@@ -40,12 +40,8 @@ class radio_save_spec_fits(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
-        self.zeromq_sub_source_0 = zeromq.sub_source(
-            gr.sizeof_float, num_bins, "tcp://127.0.0.1:5562", 100, True, -1
-        )
-        self.save_fits_file = save_fits_file.blk(
-            directory=directory_name, filename=file_name, vec_length=num_bins
-        )
+        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_float, num_bins, "tcp://127.0.0.1:5562", 100, True, -1)
+        self.save_fits_file = save_fits_file.blk(directory=directory_name, filename=file_name, vec_length=num_bins, num_channels=1)
 
         ##################################################
         # Connections

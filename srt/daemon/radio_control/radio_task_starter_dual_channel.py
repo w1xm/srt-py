@@ -11,7 +11,7 @@ from .radio_save_spec_rad import radio_save_spec_dual_channel
 from .radio_save_spec_fits import radio_save_spec_fits_dual_channel
 
 
-class RadioTask(multiprocessing.Process):
+class RadioTaskDual(multiprocessing.Process):
     """
     Multiprocessing Wrapper Process Superclass for Calling Unmodified GNU Radio Companion Scripts
     """
@@ -24,7 +24,7 @@ class RadioTask(multiprocessing.Process):
         )
 
 
-class RadioProcessTask(RadioTask):
+class RadioProcessTaskDual(RadioTaskDual):
     """
     Multiprocessing Wrapper Process for Starting the Processing of Radio Signals
     """
@@ -35,7 +35,7 @@ class RadioProcessTask(RadioTask):
         )
 
 
-class RadioSaveRawTask(RadioTask):
+class RadioSaveRawTaskDual(RadioTaskDual):
     """
     Multiprocessing Wrapper Process for Saving Raw I/Q Samples
     """
@@ -47,7 +47,7 @@ class RadioSaveRawTask(RadioTask):
         super().__init__(radio_save_raw_dual_channel.main, directory_name=path, samp_rate=samp_rate)
 
 
-class RadioSaveSpecRadTask(RadioTask):
+class RadioSaveSpecRadTaskDual(RadioTaskDual):
     """
     Multiprocessing Wrapper Process for Saving Spectrum Data in .rad Files
     """
@@ -65,7 +65,7 @@ class RadioSaveSpecRadTask(RadioTask):
         )
 
 
-class RadioSaveSpecFitsTask(RadioTask):
+class RadioSaveSpecFitsTaskDual(RadioTaskDual):
     """
     Multiprocessing Wrapper Process for Saving Spectrum Data in .fits Files
     """
@@ -83,7 +83,7 @@ class RadioSaveSpecFitsTask(RadioTask):
         )
 
 
-class RadioCalibrateTask(RadioTask):
+class RadioCalibrateTaskDual(RadioTaskDual):
     """
     Multiprocessing Wrapper Process for Generating a New calibration.json
     """

@@ -127,30 +127,15 @@ class radio_process(gr.top_block):
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
         
 
-        self.fft_vxx_0 = fft.fft_vcc(num_bins, True, fft_window, True, 3)
-        self.dc_blocker_xx_0 = filter.dc_blocker_cc((num_bins*num_integrations), False)
+        self.filter_integrate_0 = filter_integrate.filter_integrate(
+            fft_window=self.fft_window,
+            num_bins=self.num_bins,
+            num_integrations=self.num_integrations,
+        )
         self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
-        self.blocks_stream_to_vector_0_2 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
-        self.blocks_stream_to_vector_0_1 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
-        self.blocks_stream_to_vector_0_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
-        self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, num_bins)
-        self.blocks_skiphead_0 = blocks.skiphead(gr.sizeof_gr_complex*1, (num_bins*num_integrations))
-        self.blocks_selector_0 = blocks.selector(gr.sizeof_gr_complex*1,0,0)
-        self.blocks_selector_0.set_enabled(True)
-        self.blocks_multiply_const_xx_0 = blocks.multiply_const_ff(1.0/float(num_integrations), num_bins)
         self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff(1/(cal_pwr[0]* cal_values[0]))
-        self.blocks_multiply_const_vxx_0_0_0_0 = blocks.multiply_const_vcc(custom_window[0:num_bins])
-        self.blocks_multiply_const_vxx_0_0_0 = blocks.multiply_const_vcc(custom_window[num_bins:2*num_bins])
-        self.blocks_multiply_const_vxx_0_0 = blocks.multiply_const_vcc(custom_window[2*num_bins:3*num_bins])
-        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vcc(custom_window[-num_bins:])
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), 100)
-        self.blocks_integrate_xx_0 = blocks.integrate_ff(num_integrations, num_bins)
-        self.blocks_delay_0_1 = blocks.delay(gr.sizeof_gr_complex*1, num_bins)
-        self.blocks_delay_0_0 = blocks.delay(gr.sizeof_gr_complex*1, (num_bins*2))
-        self.blocks_delay_0 = blocks.delay(gr.sizeof_gr_complex*1, (num_bins*3))
-        self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(num_bins)
         self.blocks_add_xx_0_0 = blocks.add_vcc(1)
-        self.blocks_add_xx_0 = blocks.add_vcc(num_bins)
         self.add_clock_tags = add_clock_tags.clk(nsamps=tag_period)
 
 

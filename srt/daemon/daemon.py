@@ -19,13 +19,23 @@ import numpy as np
 
 from .rotor_control.rotors import Rotor
 #need to figure out how to let this be conditional
-from .radio_control.radio_task_starter_dual_channel import (
+from .radio_control.radio_task_starter import (
     RadioProcessTask,
     RadioSaveRawTask,
     RadioCalibrateTask,
     RadioSaveSpecRadTask,
     RadioSaveSpecFitsTask,
 )
+
+from .radio_control.radio_task_starter_dual_channel import (
+    RadioProcessTaskDual,
+    RadioSaveRawTaskDual,
+    RadioCalibrateTaskDual,
+    RadioSaveSpecRadTaskDual,
+    RadioSaveSpecFitsTaskDual,
+)
+
+
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
 from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
@@ -112,25 +122,6 @@ class SmallRadioTelescopeDaemon:
         print(f'tcal = {self.temp_cal}')
 
 
-        #conditional imports dependent on number of polarizations used
-
-        #if self.radio_num_channels == 2:
-        #    from .radio_control.radio_task_starter_dual_channel import (
-        #        RadioProcessTask,
-        #        RadioSaveRawTask,
-        #        RadioCalibrateTask,
-        #        RadioSaveSpecRadTask,
-        #        RadioSaveSpecFitsTask,
-        #    )
-        #else:
-        #   from .radio_control.radio_task_starter import (
-        #        RadioProcessTask,
-        #        RadioSaveRawTask,
-        #        RadioCalibrateTask,
-        #       RadioSaveSpecRadTask,
-        #        RadioSaveSpecFitsTask,
-        #   )
-
 
         # Generate Default Calibration Values
         # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
@@ -181,9 +172,15 @@ class SmallRadioTelescopeDaemon:
         )
 
         # Create Radio Processing Task (Wrapper for GNU Radio Script)
-        self.radio_process_task = RadioProcessTask(
-            num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
-        )
+        if self.radio_num_channels == 2:
+            self.radio_process_task = RadioProcessTaskDual(
+                num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
+            )
+        else:
+            self.radio_process_task = RadioProcessTask(
+                num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
+            )
+        
         self.radio_queue = Queue()
         self.radio_save_task = None
 
@@ -661,31 +658,58 @@ class SmallRadioTelescopeDaemon:
         None
         """
         if self.radio_save_task is None:
-            if name is None:
-                self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, file_dir, name
-                )
-            elif name.endswith(".rad"):
-                name = None if name == "*.rad" else name
-                self.radio_save_task = RadioSaveSpecRadTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    file_dir,
-                    name,
-                )
-            elif name.endswith(".fits"):
-                name = None if name == "*.fits" else name
-                self.radio_save_task = RadioSaveSpecFitsTask(
-                    self.radio_sample_frequency,
-                    self.radio_num_bins,
-                    file_dir,
-                    name,
-                )
+            if self.radio_num_channels ==2:
+                if name is None:
+                    self.radio_save_task = RadioSaveRawTaskDual(
+                        self.radio_sample_frequency, file_dir, name
+                    )
+                elif name.endswith(".rad"):
+                    name = None if name == "*.rad" else name
+                    self.radio_save_task = RadioSaveSpecRadTaskDual(
+                        self.radio_sample_frequency,
+                        self.radio_num_bins,
+                        file_dir,
+                        name,
+                    )
+                elif name.endswith(".fits"):
+                    name = None if name == "*.fits" else name
+                    self.radio_save_task = RadioSaveSpecFitsTaskDual(
+                        self.radio_sample_frequency,
+                        self.radio_num_bins,
+                        file_dir,
+                        name,
+                    )
+                else:
+                    self.radio_save_task = RadioSaveRawTaskDual(
+                        self.radio_sample_frequency, file_dir, name
+                    )
+                self.radio_save_task.start()
             else:
-                self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, file_dir, name
-                )
-            self.radio_save_task.start()
+                if name is None:
+                    self.radio_save_task = RadioSaveRawTask(
+                        self.radio_sample_frequency, file_dir, name
+                    )
+                elif name.endswith(".rad"):
+                    name = None if name == "*.rad" else name
+                    self.radio_save_task = RadioSaveSpecRadTask(
+                        self.radio_sample_frequency,
+                        self.radio_num_bins,
+                        file_dir,
+                        name,
+                    )
+                elif name.endswith(".fits"):
+                    name = None if name == "*.fits" else name
+                    self.radio_save_task = RadioSaveSpecFitsTask(
+                        self.radio_sample_frequency,
+                        self.radio_num_bins,
+                        file_dir,
+                        name,
+                    )
+                else:
+                    self.radio_save_task = RadioSaveRawTask(
+                        self.radio_sample_frequency, file_dir, name
+                    )
+                self.radio_save_task.start()
         else:
             self.log_message("Cannot Start Recording - Already Recording")
 
