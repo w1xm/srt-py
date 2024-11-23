@@ -31,6 +31,7 @@ import numpy as np
 from . import add_clock_tags
 #import radio_process_calibrator_control_strobe as calibrator_control_strobe  # embedded python block
 from . import calibrator_control_strobe
+from . import filter_integrate
 
 
 class radio_process(gr.top_block):
@@ -67,8 +68,8 @@ class radio_process(gr.top_block):
         self.fft_window = fft_window = window.blackmanharris(num_bins)
         self.custom_window = custom_window = sinc_samples*np.hamming(4*num_bins)
         self.calibrator_mask = calibrator_mask = 0b000000000011
-        self.cal_values = cal_values = np.repeat(np.nan, num_bins)
-        self.cal_pwr = cal_pwr = np.array([1])
+        self.cal_values = cal_values = np.array([np.repeat(np.nan, num_bins),np.repeat(np.nan, num_bins)])
+        self.cal_pwr = cal_pwr = np.array([1.0])
         self.cal_on = cal_on = False
         self.beam_switch = beam_switch = 0
 
@@ -139,7 +140,7 @@ class radio_process(gr.top_block):
         self.blocks_selector_0 = blocks.selector(gr.sizeof_gr_complex*1,0,0)
         self.blocks_selector_0.set_enabled(True)
         self.blocks_multiply_const_xx_0 = blocks.multiply_const_ff(1.0/float(num_integrations), num_bins)
-        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff([(tsys[0] + tcal[0])/(value * cal_pwr) for value in cal_values])
+        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff(1/(cal_pwr[0]* cal_values[0]))
         self.blocks_multiply_const_vxx_0_0_0_0 = blocks.multiply_const_vcc(custom_window[0:num_bins])
         self.blocks_multiply_const_vxx_0_0_0 = blocks.multiply_const_vcc(custom_window[num_bins:2*num_bins])
         self.blocks_multiply_const_vxx_0_0 = blocks.multiply_const_vcc(custom_window[2*num_bins:3*num_bins])
@@ -161,39 +162,16 @@ class radio_process(gr.top_block):
         self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.calibrator_control_strobe, 'strobe'))
         self.msg_connect((self.calibrator_control_strobe, 'command'), (self.uhd_usrp_source_1, 'command'))
         self.connect((self.add_clock_tags, 0), (self.blocks_add_xx_0_0, 1))
-        self.connect((self.blocks_add_xx_0, 0), (self.fft_vxx_0, 0))
-        self.connect((self.blocks_add_xx_0_0, 0), (self.blocks_selector_0, 0))
-        self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.blocks_integrate_xx_0, 0))
-        self.connect((self.blocks_delay_0, 0), (self.blocks_stream_to_vector_0_2, 0))
-        self.connect((self.blocks_delay_0_0, 0), (self.blocks_stream_to_vector_0_0, 0))
-        self.connect((self.blocks_delay_0_1, 0), (self.blocks_stream_to_vector_0_1, 0))
-        self.connect((self.blocks_integrate_xx_0, 0), (self.blocks_multiply_const_xx_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.blocks_add_xx_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_0_0, 0), (self.blocks_add_xx_0, 1))
-        self.connect((self.blocks_multiply_const_vxx_0_0_0, 0), (self.blocks_add_xx_0, 2))
-        self.connect((self.blocks_multiply_const_vxx_0_0_0_0, 0), (self.blocks_add_xx_0, 3))
+        self.connect((self.blocks_add_xx_0_0, 0), (self.filter_integrate_0, 0))
+        self.connect((self.blocks_add_xx_0_0, 0), (self.zeromq_pub_sink_0, 0))
+        self.connect((self.blocks_add_xx_0_0, 0), (self.zeromq_pub_sink_0_0, 0))
         self.connect((self.blocks_multiply_const_vxx_1, 0), (self.zeromq_pub_sink_1, 0))
         self.connect((self.blocks_multiply_const_vxx_1, 0), (self.zeromq_pub_sink_1_0, 0))
-        self.connect((self.blocks_multiply_const_xx_0, 0), (self.blocks_multiply_const_vxx_1, 0))
-        self.connect((self.blocks_multiply_const_xx_0, 0), (self.zeromq_pub_sink_2, 0))
-        self.connect((self.blocks_multiply_const_xx_0, 0), (self.zeromq_pub_sink_2_0, 0))
-
-        self.connect((self.blocks_selector_0, 0), (self.dc_blocker_xx_0, 0))
-        self.connect((self.blocks_selector_0, 0), (self.zeromq_pub_sink_0, 0))
-        self.connect((self.blocks_selector_0, 0),
-                     (self.zeromq_pub_sink_0_0, 0))
-        self.connect((self.blocks_skiphead_0, 0), (self.blocks_delay_0, 0))
-        self.connect((self.blocks_skiphead_0, 0), (self.blocks_delay_0_0, 0))
-        self.connect((self.blocks_skiphead_0, 0), (self.blocks_delay_0_1, 0))
-        self.connect((self.blocks_skiphead_0, 0), (self.blocks_stream_to_vector_0, 0))
-        self.connect((self.blocks_stream_to_vector_0, 0), (self.blocks_multiply_const_vxx_0, 0))
-        self.connect((self.blocks_stream_to_vector_0_0, 0), (self.blocks_multiply_const_vxx_0_0_0, 0))
-        self.connect((self.blocks_stream_to_vector_0_1, 0), (self.blocks_multiply_const_vxx_0_0, 0))
-        self.connect((self.blocks_stream_to_vector_0_2, 0), (self.blocks_multiply_const_vxx_0_0_0_0, 0))
         self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0, 0))
         self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0, 2))
-        self.connect((self.dc_blocker_xx_0, 0), (self.blocks_skiphead_0, 0))
-        self.connect((self.fft_vxx_0, 0), (self.blocks_complex_to_mag_squared_0, 0))
+        self.connect((self.filter_integrate_0, 0), (self.blocks_multiply_const_vxx_1, 0))
+        self.connect((self.filter_integrate_0, 0), (self.zeromq_pub_sink_2, 0))
+        self.connect((self.filter_integrate_0, 0), (self.zeromq_pub_sink_2_0, 0))
         self.connect((self.uhd_usrp_source_1, 0), (self.add_clock_tags, 0))
 
 
@@ -207,13 +185,7 @@ class radio_process(gr.top_block):
         self.set_fft_window(window.blackmanharris(self.num_bins))
         self.set_sinc_sample_locations(np.arange(-np.pi*4/2.0, np.pi*4/2.0, np.pi/self.num_bins))
         self.set_tag_period(self.num_bins*self.num_integrations)
-        self.blocks_delay_0.set_dly(int((self.num_bins*3)))
-        self.blocks_delay_0_0.set_dly(int((self.num_bins*2)))
-        self.blocks_delay_0_1.set_dly(int(self.num_bins))
-        self.blocks_multiply_const_vxx_0.set_k(self.custom_window[-self.num_bins:])
-        self.blocks_multiply_const_vxx_0_0.set_k(self.custom_window[2*self.num_bins:3*self.num_bins])
-        self.blocks_multiply_const_vxx_0_0_0.set_k(self.custom_window[self.num_bins:2*self.num_bins])
-        self.blocks_multiply_const_vxx_0_0_0_0.set_k(self.custom_window[0:self.num_bins])
+        self.filter_integrate_0.set_num_bins(self.num_bins)
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_num_integrations(self):
@@ -222,7 +194,7 @@ class radio_process(gr.top_block):
     def set_num_integrations(self, num_integrations):
         self.num_integrations = num_integrations
         self.set_tag_period(self.num_bins*self.num_integrations)
-        self.blocks_multiply_const_xx_0.set_k(1.0/float(self.num_integrations))
+        self.filter_integrate_0.set_num_integrations(self.num_integrations)
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
     
     def get_sinc_sample_locations(self):
@@ -260,7 +232,6 @@ class radio_process(gr.top_block):
 
     def set_tsys(self, tsys):
         self.tsys = tsys
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values])
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tcal(self):
@@ -268,7 +239,6 @@ class radio_process(gr.top_block):
 
     def set_tcal(self, tcal):
         self.tcal = tcal
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values])
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_tag_period(self):
@@ -352,16 +322,13 @@ class radio_process(gr.top_block):
 
     def set_fft_window(self, fft_window):
         self.fft_window = fft_window
+        self.filter_integrate_0.set_fft_window(self.fft_window)
 
     def get_custom_window(self):
         return self.custom_window
 
     def set_custom_window(self, custom_window):
         self.custom_window = custom_window
-        self.blocks_multiply_const_vxx_0.set_k(self.custom_window[-self.num_bins:])
-        self.blocks_multiply_const_vxx_0_0.set_k(self.custom_window[2*self.num_bins:3*self.num_bins])
-        self.blocks_multiply_const_vxx_0_0_0.set_k(self.custom_window[self.num_bins:2*self.num_bins])
-        self.blocks_multiply_const_vxx_0_0_0_0.set_k(self.custom_window[0:self.num_bins])
 
     def get_calibrator_mask(self):
         return self.calibrator_mask
@@ -374,15 +341,15 @@ class radio_process(gr.top_block):
         return self.cal_values
 
     def set_cal_values(self, cal_values):
-        self.cal_values = cal_values
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values])
+        self.cal_values = np.array(cal_values)
+        self.blocks_multiply_const_vxx_1.set_k(1/(self.cal_pwr[0]* self.cal_values[0]))
 
     def get_cal_pwr(self):
         return self.cal_pwr
 
     def set_cal_pwr(self, cal_pwr):
         self.cal_pwr = cal_pwr
-        self.blocks_multiply_const_vxx_1.set_k([(self.tsys[0] + self.tcal[0])/(value * self.cal_pwr[0]) for value in self.cal_values])
+        self.blocks_multiply_const_vxx_1.set_k(1/(self.cal_pwr[0]* self.cal_values[0]))
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_cal_on(self):
