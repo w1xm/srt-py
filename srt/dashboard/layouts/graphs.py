@@ -613,7 +613,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     #         return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
-    calibrated_power_vals = power_vals/cal_power
+    calibrated_power_vals = power_vals/cal_pwr
     for i in range(num_channels):
         fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{i}"))
 
