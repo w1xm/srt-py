@@ -158,16 +158,6 @@ class radio_process_dual_channel(gr.top_block):
 
 
 
-        self.filter_integrate_0_0 = filter_integrate.filter_integrate(
-            fft_window=self.fft_window,
-            num_bins=self.num_bins,
-            num_integrations=self.num_integrations,
-        )
-        self.filter_integrate_0 = filter_integrate.filter_integrate(
-            fft_window=self.fft_window,
-            num_bins=self.num_bins,
-            num_integrations=self.num_integrations,
-        )
 
         self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
         self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_gr_complex*num_bins, (num_channels**2))
@@ -214,7 +204,7 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.add_clock_tags_0, 0), (self.blocks_add_xx_0_0_0, 1))
         self.connect((self.blocks_add_xx_0_0, 0), (self.weighted_overlap_fft_0, 0))
         self.connect((self.blocks_add_xx_0_0, 0), (self.blocks_streams_to_vector_0, 0))
-        self.connect((self.blocks_add_xx_0_0_0, 0), (self.weighted_overlap_fft_0_0 0))
+        self.connect((self.blocks_add_xx_0_0_0, 0), (self.weighted_overlap_fft_0_0, 0))
         self.connect((self.blocks_add_xx_0_0_0, 0), (self.blocks_streams_to_vector_0, 1))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_1, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_streams_to_vector_0_0, 0))
