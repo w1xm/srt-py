@@ -557,7 +557,7 @@ def generate_el_time_graph(
     return fig
 
 
-def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_channels=1):
+def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channels=1):
     """Generates a Graph of the Power History
 
     Parameters
@@ -598,21 +598,24 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, spectrum_history, num_chan
         },
     )
 
-    for i in range(num_channels): #compute this one at a time for now because something is thoroughly screwy about this.
-        #note this won't work right once we have independent cal for each channel
 
-        power_history = []
-        for t, spectrum in spectrum_history:
-            p = np.sum(spectrum[i])
-            a = np.shape(spectrum)[1]
-            pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
-            #pwr = p/a
-            power_history.insert(0, (t, pwr))
-        if power_history is None or len(power_history) == 0:
-            return ""
-        power_time, power_vals = zip(*power_history)
+    # for i in range(num_channels): #compute this one at a time for now because something is thoroughly screwy about this.
+    #     #note this won't work right once we have independent cal for each channel
 
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=power_vals,name=f"ch{i}"))
+    #     calibrated_power_history = []
+    #     for t, spectrum in spectrum_history:
+    #         p = np.sum(spectrum[i])
+    #         a = np.shape(spectrum)[1]
+    #         pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
+    #         #pwr = p/a
+    #         power_history.insert(0, (t, pwr))
+    #     if power_history is None or len(power_history) == 0:
+    #         return ""
+    power_time, powers = zip(*power_history)
+    power_vals = np.array(powers) #so that I can index into it neatly
+    calibrated_power_vals = power_vals/cal_power
+    for i in range(num_channels):
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{i}"))
 
     return fig
 

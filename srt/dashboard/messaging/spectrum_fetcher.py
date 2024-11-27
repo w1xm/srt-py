@@ -38,7 +38,8 @@ class SpectrumThread(Thread):
         self.num_channels = num_channels
         self.history_length = history_length
         self.spectrum = None
-        self.history = []
+        self.spectrum_history = []
+        self.power_history = []
         self.port = port
 
     def run(self):
@@ -55,9 +56,12 @@ class SpectrumThread(Thread):
         while True:
             rec = socket.recv()
             var = np.frombuffer(rec, dtype="float32").reshape((self.num_channels,-1))
-            if len(self.history) >= self.history_length:
-                self.history.pop()
-            self.history.insert(0, (time.time(), var))
+            pwr = np.mean(var,axis=0)
+            if len(self.power_history) >= self.history_length:
+                self.spectrum_history.pop()
+                self.power_history.pop()
+            self.spectrum_history.insert(0, (time.time(), var))
+            self.power_history.insert(0, (time.time(), pwr))
             self.spectrum = var
 
     def get_spectrum(self):
@@ -69,15 +73,25 @@ class SpectrumThread(Thread):
         """
         return self.spectrum
 
-    def get_history(self):
-        """Return Entire History List
+    def get_spectrum_history(self):
+        """Return Entire Spectrum History List
 
         Returns
         -------
         [(int, ndarary)]
             Time and Numpy Spectrum Pairs History
         """
-        return self.history.copy()
+        return self.spectrum_history.copy()
+
+    def get_power_history(self):
+        """Return Entire Power History List
+
+        Returns
+        -------
+        [(int, ndarary)]
+            Time and Numpy Spectrum Pairs History
+        """
+        return self.power_history.copy()
 
 
 if __name__ == "__main__":
