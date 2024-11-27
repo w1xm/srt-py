@@ -76,12 +76,12 @@ class radio_process(gr.top_block):
         # Blocks
         ##################################################
 
-        self.zeromq_pub_sink_2_0 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5561', 100, False, (-1), '', True, True)
-        self.zeromq_pub_sink_2 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5560', 100, True, (-1), '', True, True)
-        self.zeromq_pub_sink_1_0 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5562', 100, True, (-1), '', True, True)
-        self.zeromq_pub_sink_1 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5563', 100, False, (-1), '', True, True)
-        self.zeromq_pub_sink_0_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5559', 100, False, (-1), '', True, True)
-        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5558', 100, True, (-1), '', True, True)
+        self.zeromq_pub_sink_2_0 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5561', 100, False, (-1), '', True)
+        self.zeromq_pub_sink_2 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5560', 100, True, (-1), '', True)
+        self.zeromq_pub_sink_1_0 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5562', 100, True, (-1), '', True)
+        self.zeromq_pub_sink_1 = zeromq.pub_sink(gr.sizeof_float, num_bins, 'tcp://127.0.0.1:5563', 100, False, (-1), '', True)
+        self.zeromq_pub_sink_0_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5559', 100, False, (-1), '', True)
+        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 1, 'tcp://127.0.0.1:5558', 100, True, (-1), '', True)
         self.xmlrpc_server_0 = SimpleXMLRPCServer(('localhost', 5557), allow_none=True)
         self.xmlrpc_server_0.register_instance(self)
         self.xmlrpc_server_0_thread = threading.Thread(target=self.xmlrpc_server_0.serve_forever)
