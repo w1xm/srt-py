@@ -56,7 +56,7 @@ class SpectrumThread(Thread):
         while True:
             rec = socket.recv()
             var = np.frombuffer(rec, dtype="float32").reshape((self.num_channels,-1))
-            pwr = np.mean(var,axis=0)
+            pwr = np.mean(var,axis=1)
             if len(self.power_history) >= self.history_length:
                 self.spectrum_history.pop()
                 self.power_history.pop()
