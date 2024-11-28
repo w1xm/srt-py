@@ -187,7 +187,7 @@ class radio_process_dual_channel(gr.top_block):
             num_bins=num_bins,
             num_integrations=num_integrations,
         )
-        self.covariance_matrix_1 = covariance_matrix.covariance_matrix_block(num_channels=num_channels, num_bins=num_bins)
+        self.covariance_matrix_1 = covariance_matrix.covariance_matrix_block(num_channels=num_channels, vec_length=num_bins)
 
         ##################################################
         # Connections
@@ -243,9 +243,9 @@ class radio_process_dual_channel(gr.top_block):
         self.set_fft_window(window.blackmanharris(self.num_bins))
         self.set_sinc_sample_locations(np.arange(-np.pi*4/2.0, np.pi*4/2.0, np.pi/self.num_bins))
         self.set_tag_period(self.num_bins*self.num_integrations)
-        self.covariance_matrix_1.num_bins = self.num_bins
+        self.covariance_matrix_1.vec_length = self.num_bins
         self.weighted_overlap_fft_0.set_num_bins(self.num_bins)
-        self.Wweighted_overlap_fft_0_0.set_num_bins(self.num_bins)
+        self.weighted_overlap_fft_0_0.set_num_bins(self.num_bins)
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
 
