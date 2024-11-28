@@ -268,7 +268,7 @@ class SmallRadioTelescopeDaemon:
             raw_spec = get_spectrum(port=5561,num_channels=self.radio_num_channels)
             p = np.sum(raw_spec,axis=1)
             a = np.shape(raw_spec)[1]
-            pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
+            pwr = p / (a * self.cal_power)
             pwr_list.append(np.mean(pwr))
         maxdiff = (az_dif, el_dif)
 
