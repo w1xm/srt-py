@@ -684,16 +684,19 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     maxs = np.zeros(num_channels)
     for channel in range(num_channels):
         i = (num_channels+1)*channel
+        ydata = np.abs(spectrum[i])
+        mins[channel] = np.min(ydata)
+        maxs[channel] = np.max(ydata)
+
         fig.add_trace(
             go.Scatter(
                 x=data_range,
-                y=np.abs(spectrum[i]),
+                y=ydata,
                 name=f"ch{channel}",
-                mode="lines",
+                mode='lines',
             )
         )
-        mins[channel] = np.min(np.abs(spectrum[i]))
-        maxs[channel] = np.max(np.abs(spectrum[i]))
+
     # if len(spectrum) > max_histogram_size:
     #     fig.add_trace(
     #         go.Scatter(
