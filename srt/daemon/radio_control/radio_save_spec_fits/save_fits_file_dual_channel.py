@@ -39,8 +39,6 @@ class blk(gr.sync_block):
         #not too worried babout getting this perfect because I'll need to rewrite this later anyway
         file_path = pathlib.Path(self.directory, self.filename)
 
-        # reshape data into the array form it actually should be
-
         with open(file_path, "ab+") as file:
             for input_array in input_items[0]:
 
@@ -74,8 +72,12 @@ class blk(gr.sync_block):
                 hdr["UTC"] = date.strftime("%H:%M:00%s")
                 hdr["METADATA"] = json.dumps(metadata)
 
+                #need to add an axis that separately includes real and complex parts of the data
+                covariances = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)
+                float_array = np.array([np.real(covariances),np.imag(covariances)]).swapaxes(0,3)
+
                 #append neatly reshaped input containing covariance matrix data
-                fits.append(file, input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len), hdr) #need to explicitly reshape inline to force it to save array in correct shape
+                fits.append(file, float_array.reshape(self.num_channels,self.num_channels,self.spectrum_len,2), hdr) #need to explicitly reshape inline to force it to save array in correct shape
                 #fits.append(file, combined_data, hdr) #append both spectra.
                 #file.close()
                 # p = np.sum(input_array)

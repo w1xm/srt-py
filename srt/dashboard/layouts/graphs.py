@@ -678,8 +678,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
             "uirevision": True,
         },
     )
-    data_range = np.linspace(-bandwidth / 2, bandwidth /
-                             2, num=np.shape(spectrum)[1]) + cf
+    data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
     mins = np.zeros(num_channels)
     maxs = np.zeros(num_channels)
     for channel in range(num_channels):
