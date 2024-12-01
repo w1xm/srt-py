@@ -445,7 +445,7 @@ class radio_process_dual_channel(gr.top_block):
         return self.cal_values
 
     def set_cal_values(self, cal_values):
-        self.cal_values = cal_values
+        self.cal_values = np.array(cal_values)
         self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
         self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[3] * self.cal_pwr[3]))
         self.blocks_multiply_const_vxx_1_0_0.set_k(1.0/(self.cal_values[1] * self.cal_pwr[1]))
