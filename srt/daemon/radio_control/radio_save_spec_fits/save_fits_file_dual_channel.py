@@ -74,7 +74,7 @@ class blk(gr.sync_block):
 
                 #need to add an axis that separately includes real and complex parts of the data
                 covariances = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)
-                float_array = np.array([np.real(covariances),np.imag(covariances)]).swapaxes(0,3)
+                float_array = np.moveaxis(np.array([np.real(covariances),np.imag(covariances)]),0,-1) #.swapaxes(0,3)
 
                 #append neatly reshaped input containing covariance matrix data
                 fits.append(file, float_array.reshape(self.num_channels,self.num_channels,self.spectrum_len,2), hdr) #need to explicitly reshape inline to force it to save array in correct shape
