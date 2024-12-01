@@ -1,9 +1,5 @@
 """
-Embedded Python Blocks:
-
-Each time this file is saved, GRC will instantiate the first class it finds
-to get ports and parameters of your block. The arguments to __init__  will
-be the parameters. All of them are required to have default values!
+Block to save covariance spectra to a fits file
 """
 
 import numpy as np
@@ -20,21 +16,21 @@ class blk(gr.sync_block):
     """Embedded Python Block - Saving """
 
     def __init__(
-        self, directory=".", filename="test.fits", vec_length=4096, num_channels=2
+        self, directory=".", filename="test.fits", spectrum_len=4096, num_channels=2
     ):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
         gr.sync_block.__init__(
             self,
             name="Embedded Python Block",  # will show up in GRC
-            in_sig=[(np.float32, vec_length)] * num_channels,
-            #in_sig=[(np.float32, vec_length) for i in range(num_channels)],
+            in_sig=[(np.complex64, spectrum_len * num_channels**2)] ,
+            #in_sig=[(np.float32, spectrum_len) for i in range(num_channels)],
             out_sig=None,
         )
         # if an attribute with the same name as a parameter is found,
         # a callback is registered (properties work, too).
         self.directory = directory
         self.filename = filename
-        self.vec_length = vec_length
+        self.spectrum_len = spectrum_len
         self.num_channels = num_channels
 
     def work(self, input_items, output_items):
@@ -43,48 +39,47 @@ class blk(gr.sync_block):
         #not too worried babout getting this perfect because I'll need to rewrite this later anyway
         file_path = pathlib.Path(self.directory, self.filename)
 
-        # Combine the input data from each channel into a single array
-        combined_data = np.stack(input_items[:self.num_channels], axis=0)
+        # reshape data into the array form it actually should be
 
-        #for i, input_array in enumerate(input_items[0]):
-        #for input_array_0, input_array_1 in zip(input_items[0],input_items[1]): #idk why enumerate was involved here. not needed
-            #file = open(file_path, "ab+")
         with open(file_path, "ab+") as file:
-            tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
-            #tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
-            tags_dict_0 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}
-            #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}
+            for input_array in input_items[0]:
 
-            time_since_epoch = tags_dict_0["rx_time"][0] + tags_dict_0["rx_time"][1]
-            date = datetime.fromtimestamp(time_since_epoch, timezone.utc)
-            metadata = tags_dict_0["metadata"]
-            samp_rate = metadata["samp_rate"]
-            num_integrations = metadata["num_integrations"]
-            freq = metadata["freq"]
-            num_bins = metadata["num_bins"]
-            soutrack = metadata["soutrack"]
+                tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
+                #tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
+                tags_dict_0 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}
+                #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}
 
-            hdr = fits.Header()
-            hdr["BUNIT"] = "K"
-            hdr["CTYPE1"] = "Freq"
-            hdr["CRPIX1"] = num_bins / float(2)  # Reference pixel (center)
-            hdr["CRVAL1"] = freq  # Center, USRP, frequency
-            hdr["CDELT1"] = samp_rate / (1 * num_bins)  # Channel width
-            hdr["CUNIT1"] = "Hz"
+                time_since_epoch = tags_dict_0["rx_time"][0] + tags_dict_0["rx_time"][1]
+                date = datetime.fromtimestamp(time_since_epoch, timezone.utc)
+                metadata = tags_dict_0["metadata"]
+                samp_rate = metadata["samp_rate"]
+                num_integrations = metadata["num_integrations"]
+                freq = metadata["freq"]
+                num_bins = metadata["num_bins"]
+                soutrack = metadata["soutrack"]
 
-            hdr["TELESCOP"] = "SmallRadioTelescope"
-            hdr["OBJECT"] = soutrack
-            hdr["OBSTIME"] = (num_bins * num_integrations) / samp_rate
+                hdr = fits.Header()
+                hdr["BUNIT"] = "K"
+                hdr["CTYPE1"] = "Freq"
+                hdr["CRPIX1"] = num_bins / float(2)  # Reference pixel (center)
+                hdr["CRVAL1"] = freq  # Center, USRP, frequency
+                hdr["CDELT1"] = samp_rate / (1 * num_bins)  # Channel width
+                hdr["CUNIT1"] = "Hz"
 
-            hdr["DATE-OBS"] = date.strftime("%Y-%m-%d")
-            hdr["UTC"] = date.strftime("%H:%M:00%s")
-            hdr["METADATA"] = json.dumps(metadata)
+                hdr["TELESCOP"] = "SmallRadioTelescope"
+                hdr["OBJECT"] = soutrack
+                hdr["OBSTIME"] = (num_bins * num_integrations) / samp_rate
 
-            fits.append(file, combined_data.reshape((self.num_channels, self.vec_length)), hdr) #need to explicitly reshape inline to force it to save array in correct shape
-            #fits.append(file, combined_data, hdr) #append both spectra.
-            #file.close()
-            # p = np.sum(input_array)
-            # a = len(input_array)
-            # pwr = (tsys + tcal) * p / (a * calpwr)
-            # ppwr = pwr - tsys
+                hdr["DATE-OBS"] = date.strftime("%Y-%m-%d")
+                hdr["UTC"] = date.strftime("%H:%M:00%s")
+                hdr["METADATA"] = json.dumps(metadata)
+
+                #append neatly reshaped input containing covariance matrix data
+                fits.append(file, input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len), hdr) #need to explicitly reshape inline to force it to save array in correct shape
+                #fits.append(file, combined_data, hdr) #append both spectra.
+                #file.close()
+                # p = np.sum(input_array)
+                # a = len(input_array)
+                # pwr = (tsys + tcal) * p / (a * calpwr)
+                # ppwr = pwr - tsys
         return len(input_items[0])

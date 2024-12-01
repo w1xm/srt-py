@@ -128,8 +128,8 @@ class SmallRadioTelescopeDaemon:
         # Unless there is a pre-exisiting calibration from a previous run
 
         # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
-        self.cal_values = np.ones((self.radio_num_channels, self.radio_num_bins))
-        self.cal_power = np.ones_like(self.temp_sys)
+        self.cal_values = np.ones((self.radio_num_channels**2, self.radio_num_bins))
+        self.cal_power = np.ones(self.radio_num_channels**2)
 
         calibration_path = Path(config_directory, "calibration.json")
         if calibration_path.is_file():
@@ -137,7 +137,7 @@ class SmallRadioTelescopeDaemon:
                 try:
                     cal_data = json.load(input_file)
                     # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                    if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
+                    if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
                         self.cal_values = np.array(cal_data["cal_values"])
                         self.cal_power = np.array(cal_data["cal_pwr"])
                 except KeyError:
@@ -536,8 +536,8 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = np.ones((self.radio_num_channels,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = np.ones_like(self.temp_cal)
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones(self.radio_num_channels**2)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
         self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
@@ -660,8 +660,8 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = np.ones((self.radio_num_channels,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = np.ones_like(self.temp_cal)
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones(self.radio_num_channels**2)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
         self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
@@ -694,7 +694,7 @@ class SmallRadioTelescopeDaemon:
             try:
                 cal_data = json.load(input_file)
                 # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
+                if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
                     self.cal_values = np.array(cal_data["cal_values"])
                     self.cal_power = np.array(cal_data["cal_pwr"])
 

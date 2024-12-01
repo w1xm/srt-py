@@ -53,8 +53,8 @@ class radio_process_dual_channel(gr.top_block):
         self.sinc_samples = sinc_samples = np.sinc(sinc_sample_locations/np.pi)
         self.freq = freq = 1420000000
         self.vlsr = vlsr = np.nan
-        self.tsys = tsys = np.array([171,171])
-        self.tcal = tcal = np.array([290,290])
+        self.tsys = tsys = np.array([171]*num_channels)
+        self.tcal = tcal = np.array([290]*num_channels)
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
         self.samp_rate = samp_rate = 2000000
@@ -69,7 +69,7 @@ class radio_process_dual_channel(gr.top_block):
         self.fft_window = fft_window = window.blackmanharris(num_bins)
         self.custom_window = custom_window = sinc_samples*np.hamming(4*num_bins)
         self.calibrator_mask = calibrator_mask = 0b000000000011
-        self.cal_values = cal_values = np.array([np.repeat(np.nan, num_bins),np.repeat(np.nan, num_bins)])
+        self.cal_values = cal_values = np.array([np.repeat(np.nan, num_bins)]*num_channels**2)
         self.cal_pwr = cal_pwr = np.array([1,1])
         self.cal_on = cal_on = False
         self.beam_switch = beam_switch = 0
@@ -78,10 +78,10 @@ class radio_process_dual_channel(gr.top_block):
         # Blocks
         ##################################################
 
-        self.zeromq_pub_sink_2_0 = zeromq.pub_sink(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5561', 100, False, (-1), '', True)
-        self.zeromq_pub_sink_2 = zeromq.pub_sink(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5560', 100, True, (-1), '', True)
-        self.zeromq_pub_sink_1_0 = zeromq.pub_sink(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5562', 100, True, (-1), '', True)
-        self.zeromq_pub_sink_1 = zeromq.pub_sink(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5563', 100, False, (-1), '', True)
+        self.zeromq_pub_sink_2_0 = zeromq.pub_sink(gr.sizeof_gr_complex, (4*num_bins), 'tcp://127.0.0.1:5561', 100, False, (-1), '', True)
+        self.zeromq_pub_sink_2 = zeromq.pub_sink(gr.sizeof_gr_complex, (4*num_bins), 'tcp://127.0.0.1:5560', 100, True, (-1), '', True)
+        self.zeromq_pub_sink_1_0 = zeromq.pub_sink(gr.sizeof_gr_complex, (4*num_bins), 'tcp://127.0.0.1:5562', 100, True, (-1), '', True)
+        self.zeromq_pub_sink_1 = zeromq.pub_sink(gr.sizeof_gr_complex, (4*num_bins), 'tcp://127.0.0.1:5563', 100, False, (-1), '', True)
         self.zeromq_pub_sink_0_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 2, 'tcp://127.0.0.1:5559', 100, False, (-1), '', True)
         self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 2, 'tcp://127.0.0.1:5558', 100, True, (-1), '', True)
         self.xmlrpc_server_0 = SimpleXMLRPCServer(('localhost', 5557), allow_none=True)
@@ -162,21 +162,20 @@ class radio_process_dual_channel(gr.top_block):
         self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
         self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_gr_complex*num_bins, (num_channels**2))
         self.blocks_streams_to_vector_1 = blocks.streams_to_vector(gr.sizeof_gr_complex*num_bins, (num_channels**2))
-        self.blocks_streams_to_vector_0_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
-        self.blocks_streams_to_vector_0_0 = blocks.streams_to_vector(gr.sizeof_float*num_bins, 2)
+        self.blocks_streams_to_vector_0_0_0 = blocks.streams_to_vector(gr.sizeof_gr_complex*num_bins, 4)
         self.blocks_streams_to_vector_0 = blocks.streams_to_vector(gr.sizeof_gr_complex*1, 2)
-        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_gr_complex*num_bins)
         self.blocks_multiply_const_xx_0_0_0_0 = blocks.multiply_const_cc(1.0/float(num_integrations), (num_bins*(num_channels**2)))
-        self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vff(1.0/(cal_values[1] * cal_pwr[1]))
-        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vff(1.0/(cal_values[0]*cal_pwr[0]))
+        self.blocks_multiply_const_vxx_1_0_0_0 = blocks.multiply_const_vcc(1.0/(cal_values[2] * cal_pwr[2]))
+        self.blocks_multiply_const_vxx_1_0_0 = blocks.multiply_const_vcc(1.0/(cal_values[1] * cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vcc(1.0/(cal_values[3] * cal_pwr[3]))
+        self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vcc(1.0/(cal_values[0]*cal_pwr[0]))
         self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), 100)
         self.blocks_integrate_xx_0 = blocks.integrate_cc(num_integrations, (num_bins*(num_channels**2)))
-        self.blocks_complex_to_real_0_0 = blocks.complex_to_real(num_bins)
-        self.blocks_complex_to_real_0 = blocks.complex_to_real(num_bins)
         self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         self.blocks_add_xx_0_0 = blocks.add_vcc(1)
         self.add_clock_tags_0 = add_clock_tags.clk(nsamps=tag_period)
         self.add_clock_tags = add_clock_tags.clk(nsamps=tag_period)
+
         self.weighted_overlap_fft_0_0 = weighted_overlap_fft.weighted_overlap_fft(
             fft_window=fft_window,
             num_bins=num_bins,
@@ -202,22 +201,22 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.weighted_overlap_fft_0_0, 0), (self.covariance_matrix_1, 1))
         self.connect((self.add_clock_tags, 0), (self.blocks_add_xx_0_0, 1))
         self.connect((self.add_clock_tags_0, 0), (self.blocks_add_xx_0_0_0, 1))
+
         self.connect((self.blocks_add_xx_0_0, 0), (self.weighted_overlap_fft_0, 0))
         self.connect((self.blocks_add_xx_0_0, 0), (self.blocks_streams_to_vector_0, 0))
         self.connect((self.blocks_add_xx_0_0_0, 0), (self.weighted_overlap_fft_0_0, 0))
         self.connect((self.blocks_add_xx_0_0_0, 0), (self.blocks_streams_to_vector_0, 1))
-        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_1, 0))
-        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_streams_to_vector_0_0, 0))
-        self.connect((self.blocks_complex_to_real_0_0, 0), (self.blocks_multiply_const_vxx_1_0, 0))
-        self.connect((self.blocks_complex_to_real_0_0, 0), (self.blocks_streams_to_vector_0_0, 1))
+
         self.connect((self.blocks_integrate_xx_0, 0), (self.blocks_multiply_const_xx_0_0_0_0, 0))
         self.connect((self.blocks_multiply_const_vxx_1, 0), (self.blocks_streams_to_vector_0_0_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_1_0, 0), (self.blocks_streams_to_vector_0_0_0, 1))
+        self.connect((self.blocks_multiply_const_vxx_1_0, 0), (self.blocks_streams_to_vector_0_0_0, 3))
+        self.connect((self.blocks_multiply_const_vxx_1_0_0, 0), (self.blocks_streams_to_vector_0_0_0, 1))
+        self.connect((self.blocks_multiply_const_vxx_1_0_0_0, 0), (self.blocks_streams_to_vector_0_0_0, 2))
         self.connect((self.blocks_multiply_const_xx_0_0_0_0, 0), (self.blocks_vector_to_streams_0, 0))
+        self.connect((self.blocks_multiply_const_xx_0_0_0_0, 0), (self.zeromq_pub_sink_2, 0))
+        self.connect((self.blocks_multiply_const_xx_0_0_0_0, 0), (self.zeromq_pub_sink_2_0, 0))
         self.connect((self.blocks_streams_to_vector_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.blocks_streams_to_vector_0, 0), (self.zeromq_pub_sink_0_0, 0))
-        self.connect((self.blocks_streams_to_vector_0_0, 0), (self.zeromq_pub_sink_2, 0))
-        self.connect((self.blocks_streams_to_vector_0_0, 0), (self.zeromq_pub_sink_2_0, 0))
         self.connect((self.blocks_streams_to_vector_0_0_0, 0), (self.zeromq_pub_sink_1, 0))
         self.connect((self.blocks_streams_to_vector_0_0_0, 0), (self.zeromq_pub_sink_1_0, 0))
         self.connect((self.blocks_streams_to_vector_1, 0), (self.blocks_integrate_xx_0, 0))
@@ -225,10 +224,10 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0_0, 0))
         self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0, 2))
         self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0_0, 2))
-        self.connect((self.blocks_vector_to_streams_0, 0), (self.blocks_complex_to_real_0, 0))
-        self.connect((self.blocks_vector_to_streams_0, 3), (self.blocks_complex_to_real_0_0, 0))
-        self.connect((self.blocks_vector_to_streams_0, 2), (self.blocks_null_sink_0, 1))
-        self.connect((self.blocks_vector_to_streams_0, 1), (self.blocks_null_sink_0, 0))
+        self.connect((self.blocks_vector_to_streams_0, 0), (self.blocks_multiply_const_vxx_1, 0))
+        self.connect((self.blocks_vector_to_streams_0, 3), (self.blocks_multiply_const_vxx_1_0, 0))
+        self.connect((self.blocks_vector_to_streams_0, 1), (self.blocks_multiply_const_vxx_1_0_0, 0))
+        self.connect((self.blocks_vector_to_streams_0, 2), (self.blocks_multiply_const_vxx_1_0_0_0, 0))
         self.connect((self.uhd_usrp_source_1, 0), (self.add_clock_tags, 0))
         self.connect((self.uhd_usrp_source_1, 1), (self.add_clock_tags_0, 0))
 
@@ -238,7 +237,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_num_bins(self, num_bins):
         self.num_bins = num_bins
-        self.set_cal_values(np.array([np.repeat(np.nan, self.num_bins),np.repeat(np.nan, self.num_bins)]))
+        self.set_cal_values(np.array([np.repeat(np.nan, self.num_bins)]*self.num_channels**2))
         self.set_custom_window(self.sinc_samples*np.hamming(4*self.num_bins))
         self.set_fft_window(window.blackmanharris(self.num_bins))
         self.set_sinc_sample_locations(np.arange(-np.pi*4/2.0, np.pi*4/2.0, np.pi/self.num_bins))
@@ -376,6 +375,10 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_num_channels(self, num_channels):
         self.num_channels = num_channels
+        self.set_cal_pwr(np.array([1]*self.num_channels**2))
+        self.set_cal_values(np.array([np.repeat(np.nan, self.num_bins)]*self.num_channels**2))
+        self.set_tcal(np.array([290]*self.num_channels))
+        self.set_tsys(np.array([171]*self.num_channels))
         self.covariance_matrix_1.num_channels = self.num_channels
 
     def get_motor_el(self):
@@ -442,9 +445,11 @@ class radio_process_dual_channel(gr.top_block):
         return self.cal_values
 
     def set_cal_values(self, cal_values):
-        self.cal_values = np.array(cal_values)
+        self.cal_values = cal_values
         self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
-        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[3] * self.cal_pwr[3]))
+        self.blocks_multiply_const_vxx_1_0_0.set_k(1.0/(self.cal_values[1] * self.cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1_0_0_0.set_k(1.0/(self.cal_values[2] * self.cal_pwr[2]))
 
     def get_cal_pwr(self):
         return self.cal_pwr
@@ -452,7 +457,9 @@ class radio_process_dual_channel(gr.top_block):
     def set_cal_pwr(self, cal_pwr):
         self.cal_pwr = cal_pwr
         self.blocks_multiply_const_vxx_1.set_k(1.0/(self.cal_values[0]*self.cal_pwr[0]))
-        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[1]*self.cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1_0.set_k(1.0/(self.cal_values[3] * self.cal_pwr[3]))
+        self.blocks_multiply_const_vxx_1_0_0.set_k(1.0/(self.cal_values[1] * self.cal_pwr[1]))
+        self.blocks_multiply_const_vxx_1_0_0_0.set_k(1.0/(self.cal_values[2] * self.cal_pwr[2]))
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
 
     def get_cal_on(self):

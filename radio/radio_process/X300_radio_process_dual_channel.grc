@@ -61,7 +61,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([1,1])
+    value: np.array([1]*num_channels**2)
   states:
     bus_sink: false
     bus_source: false
@@ -73,7 +73,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([np.repeat(np.nan, num_bins),np.repeat(np.nan, num_bins)])
+    value: np.array([np.repeat(np.nan, num_bins)]*num_channels**2)
   states:
     bus_sink: false
     bus_source: false
@@ -289,7 +289,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([290,290])
+    value: np.array([290]*num_channels)
   states:
     bus_sink: false
     bus_source: false
@@ -301,12 +301,12 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([171,171])
+    value: np.array([171]*num_channels)
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [120, 532.0]
+    coordinate: [176, 532.0]
     rotation: 0
     state: true
 - name: vlsr
@@ -476,38 +476,6 @@ blocks:
     coordinate: [1432, 680.0]
     rotation: 0
     state: true
-- name: blocks_complex_to_real_0
-  id: blocks_complex_to_real
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2296, 700.0]
-    rotation: 0
-    state: enabled
-- name: blocks_complex_to_real_0_0
-  id: blocks_complex_to_real
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2304, 812.0]
-    rotation: 0
-    state: enabled
 - name: blocks_integrate_xx_0
   id: blocks_integrate_xx
   parameters:
@@ -552,13 +520,13 @@ blocks:
     const: 1.0/(cal_values[0]*cal_pwr[0])
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: float
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 404.0]
+    coordinate: [2680, 652.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_1_0
@@ -567,16 +535,52 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: 1.0/(cal_values[1] * cal_pwr[1])
+    const: 1.0/(cal_values[3] * cal_pwr[3])
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: float
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 964.0]
+    coordinate: [2680, 836.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_1_0_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: 1.0/(cal_values[1] * cal_pwr[1])
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: complex
+    vlen: num_bins
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2680, 716.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_1_0_0_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: 1.0/(cal_values[2] * cal_pwr[2])
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: complex
+    vlen: num_bins
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2680, 780.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_xx_0_0_0_0
@@ -597,23 +601,6 @@ blocks:
     coordinate: [2136, 588.0]
     rotation: 0
     state: true
-- name: blocks_null_sink_0
-  id: blocks_null_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    bus_structure_sink: '[[0,],]'
-    comment: ''
-    num_inputs: num_channels*(num_channels-1)
-    type: complex
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2184, 744.0]
-    rotation: 0
-    state: enabled
 - name: blocks_streams_to_vector_0
   id: blocks_streams_to_vector
   parameters:
@@ -632,24 +619,6 @@ blocks:
     coordinate: [1512, 432.0]
     rotation: 0
     state: enabled
-- name: blocks_streams_to_vector_0_0
-  id: blocks_streams_to_vector
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_streams: '2'
-    type: float
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2496, 744.0]
-    rotation: 0
-    state: enabled
 - name: blocks_streams_to_vector_0_0_0
   id: blocks_streams_to_vector
   parameters:
@@ -658,14 +627,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_streams: '2'
-    type: float
+    num_streams: '4'
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2968, 736.0]
+    coordinate: [3112, 736.0]
     rotation: 0
     state: enabled
 - name: blocks_streams_to_vector_1
@@ -745,7 +714,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1928, 712.0]
+    coordinate: [2424, 664.0]
     rotation: 0
     state: enabled
 - name: calibrator_control_strobe
@@ -1421,13 +1390,13 @@ blocks:
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [3176, 788.0]
+    coordinate: [3320, 788.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_1_0
@@ -1443,13 +1412,13 @@ blocks:
     key: ''
     pass_tags: 'True'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [3176, 636.0]
+    coordinate: [3320, 636.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_2
@@ -1465,13 +1434,13 @@ blocks:
     key: ''
     pass_tags: 'True'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 636.0]
+    coordinate: [2424, 804.0]
     rotation: 0
     state: true
 - name: zeromq_pub_sink_2_0
@@ -1487,13 +1456,13 @@ blocks:
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 788.0]
+    coordinate: [2424, 948.0]
     rotation: 0
     state: true
 
@@ -1508,19 +1477,17 @@ connections:
 - [blocks_add_xx_0_0, '0', weaighted_overlap_fft_0, '0']
 - [blocks_add_xx_0_0_0, '0', blocks_streams_to_vector_0, '1']
 - [blocks_add_xx_0_0_0, '0', weaighted_overlap_fft_0_0, '0']
-- [blocks_complex_to_real_0, '0', blocks_multiply_const_vxx_1, '0']
-- [blocks_complex_to_real_0, '0', blocks_streams_to_vector_0_0, '0']
-- [blocks_complex_to_real_0_0, '0', blocks_multiply_const_vxx_1_0, '0']
-- [blocks_complex_to_real_0_0, '0', blocks_streams_to_vector_0_0, '1']
 - [blocks_integrate_xx_0, '0', blocks_multiply_const_xx_0_0_0_0, '0']
 - [blocks_message_strobe_0, strobe, calibrator_control_strobe, strobe]
 - [blocks_multiply_const_vxx_1, '0', blocks_streams_to_vector_0_0_0, '0']
-- [blocks_multiply_const_vxx_1_0, '0', blocks_streams_to_vector_0_0_0, '1']
+- [blocks_multiply_const_vxx_1_0, '0', blocks_streams_to_vector_0_0_0, '3']
+- [blocks_multiply_const_vxx_1_0_0, '0', blocks_streams_to_vector_0_0_0, '1']
+- [blocks_multiply_const_vxx_1_0_0_0, '0', blocks_streams_to_vector_0_0_0, '2']
 - [blocks_multiply_const_xx_0_0_0_0, '0', blocks_vector_to_streams_0, '0']
+- [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2, '0']
+- [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2_0, '0']
 - [blocks_streams_to_vector_0, '0', zeromq_pub_sink_0, '0']
 - [blocks_streams_to_vector_0, '0', zeromq_pub_sink_0_0, '0']
-- [blocks_streams_to_vector_0_0, '0', zeromq_pub_sink_2, '0']
-- [blocks_streams_to_vector_0_0, '0', zeromq_pub_sink_2_0, '0']
 - [blocks_streams_to_vector_0_0_0, '0', zeromq_pub_sink_1, '0']
 - [blocks_streams_to_vector_0_0_0, '0', zeromq_pub_sink_1_0, '0']
 - [blocks_streams_to_vector_1, '0', blocks_integrate_xx_0, '0']
@@ -1528,10 +1495,10 @@ connections:
 - [blocks_tags_strobe_0, '0', blocks_add_xx_0_0_0, '0']
 - [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0, '2']
 - [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0_0, '2']
-- [blocks_vector_to_streams_0, '0', blocks_complex_to_real_0, '0']
-- [blocks_vector_to_streams_0, '1', blocks_null_sink_0, '0']
-- [blocks_vector_to_streams_0, '2', blocks_null_sink_0, '1']
-- [blocks_vector_to_streams_0, '3', blocks_complex_to_real_0_0, '0']
+- [blocks_vector_to_streams_0, '0', blocks_multiply_const_vxx_1, '0']
+- [blocks_vector_to_streams_0, '1', blocks_multiply_const_vxx_1_0_0, '0']
+- [blocks_vector_to_streams_0, '2', blocks_multiply_const_vxx_1_0_0_0, '0']
+- [blocks_vector_to_streams_0, '3', blocks_multiply_const_vxx_1_0, '0']
 - [calibrator_control_strobe, command, uhd_usrp_source_1, command]
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '1', add_clock_tags_0, '0']

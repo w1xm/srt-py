@@ -40,17 +40,14 @@ class radio_save_spec_fits_dual_channel(gr.top_block):
         # Blocks
         ##################################################
 
-        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_float, (2*num_bins), 'tcp://127.0.0.1:5562', 100, True, (-1), '')
-        self.save_fits_file = save_fits_file.blk(directory=directory_name, filename=file_name, vec_length=num_bins, num_channels=2)
-        self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_float*num_bins, 2)
+        self.zeromq_sub_source_0 = zeromq.sub_source(gr.sizeof_gr_complex, (4*num_bins), 'tcp://127.0.0.1:5562', 100, True, (-1), '')
+        self.save_fits_file = save_fits_file.blk(directory=directory_name, filename=file_name, spectrum_len=num_bins, num_channels=2)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.blocks_vector_to_streams_0, 1), (self.save_fits_file, 1))
-        self.connect((self.blocks_vector_to_streams_0, 0), (self.save_fits_file, 0))
-        self.connect((self.zeromq_sub_source_0, 0), (self.blocks_vector_to_streams_0, 0))
+        self.connect((self.zeromq_sub_source_0, 0), (self.save_fits_file, 0))
 
 
     def get_directory_name(self):
@@ -72,7 +69,7 @@ class radio_save_spec_fits_dual_channel(gr.top_block):
 
     def set_num_bins(self, num_bins):
         self.num_bins = num_bins
-        self.save_fits_file.vec_length = self.num_bins
+        self.save_fits_file.spectrum_len = self.num_bins
 
     def get_samp_rate(self):
         return self.samp_rate

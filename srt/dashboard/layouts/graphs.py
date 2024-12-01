@@ -614,8 +614,9 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
     calibrated_power_vals = power_vals/cal_pwr
-    for i in range(num_channels):
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{i}"))
+    for channel in range(num_channels):
+        i = (num_channels+1)*channel
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{channel}"))
 
     return fig
 
@@ -679,11 +680,12 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     )
     data_range = np.linspace(-bandwidth / 2, bandwidth /
                              2, num=np.shape(spectrum)[1]) + cf
-    for i in range(num_channels):
+    for channel in range(num_channels):
+        i = (num_channels+1)*channel
         fig.add_trace(
             go.Scatter(
                 x=data_range,
-                y=spectrum[i],
+                y=np.abs(spectrum[channel]),
                 name=f"ch{i}",
                 mode="lines",
             )
