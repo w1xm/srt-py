@@ -45,6 +45,7 @@ class radio_process_dual_channel(gr.top_block):
         ##################################################
         self.num_bins = num_bins
         self.num_integrations = num_integrations
+        self.num_channels = num_channels = 2
 
         ##################################################
         # Variables
@@ -60,7 +61,6 @@ class radio_process_dual_channel(gr.top_block):
         self.samp_rate = samp_rate = 2000000
         self.rf_gain = rf_gain = 20
         self.rf_freq = rf_freq = freq
-        self.num_channels = num_channels = 2
         self.motor_el = motor_el = np.nan
         self.motor_az = motor_az = np.nan
         self.is_running = is_running = False
