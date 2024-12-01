@@ -84,9 +84,9 @@ def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_refer
     only accounts for amplitude and assumes noise covariance between channels is zero for now
     """
 
-    average_cold_sky_spectrum = np.abs(get_averaged_spectrum(cold_sky_reference_filepath))
+    average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath)
     average_cold_sky_spectrum_real = average_cold_sky_spectrum[:,:,:,0] #only get real values for now
-    average_calibrator_plus_sky_spectrum = np.abs(get_averaged_spectrum(calibrator_reference_filepath))
+    average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
     average_calibrator_plus_sky_spectrum_real = average_calibrator_plus_sky_spectrum[:,:,:,0] #only get real values for now
     average_calibrator_spectrum = average_calibrator_plus_sky_spectrum_real - average_cold_sky_spectrum_real
 
