@@ -688,7 +688,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
             go.Scatter(
                 x=data_range,
                 y=np.abs(spectrum[i]),
-                name=f"ch{i}",
+                name=f"ch{channel}",
                 mode="lines",
             )
         )
