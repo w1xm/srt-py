@@ -70,7 +70,7 @@ class radio_process_dual_channel(gr.top_block):
         self.custom_window = custom_window = sinc_samples*np.hamming(4*num_bins)
         self.calibrator_mask = calibrator_mask = 0b000000000011
         self.cal_values = cal_values = np.array([np.repeat(np.nan, num_bins)]*num_channels**2)
-        self.cal_pwr = cal_pwr = np.array([1]**num_channels**2)
+        self.cal_pwr = cal_pwr = np.array([1]*num_channels**2)
         self.cal_on = cal_on = False
         self.beam_switch = beam_switch = 0
 
