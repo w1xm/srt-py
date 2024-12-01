@@ -680,6 +680,8 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     )
     data_range = np.linspace(-bandwidth / 2, bandwidth /
                              2, num=np.shape(spectrum)[1]) + cf
+    mins = np.zeros(num_channels)
+    maxs = np.zeros(num_channels)
     for channel in range(num_channels):
         i = (num_channels+1)*channel
         fig.add_trace(
@@ -690,6 +692,8 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
                 mode="lines",
             )
         )
+        mins[channel] = np.min(np.abs(spectrum[channel]))
+        maxs[channel] = np.max(np.abs(spectrum[channel]))
     # if len(spectrum) > max_histogram_size:
     #     fig.add_trace(
     #         go.Scatter(
@@ -714,7 +718,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     #         )
     #     )
     if is_spec_cal:
-        fig.update_yaxes(range=[np.min(spectrum), np.max(spectrum)])
+        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
     return fig
 
 
