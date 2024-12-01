@@ -645,6 +645,72 @@ class SmallRadioTelescopeDaemon:
 
         self.log_message("Calibration Done")
 
+    def clear_calibration(self):
+
+        """pushes empty calibration set to radio processing script
+
+        Returns
+        -------
+        None
+        """
+
+        #kill any running file save operations since we're about to scramble them
+
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+        
+        # erase existing calibration
+        self.cal_values = np.ones((self.radio_num_channels,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones_like(self.temp_cal)
+        
+        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+
+        #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
+        sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+        self.log_message("Calibration Cleared")
+
+    def load_calibration(self, path=None):
+        """ load calibration from file
+        really meant exclusively for reversing the calclear command
+        but also potentially useful for loading a known approximate cal for an overview if the configuration is changes
+
+        Returns
+        -------
+        None
+        """
+
+        if path==None:
+            path = Path(self.config_directory, "calibration.json")
+
+        #kill any running file save operations since we're going to change the calibration correction in the processing path
+
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+
+ 
+        with open(path, "r") as input_file:
+            try:
+                cal_data = json.load(input_file)
+                # If Calibration is of a Different Size Than The Current FFT Size, Discard
+                if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
+                    self.cal_values = np.array(cal_data["cal_values"])
+                    self.cal_power = np.array(cal_data["cal_pwr"])
+
+                    self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+                    self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+
+                    #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
+                    sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+                    self.log_message("Calibration Loaded")
+                else:
+                    self.log_message("Loading Calibration failed, cal coefficients array incorrect size")
+            except KeyError:
+                self.log_message("Bad Cal File")
+
+
     def start_recording(self, name, file_dir):
         """Starts Recording Data
 
@@ -1234,6 +1300,10 @@ Commands Coming in Over ZMQ PUSH/PULL
                     self.set_calibrator_state(False)
                 elif command_name == "calibrate":
                     self.calibrate()
+                elif command_name == "clearcal":
+                    self.clear_calibration()
+                elif command_name == "loadcal":
+                    self.load_calibration()
                 elif command_name == "npointset":
                     self.set_npoints(n=int(command_parts[1]))
                 elif command_name == "quit":
