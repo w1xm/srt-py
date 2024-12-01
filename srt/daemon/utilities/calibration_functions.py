@@ -40,15 +40,16 @@ def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=300, t_cal
     only accounts for amplitude and assumes noise covariance between channels is zero for reference observation
     """
 
-    average_cold_sky_spectrum = np.abs(get_averaged_spectrum(cold_sky_reference_filepath)) #force real, for now this is a magnitude only correction
-    relative_freq_values = np.linspace(-1, 1, np.shape(average_cold_sky_spectrum)[2])
+    average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath) 
+    average_cold_sky_spectrum_real = average_cold_sky_spectrum[:,:,:,0] #only get real values for now
+    relative_freq_values = np.linspace(-1, 1, np.shape(average_cold_sky_spectrum_real)[2])
 
-    smoothed_cold_sky_spectrum =np.ones_like(average_cold_sky_spectrum[0]) #drop a dimension to save my sanity here. 
+    smoothed_cold_sky_spectrum =np.ones_like(average_cold_sky_spectrum_real[0]) #drop a dimension to save my sanity here. 
     #this is ONLY calculating the diagonal elements
 
 
     for i in range(num_channels):
-        polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_cold_sky_spectrum[i,i], polynomial_order,)
+        polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_cold_sky_spectrum_real[i,i], polynomial_order,)
         smoothed_cold_sky_spectrum[i] = polynomial_fit(relative_freq_values)
 
     #calculate gain corrections for the diagonal terms
@@ -84,8 +85,10 @@ def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_refer
     """
 
     average_cold_sky_spectrum = np.abs(get_averaged_spectrum(cold_sky_reference_filepath))
+    average_cold_sky_spectrum_real = average_cold_sky_spectrum[:,:,:,0] #only get real values for now
     average_calibrator_plus_sky_spectrum = np.abs(get_averaged_spectrum(calibrator_reference_filepath))
-    average_calibrator_spectrum = average_calibrator_plus_sky_spectrum - average_cold_sky_spectrum
+    average_calibrator_plus_sky_spectrum_real = average_calibrator_plus_sky_spectrum[:,:,:,0] #only get real values for now
+    average_calibrator_spectrum = average_calibrator_plus_sky_spectrum_real - average_cold_sky_spectrum_real
 
     smoothed_calibrator_spectrum =np.ones_like(average_calibrator_spectrum[0]) #collapse to a single dimension corresponding to the diagonal
 

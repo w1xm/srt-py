@@ -1160,7 +1160,7 @@ class SmallRadioTelescopeDaemon:
         rpc_server = ServerProxy("http://localhost:5557/")
         while True:
             method, value = self.radio_queue.get()
-            print(method)
+            #print(method)
             call = getattr(rpc_server, f"set_{method}")
             call(value)
             sleep(0.01)
