@@ -79,7 +79,7 @@ def generate_first_row():
                     html.Div(
                         [
                             dcc.Graph(id="cal-spectrum-histogram"),
-                            #dcc.Graph(id="raw-spectrum-histogram"),
+                            dcc.Graph(id="raw-spectrum-histogram"),
                         ],
                         className="pretty_container six columns",
                     ),
