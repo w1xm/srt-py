@@ -124,31 +124,34 @@ blocks:
       \ because they will be, and for now assume they share the same metadata \n \
       \       #not too worried babout getting this perfect because I'll need to rewrite\
       \ this later anyway\n        file_path = pathlib.Path(self.directory, self.filename)\n\
-      \n        # reshape data into the array form it actually should be\n\n     \
-      \   with open(file_path, \"ab+\") as file:\n            for input_array in input_items[0]:\n\
-      \n                tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))\n\
-      \                #tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))\n\
-      \                tags_dict_0 = {pmt.to_python(tag.key): pmt.to_python(tag.value)\
-      \ for tag in tags_0}\n                #tags_dict_1 = {pmt.to_python(tag.key):\
-      \ pmt.to_python(tag.value) for tag in tags_1}\n\n                time_since_epoch\
-      \ = tags_dict_0[\"rx_time\"][0] + tags_dict_0[\"rx_time\"][1]\n            \
-      \    date = datetime.fromtimestamp(time_since_epoch, timezone.utc)\n       \
-      \         metadata = tags_dict_0[\"metadata\"]\n                samp_rate =\
-      \ metadata[\"samp_rate\"]\n                num_integrations = metadata[\"num_integrations\"\
-      ]\n                freq = metadata[\"freq\"]\n                num_bins = metadata[\"\
-      num_bins\"]\n                soutrack = metadata[\"soutrack\"]\n\n         \
-      \       hdr = fits.Header()\n                hdr[\"BUNIT\"] = \"K\"\n      \
-      \          hdr[\"CTYPE1\"] = \"Freq\"\n                hdr[\"CRPIX1\"] = num_bins\
-      \ / float(2)  # Reference pixel (center)\n                hdr[\"CRVAL1\"] =\
-      \ freq  # Center, USRP, frequency\n                hdr[\"CDELT1\"] = samp_rate\
-      \ / (1 * num_bins)  # Channel width\n                hdr[\"CUNIT1\"] = \"Hz\"\
-      \n\n                hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\n          \
-      \      hdr[\"OBJECT\"] = soutrack\n                hdr[\"OBSTIME\"] = (num_bins\
-      \ * num_integrations) / samp_rate\n\n                hdr[\"DATE-OBS\"] = date.strftime(\"\
-      %Y-%m-%d\")\n                hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n\
-      \                hdr[\"METADATA\"] = json.dumps(metadata)\n\n              \
-      \  #append neatly reshaped input containing covariance matrix data\n       \
-      \         fits.append(file, input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len),\
+      \n        with open(file_path, \"ab+\") as file:\n            for input_array\
+      \ in input_items[0]:\n\n                tags_0 = self.get_tags_in_window(0,\
+      \ 0, len(input_items[0]))\n                #tags_1 = self.get_tags_in_window(0,\
+      \ 0, len(input_items[1]))\n                tags_dict_0 = {pmt.to_python(tag.key):\
+      \ pmt.to_python(tag.value) for tag in tags_0}\n                #tags_dict_1\
+      \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}\n\n\
+      \                time_since_epoch = tags_dict_0[\"rx_time\"][0] + tags_dict_0[\"\
+      rx_time\"][1]\n                date = datetime.fromtimestamp(time_since_epoch,\
+      \ timezone.utc)\n                metadata = tags_dict_0[\"metadata\"]\n    \
+      \            samp_rate = metadata[\"samp_rate\"]\n                num_integrations\
+      \ = metadata[\"num_integrations\"]\n                freq = metadata[\"freq\"\
+      ]\n                num_bins = metadata[\"num_bins\"]\n                soutrack\
+      \ = metadata[\"soutrack\"]\n\n                hdr = fits.Header()\n        \
+      \        hdr[\"BUNIT\"] = \"K\"\n                hdr[\"CTYPE1\"] = \"Freq\"\n\
+      \                hdr[\"CRPIX1\"] = num_bins / float(2)  # Reference pixel (center)\n\
+      \                hdr[\"CRVAL1\"] = freq  # Center, USRP, frequency\n       \
+      \         hdr[\"CDELT1\"] = samp_rate / (1 * num_bins)  # Channel width\n  \
+      \              hdr[\"CUNIT1\"] = \"Hz\"\n\n                hdr[\"TELESCOP\"\
+      ] = \"SmallRadioTelescope\"\n                hdr[\"OBJECT\"] = soutrack\n  \
+      \              hdr[\"OBSTIME\"] = (num_bins * num_integrations) / samp_rate\n\
+      \n                hdr[\"DATE-OBS\"] = date.strftime(\"%Y-%m-%d\")\n        \
+      \        hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n                hdr[\"\
+      METADATA\"] = json.dumps(metadata)\n\n                #need to add an axis that\
+      \ separately includes real and complex parts of the data\n                covariances\
+      \ = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)\n\
+      \                float_array = np.moveaxis(np.array([np.real(covariances),np.imag(covariances)]),0,-1)\
+      \ #.swapaxes(0,3)\n\n                #append neatly reshaped input containing\
+      \ covariance matrix data\n                fits.append(file, float_array.reshape(self.num_channels,self.num_channels,self.spectrum_len,2),\
       \ hdr) #need to explicitly reshape inline to force it to save array in correct\
       \ shape\n                #fits.append(file, combined_data, hdr) #append both\
       \ spectra.\n                #file.close()\n                # p = np.sum(input_array)\n\
@@ -180,7 +183,6 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
-    bind: 'False'
     comment: ''
     hwm: '-1'
     key: ''
@@ -203,4 +205,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.10.0
+  grc_version: 3.10.5.0

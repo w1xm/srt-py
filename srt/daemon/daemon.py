@@ -123,25 +123,9 @@ class SmallRadioTelescopeDaemon:
 
 
 
-        # Generate Default Calibration Values
-        # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
-        # Unless there is a pre-exisiting calibration from a previous run
 
-        # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
-        self.cal_values = np.ones((self.radio_num_channels**2, self.radio_num_bins))
-        self.cal_power = np.ones(self.radio_num_channels**2)
-
-        calibration_path = Path(config_directory, "calibration.json")
-        if calibration_path.is_file():
-            with open(calibration_path, "r") as input_file:
-                try:
-                    cal_data = json.load(input_file)
-                    # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                    if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
-                        self.cal_values = np.array(cal_data["cal_values"])
-                        self.cal_power = np.array(cal_data["cal_pwr"])
-                except KeyError:
-                    pass
+        
+        
 
         # Create Helper Object Which Tracks Celestial Objects
         self.ephemeris_tracker = EphemerisTracker(
@@ -193,7 +177,31 @@ class SmallRadioTelescopeDaemon:
         # List for data that will be plotted in the app
         self.n_point_data = []
         self.beam_switch_data = []
+        
+        # Generate Default Calibration Values
+        # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
+        # Unless there is a pre-exisiting calibration from a previous run
 
+        # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
+        self.cal_values = self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins))
+        self.cal_power = np.ones(self.radio_num_channels**2)
+
+        calibration_path = Path(config_directory, "calibration.json")
+
+        if calibration_path.is_file():
+            self.load_calibration(path=calibration_path)
+            
+        #    with open(calibration_path, "r") as input_file:
+        #        try:
+        #            cal_data = json.load(input_file)
+        #            # If Calibration is of a Different Size Than The Current FFT Size, Discard
+        #            if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
+        #                self.cal_values = np.array(cal_data["cal_values"])
+        #                self.cal_power = np.array(cal_data["cal_pwr"])
+        #        except KeyError:
+        #            pass
+        
+        
     def log_message(self, message):
         """Writes Contents to a Logging List and Prints
 
@@ -536,11 +544,12 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
         self.cal_power = np.ones(self.radio_num_channels**2)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
         '''
         simple cold sky cal for the basic SRT
@@ -624,7 +633,8 @@ class SmallRadioTelescopeDaemon:
 
         file_output = {
             "cal_pwr": cal_power.tolist(),
-            "cal_values": [vals.tolist() for vals in cal_values], #note this is not the global one
+            "cal_values_real": [vals.tolist() for vals in np.real(cal_values)], #note this is not the global one
+            "cal_values_imag": [vals.tolist() for vals in np.imag(cal_values)], #note this is not the global one
         }
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
@@ -637,10 +647,11 @@ class SmallRadioTelescopeDaemon:
         path = Path(self.config_directory, "calibration.json")
         with open(path, "r") as input_file:
             cal_data = json.load(input_file)
-            self.cal_values = np.array(cal_data["cal_values"])
+            self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
             self.cal_power = np.array(cal_data["cal_pwr"])
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
     
 
         self.log_message("Calibration Done")
@@ -660,11 +671,12 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
         self.cal_power = np.ones(self.radio_num_channels**2)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
         #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
         sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
@@ -694,12 +706,13 @@ class SmallRadioTelescopeDaemon:
             try:
                 cal_data = json.load(input_file)
                 # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
-                    self.cal_values = np.array(cal_data["cal_values"])
+                if np.shape(cal_data["cal_values_real"]) == (self.radio_num_channels**2, self.radio_num_bins):
+                    self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
                     self.cal_power = np.array(cal_data["cal_pwr"])
 
                     self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-                    self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+                    self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+                    self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
                     #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
                     sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
@@ -1160,7 +1173,7 @@ class SmallRadioTelescopeDaemon:
         rpc_server = ServerProxy("http://localhost:5557/")
         while True:
             method, value = self.radio_queue.get()
-            #print(method)
+            print(method)
             call = getattr(rpc_server, f"set_{method}")
             call(value)
             sleep(0.01)
@@ -1253,7 +1266,8 @@ Commands Coming in Over ZMQ PUSH/PULL
             "System Temp": ("tsys", self.temp_sys.tolist()),
             "Calibration Temp": ("tcal", self.temp_cal.tolist()),
             "Calibration Power": ("cal_pwr", self.cal_power.tolist()),
-            "Calibration Values": ("cal_values", [vals.tolist() for vals in self.cal_values] ),
+            "Calibration Values Real Part": ("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)] ),
+            "Calibration Values Complex Part": ("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)] ),
             "Is Running": ("is_running", True),
         }
         for name in radio_params:
