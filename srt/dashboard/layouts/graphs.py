@@ -609,8 +609,8 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     #         pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
     #         #pwr = p/a
     #         power_history.insert(0, (t, pwr))
-    #     if power_history is None or len(power_history) == 0:
-    #         return ""
+    if power_history is None or len(power_history) == 0:
+        return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
     calibrated_power_vals = power_vals/cal_pwr
