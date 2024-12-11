@@ -634,9 +634,9 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
 
     #if channel == None:
     if covariances:
-        title = "Calibrated Covariance Magnitudes" if is_spec_cal else "Raw Covariance Magnitudes"
+        plottitle = "Calibrated Covariance Magnitudes" if is_spec_cal else "Raw Covariance Magnitudes"
     else:
-        title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+        plottitle = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
     #else:
     #    title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
     
@@ -674,24 +674,6 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
             specs=[[{"secondary_y": True}]],
             )
         
-        
-        
-        go.Figure(
-            layout={
-                "title": title,
-                "xaxis_title": xaxistitle,
-                "yaxis_title": yaxistitle,
-                "height": 150,
-                "margin": dict(
-                    l=20,
-                    r=20,
-                    b=20,
-                    t=30,
-                    pad=4,
-                ),
-                "uirevision": True,
-            },
-        )
 
         for i in range(num_channels):
             for j in range(num_channels - 1):
@@ -708,8 +690,8 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                             y=ymagdata,
                             name=f"Mag({i}x{j}*)",
                             mode='lines',
-                            secondary_y=False
-                        )
+                        ),
+                        secondary_y=False
                     )
                     
                     fig.add_trace(
@@ -718,18 +700,33 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                             y=yphasedata,
                             name=f"ang({i}x{j}*)",
                             mode='lines',
-                            secondary_y=True
-                        )
+                        ),
+                        secondary_y=True
                     )
-                    
+
+
+        fig.update_layout(
+            title=plottitle,
+            height=150,
+            margin=dict(
+                l=20,
+                r=20,
+                b=20,
+                t=30,
+                pad=4,
+                ),
+            uirevision=True,
+            )
+
+        fig.update_xaxes(title=xaxistitle)   
         fig.update_yaxes(title=yaxistitle, range=[np.min(mins), np.max(maxs)], secondary_y=False)
-        fig.update_yaxes(title="Phase Angle",, range=[-np.pi, np.pi],, secondary_y=True)
+        fig.update_yaxes(title="Phase Angle", range=[-np.pi, np.pi], secondary_y=True)
 
     else:
     
         fig = go.Figure(
             layout={
-                "title": title,
+                "title": plottitle,
                 "xaxis_title": xaxistitle,
                 "yaxis_title": yaxistitle,
                 "height": 150,
