@@ -599,16 +599,6 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     )
 
 
-    # for i in range(num_channels): #compute this one at a time for now because something is thoroughly screwy about this.
-    #     #note this won't work right once we have independent cal for each channel
-
-    #     calibrated_power_history = []
-    #     for t, spectrum in spectrum_history:
-    #         p = np.sum(spectrum[i])
-    #         a = np.shape(spectrum)[1]
-    #         pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
-    #         #pwr = p/a
-    #         power_history.insert(0, (t, pwr))
     if power_history is None or len(power_history) == 0:
         return ""
     power_time, powers = zip(*power_history)
@@ -621,7 +611,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     return fig
 
 
-def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1):
+def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=False, num_channels=1):
     """Generates a Graph of Spectrum Data
 
     Parameters
@@ -642,7 +632,10 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     max_histogram_size = 2048
 
     #if channel == None:
-    title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+    if covariances:
+        title = "Calibrated Covariance Magnitudes" if is_spec_cal else "Raw Covariance Magnitudes"
+    else:
+        title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
     #else:
     #    title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
     
@@ -679,46 +672,47 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
         },
     )
     data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
-    mins = np.zeros(num_channels)
-    maxs = np.zeros(num_channels)
-    for channel in range(num_channels):
-        i = (num_channels+1)*channel
-        ydata = np.abs(spectrum[i])
-        mins[channel] = np.min(ydata)
-        maxs[channel] = np.max(ydata)
+    mins = []
+    maxs = []
 
-        fig.add_trace(
-            go.Scatter(
-                x=data_range,
-                y=ydata,
-                name=f"ch{channel}",
-                mode='lines',
+    if covariances:
+
+        for i in range(num_channels):
+            for j in range(num_channels - 1):
+                if i != j:
+                    index = num_channels*i + j #get index of covariance component
+                    ydata = np.abs(spectrum[index])
+                    mins.append(np.min(ydata))
+                    maxs.append(np.max(ydata))
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=data_range,
+                            y=ydata,
+                            name=f"cov: {i}x{j}*",
+                            mode='lines',
+                        )
+                    )
+
+
+    else:
+
+        for channel in range(num_channels):
+            i = (num_channels+1)*channel
+            ydata = np.abs(spectrum[i])
+            mins.append(np.min(ydata))
+            maxs.append(np.max(ydata))
+
+            fig.add_trace(
+                go.Scatter(
+                    x=data_range,
+                    y=ydata,
+                    name=f"ch{channel}",
+                    mode='lines',
+                )
             )
-        )
 
-    # if len(spectrum) > max_histogram_size:
-    #     fig.add_trace(
-    #         go.Scatter(
-    #             x=data_range,
-    #             y=spectrum,
-    #             name="Spectrum",
-    #             mode="lines",
-    #         )
-    #     )
-    # else:
-    #     fig.add_trace(
-    #         go.Histogram(
-    #             xbins={
-    #                 "size": bandwidth / len(spectrum),
-    #                 "start": -bandwidth / 2 + cf,
-    #                 "end": bandwidth / 2 + cf,
-    #             },
-    #             autobinx=False,
-    #             x=data_range,
-    #             y=spectrum,
-    #             histfunc="avg",
-    #         )
-    #     )
+
     if is_spec_cal:
         fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
     return fig

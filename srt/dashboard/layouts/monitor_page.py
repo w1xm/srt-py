@@ -93,6 +93,38 @@ def generate_first_row():
         ]
     )
 
+def generate_first_row_covariance_spectra():
+    """Generates First Row (Power and Spectrum) Display
+
+    Returns
+    -------
+    Div Containing First Row Objects
+    """
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [dcc.Graph(id="power-graph")],
+                        className="pretty_container six columns",
+                    ),
+                    html.Div(
+                        [
+                            dcc.Graph(id="cal-spectrum-histogram"),
+                            dcc.Graph(id="covariance-spectrum-histogram"),
+                        ],
+                        className="pretty_container six columns",
+                    ),
+                ],
+                className="flex-display",
+                style={
+                    "justify-content": "center",
+                    "margin": "5px",
+                },
+            ),
+        ]
+    )
+
 
 
 def generate_srt_azel():
@@ -940,19 +972,34 @@ def generate_layout(software):
             ]
         )
     else:
-        layout = html.Div(
-            [
-                generate_navbar(drop_down_buttons_srt),
-                dbc.Alert("Recording", color="danger",
-                          id="recording-alert", is_open=False),
-                generate_first_row(),
-                generate_srt_azel(),
-                generate_srt_second_row(),
-                #generate_third_row(),
-                generate_popups(software),
-                html.Div(id="signal", style={"display": "none"}),
-            ]
-        )
+        if num_channels==1:
+            layout = html.Div(
+                [
+                    generate_navbar(drop_down_buttons_srt),
+                    dbc.Alert("Recording", color="danger",
+                              id="recording-alert", is_open=False),
+                    generate_first_row(),
+                    generate_srt_azel(),
+                    generate_srt_second_row(),
+                    #generate_third_row(),
+                    generate_popups(software),
+                    html.Div(id="signal", style={"display": "none"}),
+                ]
+            )
+        else: #multichannel
+            layout = html.Div(
+                [
+                    generate_navbar(drop_down_buttons_srt),
+                    dbc.Alert("Recording", color="danger",
+                              id="recording-alert", is_open=False),
+                    generate_first_row_covariance_spectra(),
+                    generate_srt_azel(),
+                    generate_srt_second_row(),
+                    #generate_third_row(),
+                    generate_popups(software),
+                    html.Div(id="signal", style={"display": "none"}),
+                ]
+            )
     return layout
 
 
@@ -999,7 +1046,7 @@ def register_callbacks(
             return ""
         bandwidth = float(status["bandwidth"])
         cf = float(status["center_frequency"])
-        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=True, num_channels=num_channels)
+        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=True, covariances=False, num_channels=num_channels)
 
     @app.callback(
         Output("raw-spectrum-histogram", "figure"),
@@ -1013,7 +1060,22 @@ def register_callbacks(
             return ""
         bandwidth = float(status["bandwidth"])
         cf = float(status["center_frequency"])
-        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=False, num_channels=num_channels)
+        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=False, covariances=False, num_channels=num_channels)
+
+    @app.callback(
+        Output("covariance-spectrum-histogram", "figure"),
+        [Input("interval-component", "n_intervals")],
+    )
+    def update_cal_spectrum_histogram(n):
+        spectrum = cal_spectrum_thread.get_spectrum()
+        status = status_thread.get_status()
+        if status is None or spectrum is None:
+            return ""
+        bandwidth = float(status["bandwidth"])
+        cf = float(status["center_frequency"])
+        return generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal=True, covariances=True, num_channels=num_channels)
+
+
 
     @app.callback(
         Output("power-graph",
