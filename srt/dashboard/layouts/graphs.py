@@ -607,7 +607,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     calibrated_power_vals = power_vals/cal_pwr
     for channel in range(num_channels):
         i = (num_channels+1)*channel
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{channel}"))
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=np.abs(calibrated_power_vals[:,i]),name=f"ch{channel}"))
 
     return fig
 
