@@ -609,13 +609,14 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
     #         pwr = p / (a * cal_pwr[i]) #this will probably still just work when we switch to tuples for cal corrections
     #         #pwr = p/a
     #         power_history.insert(0, (t, pwr))
-    #     if power_history is None or len(power_history) == 0:
-    #         return ""
+    if power_history is None or len(power_history) == 0:
+        return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
     calibrated_power_vals = power_vals/cal_pwr
-    for i in range(num_channels):
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{i}"))
+    for channel in range(num_channels):
+        i = (num_channels+1)*channel
+        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{channel}"))
 
     return fig
 
@@ -677,17 +678,24 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
             "uirevision": True,
         },
     )
-    data_range = np.linspace(-bandwidth / 2, bandwidth /
-                             2, num=np.shape(spectrum)[1]) + cf
-    for i in range(num_channels):
+    data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
+    mins = np.zeros(num_channels)
+    maxs = np.zeros(num_channels)
+    for channel in range(num_channels):
+        i = (num_channels+1)*channel
+        ydata = np.abs(spectrum[i])
+        mins[channel] = np.min(ydata)
+        maxs[channel] = np.max(ydata)
+
         fig.add_trace(
             go.Scatter(
                 x=data_range,
-                y=spectrum[i],
-                name=f"ch{i}",
-                mode="lines",
+                y=ydata,
+                name=f"ch{channel}",
+                mode='lines',
             )
         )
+
     # if len(spectrum) > max_histogram_size:
     #     fig.add_trace(
     #         go.Scatter(
@@ -712,7 +720,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, num_channels=1
     #         )
     #     )
     if is_spec_cal:
-        fig.update_yaxes(range=[np.min(spectrum), np.max(spectrum)])
+        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
     return fig
 
 

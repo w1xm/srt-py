@@ -61,7 +61,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([1,1])
+    value: np.array([1]*num_channels**2)
   states:
     bus_sink: false
     bus_source: false
@@ -73,12 +73,36 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([np.repeat(np.nan, num_bins),np.repeat(np.nan, num_bins)])
+    value: cal_values_real+1j*cal_values_imag
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [12, 594]
+    coordinate: [384, 580.0]
+    rotation: 0
+    state: true
+- name: cal_values_imag
+  id: variable
+  parameters:
+    comment: ''
+    value: np.zeros((num_channels**2,num_bins))
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [384, 516.0]
+    rotation: 0
+    state: true
+- name: cal_values_real
+  id: variable
+  parameters:
+    comment: ''
+    value: np.ones((num_channels**2,num_bins))
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [384, 452.0]
     rotation: 0
     state: true
 - name: calibrator_mask
@@ -289,7 +313,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([290,290])
+    value: np.array([290]*num_channels)
   states:
     bus_sink: false
     bus_source: false
@@ -301,12 +325,12 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: np.array([171,171])
+    value: np.array([171]*num_channels)
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [120, 532.0]
+    coordinate: [176, 532.0]
     rotation: 0
     state: true
 - name: vlsr
@@ -476,38 +500,6 @@ blocks:
     coordinate: [1432, 680.0]
     rotation: 0
     state: true
-- name: blocks_complex_to_real_0
-  id: blocks_complex_to_real
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2296, 700.0]
-    rotation: 0
-    state: enabled
-- name: blocks_complex_to_real_0_0
-  id: blocks_complex_to_real
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2304, 812.0]
-    rotation: 0
-    state: enabled
 - name: blocks_integrate_xx_0
   id: blocks_integrate_xx
   parameters:
@@ -549,16 +541,16 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: 1.0/(cal_values[0]*cal_pwr[0])
+    const: cal_values[0]
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: float
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 404.0]
+    coordinate: [2680, 652.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_1_0
@@ -567,16 +559,52 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: 1.0/(cal_values[1] * cal_pwr[1])
+    const: 'cal_values[3] '
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: float
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 964.0]
+    coordinate: [2680, 836.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_1_0_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: 'cal_values[1] '
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: complex
+    vlen: num_bins
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2680, 716.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_1_0_0_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: 'cal_values[2] '
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: complex
+    vlen: num_bins
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2680, 780.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_xx_0_0_0_0
@@ -597,23 +625,6 @@ blocks:
     coordinate: [2136, 588.0]
     rotation: 0
     state: true
-- name: blocks_null_sink_0
-  id: blocks_null_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    bus_structure_sink: '[[0,],]'
-    comment: ''
-    num_inputs: num_channels*(num_channels-1)
-    type: complex
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2184, 744.0]
-    rotation: 0
-    state: enabled
 - name: blocks_streams_to_vector_0
   id: blocks_streams_to_vector
   parameters:
@@ -632,24 +643,6 @@ blocks:
     coordinate: [1512, 432.0]
     rotation: 0
     state: enabled
-- name: blocks_streams_to_vector_0_0
-  id: blocks_streams_to_vector
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_streams: '2'
-    type: float
-    vlen: num_bins
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2496, 744.0]
-    rotation: 0
-    state: enabled
 - name: blocks_streams_to_vector_0_0_0
   id: blocks_streams_to_vector
   parameters:
@@ -658,14 +651,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_streams: '2'
-    type: float
+    num_streams: '4'
+    type: complex
     vlen: num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2968, 736.0]
+    coordinate: [3112, 736.0]
     rotation: 0
     state: enabled
 - name: blocks_streams_to_vector_1
@@ -745,7 +738,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1928, 712.0]
+    coordinate: [2424, 664.0]
     rotation: 0
     state: enabled
 - name: calibrator_control_strobe
@@ -1314,8 +1307,8 @@ blocks:
     coordinate: [864, 84.0]
     rotation: 0
     state: true
-- name: weaighted_overlap_fft_0
-  id: weaighted_overlap_fft
+- name: weighted_overlap_fft_0
+  id: weighted_overlap_fft
   parameters:
     affinity: ''
     alias: ''
@@ -1329,11 +1322,11 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1600, 132.0]
+    coordinate: [1664, 132.0]
     rotation: 0
-    state: enabled
-- name: weaighted_overlap_fft_0_0
-  id: weaighted_overlap_fft
+    state: true
+- name: weighted_overlap_fft_0_0
+  id: weighted_overlap_fft
   parameters:
     affinity: ''
     alias: ''
@@ -1347,9 +1340,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1608, 700.0]
+    coordinate: [1656, 684.0]
     rotation: 0
-    state: enabled
+    state: true
 - name: xmlrpc_server_0
   id: xmlrpc_server
   parameters:
@@ -1370,7 +1363,6 @@ blocks:
     address: tcp://127.0.0.1:5558
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1392,7 +1384,6 @@ blocks:
     address: tcp://127.0.0.1:5559
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1414,20 +1405,19 @@ blocks:
     address: tcp://127.0.0.1:5563
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [3176, 788.0]
+    coordinate: [3320, 788.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_1_0
@@ -1436,20 +1426,19 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
     key: ''
     pass_tags: 'True'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [3176, 636.0]
+    coordinate: [3320, 636.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_2
@@ -1458,20 +1447,19 @@ blocks:
     address: tcp://127.0.0.1:5560
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
     key: ''
     pass_tags: 'True'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 636.0]
+    coordinate: [2424, 804.0]
     rotation: 0
     state: true
 - name: zeromq_pub_sink_2_0
@@ -1480,20 +1468,19 @@ blocks:
     address: tcp://127.0.0.1:5561
     affinity: ''
     alias: ''
-    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: 2*num_bins
+    type: complex
+    vlen: 4*num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2728, 788.0]
+    coordinate: [2424, 948.0]
     rotation: 0
     state: true
 
@@ -1505,22 +1492,20 @@ connections:
 - [add_clock_tags, '0', blocks_add_xx_0_0, '1']
 - [add_clock_tags_0, '0', blocks_add_xx_0_0_0, '1']
 - [blocks_add_xx_0_0, '0', blocks_streams_to_vector_0, '0']
-- [blocks_add_xx_0_0, '0', weaighted_overlap_fft_0, '0']
+- [blocks_add_xx_0_0, '0', weighted_overlap_fft_0, '0']
 - [blocks_add_xx_0_0_0, '0', blocks_streams_to_vector_0, '1']
-- [blocks_add_xx_0_0_0, '0', weaighted_overlap_fft_0_0, '0']
-- [blocks_complex_to_real_0, '0', blocks_multiply_const_vxx_1, '0']
-- [blocks_complex_to_real_0, '0', blocks_streams_to_vector_0_0, '0']
-- [blocks_complex_to_real_0_0, '0', blocks_multiply_const_vxx_1_0, '0']
-- [blocks_complex_to_real_0_0, '0', blocks_streams_to_vector_0_0, '1']
+- [blocks_add_xx_0_0_0, '0', weighted_overlap_fft_0_0, '0']
 - [blocks_integrate_xx_0, '0', blocks_multiply_const_xx_0_0_0_0, '0']
 - [blocks_message_strobe_0, strobe, calibrator_control_strobe, strobe]
 - [blocks_multiply_const_vxx_1, '0', blocks_streams_to_vector_0_0_0, '0']
-- [blocks_multiply_const_vxx_1_0, '0', blocks_streams_to_vector_0_0_0, '1']
+- [blocks_multiply_const_vxx_1_0, '0', blocks_streams_to_vector_0_0_0, '3']
+- [blocks_multiply_const_vxx_1_0_0, '0', blocks_streams_to_vector_0_0_0, '1']
+- [blocks_multiply_const_vxx_1_0_0_0, '0', blocks_streams_to_vector_0_0_0, '2']
 - [blocks_multiply_const_xx_0_0_0_0, '0', blocks_vector_to_streams_0, '0']
+- [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2, '0']
+- [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2_0, '0']
 - [blocks_streams_to_vector_0, '0', zeromq_pub_sink_0, '0']
 - [blocks_streams_to_vector_0, '0', zeromq_pub_sink_0_0, '0']
-- [blocks_streams_to_vector_0_0, '0', zeromq_pub_sink_2, '0']
-- [blocks_streams_to_vector_0_0, '0', zeromq_pub_sink_2_0, '0']
 - [blocks_streams_to_vector_0_0_0, '0', zeromq_pub_sink_1, '0']
 - [blocks_streams_to_vector_0_0_0, '0', zeromq_pub_sink_1_0, '0']
 - [blocks_streams_to_vector_1, '0', blocks_integrate_xx_0, '0']
@@ -1528,16 +1513,16 @@ connections:
 - [blocks_tags_strobe_0, '0', blocks_add_xx_0_0_0, '0']
 - [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0, '2']
 - [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0_0, '2']
-- [blocks_vector_to_streams_0, '0', blocks_complex_to_real_0, '0']
-- [blocks_vector_to_streams_0, '1', blocks_null_sink_0, '0']
-- [blocks_vector_to_streams_0, '2', blocks_null_sink_0, '1']
-- [blocks_vector_to_streams_0, '3', blocks_complex_to_real_0_0, '0']
+- [blocks_vector_to_streams_0, '0', blocks_multiply_const_vxx_1, '0']
+- [blocks_vector_to_streams_0, '1', blocks_multiply_const_vxx_1_0_0, '0']
+- [blocks_vector_to_streams_0, '2', blocks_multiply_const_vxx_1_0_0_0, '0']
+- [blocks_vector_to_streams_0, '3', blocks_multiply_const_vxx_1_0, '0']
 - [calibrator_control_strobe, command, uhd_usrp_source_1, command]
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '1', add_clock_tags_0, '0']
-- [weaighted_overlap_fft_0, '0', Covariance_Matrix_1, '0']
-- [weaighted_overlap_fft_0_0, '0', Covariance_Matrix_1, '1']
+- [weighted_overlap_fft_0, '0', Covariance_Matrix_1, '0']
+- [weighted_overlap_fft_0_0, '0', Covariance_Matrix_1, '1']
 
 metadata:
   file_format: 1
-  grc_version: 3.10.10.0
+  grc_version: 3.10.5.0
