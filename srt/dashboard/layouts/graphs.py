@@ -670,57 +670,71 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
 
     if covariances:
     
-        fig = make_subplots(
-            specs=[[{"secondary_y": True}]],
-            )
+        # fig = make_subplots(
+        #     specs=[[{"secondary_y": True}]],
+        #     )
+        fig = go.Figure(
+            layout={
+                "title": plottitle,
+                "xaxis_title": xaxistitle,
+                "yaxis_title": yaxistitle,
+                "height": 150,
+                "margin": dict(
+                    l=20,
+                    r=50,
+                    b=20,
+                    t=30,
+                    pad=4,
+                ),
+                "uirevision": True,
+            },
+        )
         
 
         for i in range(num_channels):
             for j in range(num_channels - 1):
                 if i != j:
                     index = num_channels*i + j #get index of covariance component
-                    ymagdata = np.abs(spectrum[index])
-                    yphasedata = np.angle(spectrum[index])
-                    mins.append(np.min(ymagdata))
-                    maxs.append(np.max(ymagdata))
+                    yrdata = np.real(spectrum[index])
+                    yidata = np.imag(spectrum[index])
+                    mins.append(np.min(yrdata))
+                    maxs.append(np.max(yrdata))
+                    mins.append(np.min(yidata))
+                    maxs.append(np.max(yidata))
 
                     fig.add_trace(
                         go.Scatter(
                             x=data_range,
-                            y=ymagdata,
-                            name=f"Mag({i}x{j}*)",
+                            y=yrdata,
+                            name=f"Re({i}x{j}*)",
                             mode='lines',
                         ),
-                        secondary_y=False
+                        #secondary_y=False
                     )
                     
                     fig.add_trace(
                         go.Scatter(
                             x=data_range,
-                            y=yphasedata,
-                            name=f"ang({i}x{j}*)",
+                            y=yidata,
+                            name=f"Im({i}x{j}*)",
                             mode='lines',
                         ),
-                        secondary_y=True
+                        #secondary_y=True
                     )
+        #     margin=dict(
+        #         l=20,
+        #         r=20,
+        #         b=20,
+        #         t=30,
+        #         pad=4,
+        #         ),
+        #     uirevision=True,
+        #     )
 
-
-        fig.update_layout(
-            title=plottitle,
-            height=150,
-            margin=dict(
-                l=20,
-                r=20,
-                b=20,
-                t=30,
-                pad=4,
-                ),
-            uirevision=True,
-            )
-
-        fig.update_xaxes(title=xaxistitle)   
-        fig.update_yaxes(title=yaxistitle, range=[np.min(mins), np.max(maxs)], secondary_y=False)
-        fig.update_yaxes(title="Phase Angle", range=[-np.pi, np.pi], secondary_y=True)
+        # fig.update_xaxes(title=xaxistitle)   
+        # fig.update_yaxes(title=yaxistitle, range=[np.min(mins), np.max(maxs)], secondary_y=False)
+        # fig.update_yaxes(title="Phase Angle", range=[-np.pi, np.pi], secondary_y=True)
+        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
 
     else:
     
@@ -732,7 +746,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                 "height": 150,
                 "margin": dict(
                     l=20,
-                    r=20,
+                    r=50,
                     b=20,
                     t=30,
                     pad=4,
@@ -747,6 +761,13 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
             mins.append(np.min(ydata))
             maxs.append(np.max(ydata))
 
+
+        if is_spec_cal:
+            fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
+
+        # fig.update_layout(
+        #     title=plottitle,
+        #     height=150,
             fig.add_trace(
                 go.Scatter(
                     x=data_range,
