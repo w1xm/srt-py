@@ -268,12 +268,23 @@ class SmallRadioTelescopeDaemon:
                 self.point_at_offset(*new_rotor_offsets)
 
             rotor_loc.append(self.rotor_location)
-            sleep(5)
-            raw_spec = get_spectrum(port=5561,num_channels=self.radio_num_channels)
-            p = np.sum(raw_spec,axis=1)
-            a = np.shape(raw_spec)[1]
-            pwr = p / (a * self.cal_power)
-            pwr_list.append(np.mean(pwr))
+            
+            sleep(2*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
+            
+            cal_spec = get_spectrum(port=5563,num_channels=self.radio_num_channels)
+
+            p = np.mean(cal_spec,axis=1)
+
+            n_point_mags = np.real(p)
+            n_point_phases = np.imag(p)
+            
+            #sum power on the diagonal for single frame old style graph
+            pwr = 0.0
+            for channel in range(self.radio_num_channels):
+                i = (self.radio_num_channels+1)*channel
+                pwr += float(n_point_mags[i])
+            
+            pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
         maxdiff = (az_dif, el_dif)
 
         self.n_point_data = [scan_center, maxdiff,
@@ -311,12 +322,24 @@ class SmallRadioTelescopeDaemon:
                 self.rotor_destination = new_rotor_destination
                 self.point_at_offset(*new_rotor_offsets)
             rotor_loc.append(self.rotor_location)
-            sleep(5)
-            raw_spec = get_spectrum(port=5561,num_channels=self.radio_num_channels)
-            p = np.sum(raw_spec,axis=1)
-            a = np.shape(raw_spec)[1]
-            pwr = (self.temp_sys + self.temp_cal) * p / (a * self.cal_power)
-            pwr_list.append(np.mean(pwr))
+            
+            sleep(2*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
+            
+            cal_spec = get_spectrum(port=5563,num_channels=self.radio_num_channels)
+
+            p = np.mean(cal_spec,axis=1)
+
+            n_point_mags = np.real(p)
+            n_point_phases = np.imag(p)
+            
+            #sum power on the diagonal for single frame old style graph
+            pwr = 0.0
+            for channel in range(self.radio_num_channels):
+                i = (self.radio_num_channels+1)*channel
+                pwr += float(n_point_mags[i])
+            
+            pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
+            
         self.rotor_offsets = (0.0, 0.0)
         self.radio_queue.put(("beam_switch", 0))
         self.ephemeris_cmd_location = object_id
