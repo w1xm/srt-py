@@ -681,7 +681,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                 "height": 150,
                 "margin": dict(
                     l=20,
-                    r=100,
+                    r=150,
                     b=20,
                     t=30,
                     pad=4,
@@ -734,7 +734,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                 "height": 150,
                 "margin": dict(
                     l=20,
-                    r=100,
+                    r=150,
                     b=20,
                     t=30,
                     pad=4,
