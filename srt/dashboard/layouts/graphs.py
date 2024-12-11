@@ -5,6 +5,7 @@ Contains the Code for Generating Complicated Graphs
 """
 
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from datetime import datetime
 import numpy as np
 from dash import Dash, dcc, html, Input, Output, callback
@@ -639,63 +640,109 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
     #else:
     #    title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
     
-    yaxis = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
+    yaxistitle = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
 
     if cf > pow(10, 9):
         cf /= pow(10, 9)
         bandwidth /= pow(10, 9)
-        xaxis = "Frequency (GHz)"
+        xaxistitle = "Frequency (GHz)"
     elif cf > pow(10, 6):
         cf /= pow(10, 6)
         bandwidth /= pow(10, 6)
-        xaxis = "Frequency (MHz)"
+        xaxistitle = "Frequency (MHz)"
     elif cf > pow(10, 3):
         cf /= pow(10, 3)
         bandwidth /= pow(10, 3)
-        xaxis = "Frequency (kHz)"
+        xaxistitle = "Frequency (kHz)"
     else:
-        xaxis = "Frequency (Hz)"
-    fig = go.Figure(
-        layout={
-            "title": title,
-            "xaxis_title": xaxis,
-            "yaxis_title": yaxis,
-            "height": 150,
-            "margin": dict(
-                l=20,
-                r=20,
-                b=20,
-                t=30,
-                pad=4,
-            ),
-            "uirevision": True,
-        },
-    )
+        xaxistitle = "Frequency (Hz)"
+        
+
+    
+    #fig.update_layout(
+    #    yaxis = dict(
+    #        title="yaxis 1"
+    
+    
     data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
     mins = []
     maxs = []
 
     if covariances:
+    
+        fig = make_subplots(
+            specs=[[{"secondary_y": True}]],
+            )
+        
+        
+        
+        go.Figure(
+            layout={
+                "title": title,
+                "xaxis_title": xaxistitle,
+                "yaxis_title": yaxistitle,
+                "height": 150,
+                "margin": dict(
+                    l=20,
+                    r=20,
+                    b=20,
+                    t=30,
+                    pad=4,
+                ),
+                "uirevision": True,
+            },
+        )
 
         for i in range(num_channels):
             for j in range(num_channels - 1):
                 if i != j:
                     index = num_channels*i + j #get index of covariance component
-                    ydata = np.abs(spectrum[index])
-                    mins.append(np.min(ydata))
-                    maxs.append(np.max(ydata))
+                    ymagdata = np.abs(spectrum[index])
+                    yphasedata = np.angle(spectrum[index])
+                    mins.append(np.min(ymagdata))
+                    maxs.append(np.max(ymagdata))
 
                     fig.add_trace(
                         go.Scatter(
                             x=data_range,
-                            y=ydata,
-                            name=f"cov: {i}x{j}*",
+                            y=ymagdata,
+                            name=f"Mag({i}x{j}*)",
                             mode='lines',
+                            secondary_y=False
                         )
                     )
-
+                    
+                    fig.add_trace(
+                        go.Scatter(
+                            x=data_range,
+                            y=yphasedata,
+                            name=f"ang({i}x{j}*)",
+                            mode='lines',
+                            secondary_y=True
+                        )
+                    )
+                    
+        fig.update_yaxes(title=yaxistitle, range=[np.min(mins), np.max(maxs)], secondary_y=False)
+        fig.update_yaxes(title="Phase Angle",, range=[-np.pi, np.pi],, secondary_y=True)
 
     else:
+    
+        fig = go.Figure(
+            layout={
+                "title": title,
+                "xaxis_title": xaxistitle,
+                "yaxis_title": yaxistitle,
+                "height": 150,
+                "margin": dict(
+                    l=20,
+                    r=20,
+                    b=20,
+                    t=30,
+                    pad=4,
+                ),
+                "uirevision": True,
+            },
+        )
 
         for channel in range(num_channels):
             i = (num_channels+1)*channel
@@ -713,8 +760,9 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
             )
 
 
-    if is_spec_cal:
-        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
+        if is_spec_cal:
+            fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
+        
     return fig
 
 
