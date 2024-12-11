@@ -71,7 +71,8 @@ def get_spectrum(port=5561, num_channels=1):
     socket.subscribe("")
     try:
         rec = socket.recv()
-        var = np.frombuffer(rec, dtype="float32").reshape((num_channels,-1))
+        #var = np.frombuffer(rec, dtype="float32").reshape((num_channels,-1))
+        var = np.frombuffer(rec, dtype="complex64").reshape((num_channels**2,-1))
     except:
         return None
 
