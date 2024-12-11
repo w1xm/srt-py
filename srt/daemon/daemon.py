@@ -58,6 +58,7 @@ class SmallRadioTelescopeDaemon:
         """
 
         # Store Individual Settings In Object
+        print("Config Dict:")
         print(config_dict)
         self.config_directory = config_directory
         if "STATION" in config_dict:
@@ -110,8 +111,8 @@ class SmallRadioTelescopeDaemon:
         self.npoints = 5 #default size of grid for npoint scan
         self.radio_calibrator_state = False
 
-        print(f'tsys = {self.temp_sys}')
-        print(f'tcal = {self.temp_cal}')
+        #print(f'tsys = {self.temp_sys}')
+        #print(f'tcal = {self.temp_cal}')
 
 
 
@@ -139,7 +140,7 @@ class SmallRadioTelescopeDaemon:
             self.az_limits,
             self.el_limits,
         )
-        print("test", self.stow_location)
+        #print("test", self.stow_location)
         self.rotor_location = self.stow_location
         self.rotor_destination = self.stow_location
         self.rotor_offsets = (0.0, 0.0)
@@ -1146,7 +1147,7 @@ class SmallRadioTelescopeDaemon:
         rpc_server = ServerProxy("http://localhost:5557/")
         while True:
             method, value = self.radio_queue.get()
-            print(method)
+            #print(method)
             #print(np.shape(value))
             call = getattr(rpc_server, f"set_{method}")
             call(value)
