@@ -558,7 +558,7 @@ def generate_el_time_graph(
     return fig
 
 
-def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channels=1):
+def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=False, num_channels=1):
     """Generates a Graph of the Power History
 
     Parameters
@@ -579,18 +579,20 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
 
 
     #if channel == None:
-    channel_title = "Power vs Time"
+    plot_title = "Covariances vs Time" if covariances else "Power vs Time"
 
+    plot_height = 300 if num_channels==1 else 150
+    right_margin = 20 in num_channels==1 else 140
 
     fig = go.Figure(
         layout={
-            "title": channel_title,
+            "title": plot_title,
             "xaxis_title": "Time (UTC)",
             "yaxis_title": "Calibrated Power",
-            "height": 300,
+            "height": plot_height,
             "margin": dict(
                 l=20,
-                r=20,
+                r=right_margin,
                 b=20,
                 t=30,
                 pad=4,
@@ -599,15 +601,44 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
         },
     )
 
-
     if power_history is None or len(power_history) == 0:
         return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
     calibrated_power_vals = power_vals/cal_pwr
-    for channel in range(num_channels):
-        i = (num_channels+1)*channel
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=np.abs(calibrated_power_vals[:,i]),name=f"ch{channel}"))
+
+    if covariances:
+
+        for i in range(num_channels):
+            for j in range(num_channels - 1):
+                if i != j:
+                    index = num_channels*i + j #get index of covariance component
+
+                    fig.add_trace(go.Scatter(
+                        x=[datetime.utcfromtimestamp(t) for t in power_time],
+                        y=np.real(calibrated_power_vals[:,index]),
+                        name=f"Re({i}x{j}*)"
+                        )
+                    )
+
+                    fig.add_trace(go.Scatter(
+                        x=[datetime.utcfromtimestamp(t) for t in power_time],
+                        y=np.imag(calibrated_power_vals[:,index]),
+                        name=f"Im({i}x{j}*)"
+                        )
+                    )
+
+
+    else:
+
+        for channel in range(num_channels):
+            i = (num_channels+1)*channel
+            fig.add_trace(go.Scatter(
+                x=[datetime.utcfromtimestamp(t) for t in power_time],
+                y=np.abs(calibrated_power_vals[:,i]),
+                name=f"ch{channel}"
+                )
+            )
 
     return fig
 
@@ -656,40 +687,33 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
         xaxistitle = "Frequency (kHz)"
     else:
         xaxistitle = "Frequency (Hz)"
-        
-
-    
-    #fig.update_layout(
-    #    yaxis = dict(
-    #        title="yaxis 1"
     
     
     data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
     mins = []
     maxs = []
 
+    right_margin = 20 in num_channels==1 else 140
+
+    fig = go.Figure(
+        layout={
+            "title": plottitle,
+            "xaxis_title": xaxistitle,
+            "yaxis_title": yaxistitle,
+            "height": 150,
+            "margin": dict(
+                l=20,
+                r=right_margin,
+                b=20,
+                t=30,
+                pad=4,
+            ),
+            "uirevision": True,
+        },
+    )
+
     if covariances:
-    
-        # fig = make_subplots(
-        #     specs=[[{"secondary_y": True}]],
-        #     )
-        fig = go.Figure(
-            layout={
-                "title": plottitle,
-                "xaxis_title": xaxistitle,
-                "yaxis_title": yaxistitle,
-                "height": 150,
-                "margin": dict(
-                    l=20,
-                    r=150,
-                    b=20,
-                    t=30,
-                    pad=4,
-                ),
-                "uirevision": True,
-            },
-        )
-        
+
 
         for i in range(num_channels):
             for j in range(num_channels - 1):
@@ -709,7 +733,6 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                             name=f"Re({i}x{j}*)",
                             mode='lines',
                         ),
-                        #secondary_y=False
                     )
                     
                     fig.add_trace(
@@ -719,29 +742,11 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                             name=f"Im({i}x{j}*)",
                             mode='lines',
                         ),
-                        #secondary_y=True
                     )
        
         fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
 
     else:
-
-        fig = go.Figure(
-            layout={
-                "title": plottitle,
-                "xaxis_title": xaxistitle,
-                "yaxis_title": yaxistitle,
-                "height": 150,
-                "margin": dict(
-                    l=20,
-                    r=150,
-                    b=20,
-                    t=30,
-                    pad=4,
-                ),
-                "uirevision": True,
-            },
-        )
 
         for channel in range(num_channels):
             i = (num_channels+1)*channel
