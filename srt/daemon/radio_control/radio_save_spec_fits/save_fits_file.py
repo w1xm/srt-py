@@ -58,13 +58,28 @@ class blk(gr.sync_block):
 
                 hdr = fits.Header()
                 hdr["BUNIT"] = "K"
-                hdr["CTYPE1"] = "Freq"
-                hdr["CRPIX1"] = num_bins / float(2)  # Reference pixel (center)
-                hdr["CRVAL1"] = freq  # Center, USRP, frequency
-                hdr["CDELT1"] = samp_rate / (1 * num_bins)  # Channel width
-                hdr["CUNIT1"] = "Hz"
+                hdr["CTYPE1"] = "Channel 0"
+                hdr["CTYPE2"] = "Channel 1"
+                hdr["CTYPE3"] = "Freq"
+                hdr["CTYPE4"] = "COMPLEX"
+                hdr["CRPIX1"] = 0 #referenced to channel 0 at coordinate 0
+                hdr["CRPIX2"] = 0 #referenced to channel 0 at coordinate 0
+                hdr["CRPIX3"] = num_bins / float(2)  # Reference pixel (center)
+                hdr["CRPIX4"] = 0
+                hdr["CRVAL1"] = 0 #channel 0
+                hdr["CRVAL2"] = 0 #channel 0
+                hdr["CRVAL3"] = freq  # Center, USRP, frequency
+                hdr["CRVAL4"] = 0
+                hdr["CDELT1"] = 1
+                hdr["CDELT2"] = 1
+                hdr["CDELT3"] = samp_rate / (1 * num_bins)  # Channel width
+                hdr["CDELT4"] = 1
+                hdr["CUNIT1"] = "Radio Channel"
+                hdr["CUNIT2"] = "Radio Channel"
+                hdr["CUNIT3"] = "Hz"
 
-                hdr["TELESCOP"] = "SmallRadioTelescope"
+                #hdr["TELESCOP"] = "SmallRadioTelescope"
+                hdr["TELESCOP"] = "MediumRadioTelescope"
                 hdr["OBJECT"] = soutrack
                 hdr["OBSTIME"] = (num_bins * num_integrations) / samp_rate
 

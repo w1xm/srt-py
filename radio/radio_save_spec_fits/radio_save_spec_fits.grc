@@ -154,18 +154,26 @@ blocks:
       \ = metadata[\"num_integrations\"]\n                freq = metadata[\"freq\"\
       ]\n                num_bins = metadata[\"num_bins\"]\n                soutrack\
       \ = metadata[\"soutrack\"]\n\n                hdr = fits.Header()\n        \
-      \        hdr[\"BUNIT\"] = \"K\"\n                hdr[\"CTYPE1\"] = \"Freq\"\n\
-      \                hdr[\"CRPIX1\"] = num_bins / float(2)  # Reference pixel (center)\n\
-      \                hdr[\"CRVAL1\"] = freq  # Center, USRP, frequency\n       \
-      \         hdr[\"CDELT1\"] = samp_rate / (1 * num_bins)  # Channel width\n  \
-      \              hdr[\"CUNIT1\"] = \"Hz\"\n\n                hdr[\"TELESCOP\"\
-      ] = \"SmallRadioTelescope\"\n                hdr[\"OBJECT\"] = soutrack\n  \
-      \              hdr[\"OBSTIME\"] = (num_bins * num_integrations) / samp_rate\n\
-      \n                hdr[\"DATE-OBS\"] = date.strftime(\"%Y-%m-%d\")\n        \
-      \        hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n                hdr[\"\
-      METADATA\"] = json.dumps(metadata)\n\n                #need to add an axis that\
-      \ separately includes real and complex parts of the data\n                covariances\
-      \ = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)\n\
+      \        hdr[\"BUNIT\"] = \"K\"\n                hdr[\"CTYPE1\"] = \"Channel\
+      \ 1\"\n                hdr[\"CTYPE2\"] = \"Channel 2\"\n                hdr[\"\
+      CTYPE3\"] = \"Freq\"\n                hdr[\"CTYPE4\"] = \"COMPLEX\"\n      \
+      \          hdr[\"CRPIX1\"] = 0 #referenced to channel 0 at coordinate 0\n  \
+      \              hdr[\"CRPIX2\"] = 0 #referenced to channel 0 at coordinate 0\n\
+      \                hdr[\"CRPIX3\"] = num_bins / float(2)  # Reference pixel (center)\n\
+      \                hdr[\"CRPIX4\"] = 0\n                hdr[\"CRVAL1\"] = 0 #channel\
+      \ 0\n                hdr[\"CRVAL2\"] = 0 #channel 0\n                hdr[\"\
+      CRVAL3\"] = freq  # Center, USRP, frequency\n                hdr[\"CRVAL4\"\
+      ] = 0\n                hdr[\"CDELT1\"] = 1\n                hdr[\"CDELT2\"]\
+      \ = 2\n                hdr[\"CDELT3\"] = samp_rate / (1 * num_bins)  # Channel\
+      \ width\n                hdr[\"CDELT4\"] = 1\n                hdr[\"CUNIT3\"\
+      ] = \"Hz\"\n\n                #hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\n\
+      \                hdr[\"TELESCOP\"] = \"MediumRadioTelescope\"\n            \
+      \    hdr[\"OBJECT\"] = soutrack\n                hdr[\"OBSTIME\"] = (num_bins\
+      \ * num_integrations) / samp_rate\n\n                hdr[\"DATE-OBS\"] = date.strftime(\"\
+      %Y-%m-%d\")\n                hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n\
+      \                hdr[\"METADATA\"] = json.dumps(metadata)\n\n              \
+      \  #need to add an axis that separately includes real and complex parts of the\
+      \ data\n                covariances = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)\n\
       \                float_array = np.moveaxis(np.array([np.real(covariances),np.imag(covariances)]),0,-1)\
       \ #.swapaxes(0,3)\n\n                #append neatly reshaped input containing\
       \ covariance matrix data\n                fits.append(file, float_array.reshape(self.num_channels,self.num_channels,self.spectrum_len,2),\
