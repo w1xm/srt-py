@@ -579,7 +579,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances
 
 
     #if channel == None:
-    plot_title = "Covariances vs Time" if covariances else "Power vs Time"
+    plot_title = "Covariance vs Time" if covariances else "Total Power vs Time"
 
     plot_height = 300 if num_channels==1 else 150
     right_margin = 20 if num_channels==1 else 140
@@ -588,7 +588,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances
         layout={
             "title": plot_title,
             "xaxis_title": "Time (UTC)",
-            "yaxis_title": "Calibrated Power",
+            "yaxis_title": "Temperature (K)",
             "height": plot_height,
             "margin": dict(
                 l=20,
