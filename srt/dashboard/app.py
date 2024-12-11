@@ -162,7 +162,7 @@ def generate_app(config_dir, config_dict):
     app.validation_layout = html.Div(
         [
             layout,
-            monitor_page.generate_layout(config_dict["SOFTWARE"]),
+            monitor_page.generate_layout(config_dict["SOFTWARE"],config_dict["RADIO_NUM_CHANNELS"]),
             system_page.generate_layout(),
             #    figure_page.generate_layout()
         ]

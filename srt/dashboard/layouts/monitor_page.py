@@ -893,7 +893,7 @@ def generate_popups(software):
     )
 
 
-def generate_layout(software):
+def generate_layout(software,num_channels):
     """Generates the Basic Layout for the Monitor Page
 
     Returns
