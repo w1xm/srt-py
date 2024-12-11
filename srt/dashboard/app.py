@@ -162,7 +162,7 @@ def generate_app(config_dir, config_dict):
     app.validation_layout = html.Div(
         [
             layout,
-            monitor_page.generate_layout(config_dict["SOFTWARE"],config_dict["RADIO_NUM_CHANNELS"]),
+            monitor_page.generate_layout(config_dict["SOFTWARE"], config_dict["RADIO_NUM_CHANNELS"]),
             system_page.generate_layout(),
             #    figure_page.generate_layout()
         ]
@@ -333,7 +333,7 @@ def generate_app(config_dir, config_dict):
         """
 
         if pathname in ["/", f"/{pages['Monitor Page']}"]:
-            return monitor_page.generate_layout(config_dict["SOFTWARE"])
+            return monitor_page.generate_layout(config_dict["SOFTWARE"], config_dict["RADIO_NUM_CHANNELS"])
         elif pathname == f"/{pages['System Page']}":
             return system_page.generate_layout()
         # elif pathname == f"/{pages['Figure Page']}":
