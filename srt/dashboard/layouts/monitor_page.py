@@ -913,6 +913,8 @@ def generate_layout(software):
             dbc.DropdownMenuItem("Calibrate", id="btn-calibrate"),
             dbc.DropdownMenuItem("Noise Reference on", id="btn-calon"),
             dbc.DropdownMenuItem("Noise Reference off", id="btn-caloff"),
+            dbc.DropdownMenuItem("Clear Calibration", id="btn-clearcal"),
+            dbc.DropdownMenuItem("Load Calibration", id="btn-loadcal"),
         ],
         "Routine": [
             dbc.DropdownMenuItem("Start Recording", id="btn-start-record"),
@@ -1703,6 +1705,8 @@ def register_callbacks(
             Input("btn-calibrate", "n_clicks"),
             Input("btn-calon", "n_clicks"),
             Input("btn-caloff", "n_clicks"),
+            Input("btn-clearcal", "n_clicks"),
+            Input("btn-loadcal", "n_clicks"),
         ],
         [
             State("recording-alert", "is_open")
@@ -1715,6 +1719,8 @@ def register_callbacks(
         n_clicks_calibrate,
         n_clicks_calon,
         n_clicks_caloff,
+        n_clicks_clearcal,
+        n_clicks_loadcal,
         is_open,
     ):
         ctx = dash.callback_context
@@ -1735,3 +1741,7 @@ def register_callbacks(
                 command_thread.add_to_queue("calon")
             elif button_id == "btn-caloff":
                 command_thread.add_to_queue("caloff")
+            elif button_id == "btn-clearcal":
+                command_thread.add_to_queue("clearcal")
+            elif button_id == "btn-loadcal":
+                command_thread.add_to_queue("loadcal")

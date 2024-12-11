@@ -84,6 +84,23 @@ blocks:
     coordinate: [9, 204]
     rotation: 0
     state: true
+- name: num_channels
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: num_channels
+    short_id: ''
+    type: intx
+    value: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 300.0]
+    rotation: 0
+    state: true
 - name: samp_rate
   id: parameter
   parameters:
@@ -104,59 +121,67 @@ blocks:
 - name: save_fits_file
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
-      \ GRC will instantiate the first class it finds\nto get ports and parameters\
-      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
-      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      from gnuradio import gr\nimport pmt\nimport json\n\nimport pathlib\nfrom datetime\
-      \ import datetime, timezone\nfrom astropy.io import fits\n\n\nclass blk(gr.sync_block):\n\
-      \    \"\"\"Embedded Python Block - Saving \"\"\"\n\n    def __init__(\n    \
-      \    self, directory=\".\", filename=\"test.fits\", vec_length=4096, num_channels=1\n\
-      \    ):  # only default arguments here\n        \"\"\"arguments to this function\
-      \ show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n    \
-      \        self,\n            name=\"Embedded Python Block\",  # will show up\
-      \ in GRC\n            in_sig=[(np.float32, vec_length)] * num_channels,\n  \
-      \          #in_sig=[(np.float32, vec_length) for i in range(num_channels)],\n\
-      \            out_sig=None,\n        )\n        # if an attribute with the same\
-      \ name as a parameter is found,\n        # a callback is registered (properties\
-      \ work, too).\n        self.directory = directory\n        self.filename = filename\n\
-      \        self.vec_length = vec_length\n        self.num_channels = num_channels\n\
-      \n    def work(self, input_items, output_items):\n        \"\"\"Saving Spectrum\
-      \ Data to a FITS File\"\"\"\n        # we're just going to assume the inputs\
-      \ are the same length because they will be, and for now assume they share the\
-      \ same metadata \n        #not too worried babout getting this perfect because\
-      \ I'll need to rewrite this later anyway\n        file_path = pathlib.Path(self.directory,\
-      \ self.filename)\n\n        # Combine the input data from each channel into\
-      \ a single array\n        combined_data = np.stack(input_items[:self.num_channels],\
-      \ axis=0)\n\n        #for i, input_array in enumerate(input_items[0]):\n   \
-      \     #for input_array_0, input_array_1 in zip(input_items[0],input_items[1]):\
-      \ #idk why enumerate was involved here. not needed\n            #file = open(file_path,\
-      \ \"ab+\")\n        with open(file_path, \"ab+\") as file:\n            tags_0\
-      \ = self.get_tags_in_window(0, 0, len(input_items[0]))\n            #tags_1\
-      \ = self.get_tags_in_window(0, 0, len(input_items[1]))\n            tags_dict_0\
-      \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}\n \
-      \           #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value)\
-      \ for tag in tags_1}\n\n            time_since_epoch = tags_dict_0[\"rx_time\"\
-      ][0] + tags_dict_0[\"rx_time\"][1]\n            date = datetime.fromtimestamp(time_since_epoch,\
-      \ timezone.utc)\n            metadata = tags_dict_0[\"metadata\"]\n        \
-      \    samp_rate = metadata[\"samp_rate\"]\n            num_integrations = metadata[\"\
-      num_integrations\"]\n            freq = metadata[\"freq\"]\n            num_bins\
-      \ = metadata[\"num_bins\"]\n            soutrack = metadata[\"soutrack\"]\n\n\
-      \            hdr = fits.Header()\n            hdr[\"BUNIT\"] = \"K\"\n     \
-      \       hdr[\"CTYPE1\"] = \"Freq\"\n            hdr[\"CRPIX1\"] = num_bins /\
-      \ float(2)  # Reference pixel (center)\n            hdr[\"CRVAL1\"] = freq \
-      \ # Center, USRP, frequency\n            hdr[\"CDELT1\"] = samp_rate / (1 *\
-      \ num_bins)  # Channel width\n            hdr[\"CUNIT1\"] = \"Hz\"\n\n     \
-      \       hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\n            hdr[\"OBJECT\"\
-      ] = soutrack\n            hdr[\"OBSTIME\"] = (num_bins * num_integrations) /\
-      \ samp_rate\n\n            hdr[\"DATE-OBS\"] = date.strftime(\"%Y-%m-%d\")\n\
-      \            hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n            hdr[\"\
-      METADATA\"] = json.dumps(metadata)\n\n            fits.append(file, combined_data.reshape((self.num_channels,\
-      \ self.vec_length)), hdr) #need to explicitly reshape inline to force it to\
-      \ save array in correct shape\n            #fits.append(file, combined_data,\
-      \ hdr) #append both spectra.\n            #file.close()\n            # p = np.sum(input_array)\n\
-      \            # a = len(input_array)\n            # pwr = (tsys + tcal) * p /\
-      \ (a * calpwr)\n            # ppwr = pwr - tsys\n        return len(input_items[0])\n"
+    _source_code: "\"\"\"\nBlock to save covariance spectra to a fits file\n\"\"\"\
+      \n\nimport numpy as np\nfrom gnuradio import gr\nimport pmt\nimport json\n\n\
+      import pathlib\nfrom datetime import datetime, timezone\nfrom astropy.io import\
+      \ fits\n\n\nclass blk(gr.sync_block):\n    \"\"\"Embedded Python Block - Saving\
+      \ \"\"\"\n\n    def __init__(\n        self, directory=\".\", filename=\"test.fits\"\
+      , spectrum_len=4096, num_channels=2\n    ):  # only default arguments here\n\
+      \        \"\"\"arguments to this function show up as parameters in GRC\"\"\"\
+      \n        gr.sync_block.__init__(\n            self,\n            name=\"Embedded\
+      \ Python Block\",  # will show up in GRC\n            in_sig=[(np.complex64,\
+      \ spectrum_len * num_channels**2)] ,\n            #in_sig=[(np.float32, spectrum_len)\
+      \ for i in range(num_channels)],\n            out_sig=None,\n        )\n   \
+      \     # if an attribute with the same name as a parameter is found,\n      \
+      \  # a callback is registered (properties work, too).\n        self.directory\
+      \ = directory\n        self.filename = filename\n        self.spectrum_len =\
+      \ spectrum_len\n        self.num_channels = num_channels\n\n    def work(self,\
+      \ input_items, output_items):\n        \"\"\"Saving Spectrum Data to a FITS\
+      \ File\"\"\"\n        # we're just going to assume the inputs are the same length\
+      \ because they will be, and for now assume they share the same metadata \n \
+      \       #not too worried babout getting this perfect because I'll need to rewrite\
+      \ this later anyway\n        file_path = pathlib.Path(self.directory, self.filename)\n\
+      \n        with open(file_path, \"ab+\") as file:\n            for input_array\
+      \ in input_items[0]:\n\n                tags_0 = self.get_tags_in_window(0,\
+      \ 0, len(input_items[0]))\n                #tags_1 = self.get_tags_in_window(0,\
+      \ 0, len(input_items[1]))\n                tags_dict_0 = {pmt.to_python(tag.key):\
+      \ pmt.to_python(tag.value) for tag in tags_0}\n                #tags_dict_1\
+      \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}\n\n\
+      \                time_since_epoch = tags_dict_0[\"rx_time\"][0] + tags_dict_0[\"\
+      rx_time\"][1]\n                date = datetime.fromtimestamp(time_since_epoch,\
+      \ timezone.utc)\n                metadata = tags_dict_0[\"metadata\"]\n    \
+      \            samp_rate = metadata[\"samp_rate\"]\n                num_integrations\
+      \ = metadata[\"num_integrations\"]\n                freq = metadata[\"freq\"\
+      ]\n                num_bins = metadata[\"num_bins\"]\n                soutrack\
+      \ = metadata[\"soutrack\"]\n\n                hdr = fits.Header()\n        \
+      \        hdr[\"BUNIT\"] = \"K\"\n                hdr[\"CTYPE1\"] = \"Channel\
+      \ 1\"\n                hdr[\"CTYPE2\"] = \"Channel 2\"\n                hdr[\"\
+      CTYPE3\"] = \"Freq\"\n                hdr[\"CTYPE4\"] = \"COMPLEX\"\n      \
+      \          hdr[\"CRPIX1\"] = 0 #referenced to channel 0 at coordinate 0\n  \
+      \              hdr[\"CRPIX2\"] = 0 #referenced to channel 0 at coordinate 0\n\
+      \                hdr[\"CRPIX3\"] = num_bins / float(2)  # Reference pixel (center)\n\
+      \                hdr[\"CRPIX4\"] = 0\n                hdr[\"CRVAL1\"] = 0 #channel\
+      \ 0\n                hdr[\"CRVAL2\"] = 0 #channel 0\n                hdr[\"\
+      CRVAL3\"] = freq  # Center, USRP, frequency\n                hdr[\"CRVAL4\"\
+      ] = 0\n                hdr[\"CDELT1\"] = 1\n                hdr[\"CDELT2\"]\
+      \ = 2\n                hdr[\"CDELT3\"] = samp_rate / (1 * num_bins)  # Channel\
+      \ width\n                hdr[\"CDELT4\"] = 1\n                hdr[\"CUNIT3\"\
+      ] = \"Hz\"\n\n                #hdr[\"TELESCOP\"] = \"SmallRadioTelescope\"\n\
+      \                hdr[\"TELESCOP\"] = \"MediumRadioTelescope\"\n            \
+      \    hdr[\"OBJECT\"] = soutrack\n                hdr[\"OBSTIME\"] = (num_bins\
+      \ * num_integrations) / samp_rate\n\n                hdr[\"DATE-OBS\"] = date.strftime(\"\
+      %Y-%m-%d\")\n                hdr[\"UTC\"] = date.strftime(\"%H:%M:00%s\")\n\
+      \                hdr[\"METADATA\"] = json.dumps(metadata)\n\n              \
+      \  #need to add an axis that separately includes real and complex parts of the\
+      \ data\n                covariances = input_array.reshape(self.num_channels,self.num_channels,self.spectrum_len)\n\
+      \                float_array = np.moveaxis(np.array([np.real(covariances),np.imag(covariances)]),0,-1)\
+      \ #.swapaxes(0,3)\n\n                #append neatly reshaped input containing\
+      \ covariance matrix data\n                fits.append(file, float_array.reshape(self.num_channels,self.num_channels,self.spectrum_len,2),\
+      \ hdr) #need to explicitly reshape inline to force it to save array in correct\
+      \ shape\n                #fits.append(file, combined_data, hdr) #append both\
+      \ spectra.\n                #file.close()\n                # p = np.sum(input_array)\n\
+      \                # a = len(input_array)\n                # pwr = (tsys + tcal)\
+      \ * p / (a * calpwr)\n                # ppwr = pwr - tsys\n        return len(input_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -164,17 +189,17 @@ blocks:
     filename: file_name
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_channels: '1'
-    vec_length: num_bins
+    num_channels: num_channels
+    spectrum_len: num_bins
   states:
     _io_cache: ('Embedded Python Block', 'blk', [('directory', "'.'"), ('filename',
-      "'test.fits'"), ('vec_length', '4096'), ('num_channels', '1')], [('0', 'float',
-      4096)], [], 'Embedded Python Block - Saving ', ['directory', 'filename', 'num_channels',
-      'vec_length'])
+      "'test.fits'"), ('spectrum_len', '4096'), ('num_channels', '2')], [('0', 'complex',
+      16384)], [], 'Embedded Python Block - Saving ', ['directory', 'filename', 'num_channels',
+      'spectrum_len'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [584, 132.0]
+    coordinate: [664, 140.0]
     rotation: 0
     state: true
 - name: zeromq_sub_source_0
@@ -190,13 +215,13 @@ blocks:
     minoutbuf: '0'
     pass_tags: 'True'
     timeout: '100'
-    type: float
-    vlen: num_bins
+    type: complex
+    vlen: num_channels**2 *num_bins
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [328, 119]
+    coordinate: [328, 124.0]
     rotation: 0
     state: true
 

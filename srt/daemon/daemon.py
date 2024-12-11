@@ -22,18 +22,10 @@ from .rotor_control.rotors import Rotor
 from .radio_control.radio_task_starter import (
     RadioProcessTask,
     RadioSaveRawTask,
-    RadioCalibrateTask,
     RadioSaveSpecRadTask,
     RadioSaveSpecFitsTask,
 )
 
-from .radio_control.radio_task_starter_dual_channel import (
-    RadioProcessTaskDual,
-    RadioSaveRawTaskDual,
-    RadioCalibrateTaskDual,
-    RadioSaveSpecRadTaskDual,
-    RadioSaveSpecFitsTaskDual,
-)
 
 
 from .utilities.object_tracker import EphemerisTracker
@@ -66,6 +58,7 @@ class SmallRadioTelescopeDaemon:
         """
 
         # Store Individual Settings In Object
+        print("Config Dict:")
         print(config_dict)
         self.config_directory = config_directory
         if "STATION" in config_dict:
@@ -118,30 +111,14 @@ class SmallRadioTelescopeDaemon:
         self.npoints = 5 #default size of grid for npoint scan
         self.radio_calibrator_state = False
 
-        print(f'tsys = {self.temp_sys}')
-        print(f'tcal = {self.temp_cal}')
+        #print(f'tsys = {self.temp_sys}')
+        #print(f'tcal = {self.temp_cal}')
 
 
 
-        # Generate Default Calibration Values
-        # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
-        # Unless there is a pre-exisiting calibration from a previous run
 
-        # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
-        self.cal_values = np.ones((self.radio_num_channels, self.radio_num_bins))
-        self.cal_power = np.ones_like(self.temp_sys)
-
-        calibration_path = Path(config_directory, "calibration.json")
-        if calibration_path.is_file():
-            with open(calibration_path, "r") as input_file:
-                try:
-                    cal_data = json.load(input_file)
-                    # If Calibration is of a Different Size Than The Current FFT Size, Discard
-                    if np.shape(cal_data["cal_values"]) == (self.radio_num_channels, self.radio_num_bins):
-                        self.cal_values = np.array(cal_data["cal_values"])
-                        self.cal_power = np.array(cal_data["cal_pwr"])
-                except KeyError:
-                    pass
+        
+        
 
         # Create Helper Object Which Tracks Celestial Objects
         self.ephemeris_tracker = EphemerisTracker(
@@ -163,7 +140,7 @@ class SmallRadioTelescopeDaemon:
             self.az_limits,
             self.el_limits,
         )
-        print("test", self.stow_location)
+        #print("test", self.stow_location)
         self.rotor_location = self.stow_location
         self.rotor_destination = self.stow_location
         self.rotor_offsets = (0.0, 0.0)
@@ -172,14 +149,16 @@ class SmallRadioTelescopeDaemon:
         )
 
         # Create Radio Processing Task (Wrapper for GNU Radio Script)
-        if self.radio_num_channels == 2:
-            self.radio_process_task = RadioProcessTaskDual(
-                num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
-            )
-        else:
-            self.radio_process_task = RadioProcessTask(
-                num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
-            )
+        #if self.radio_num_channels == 2:
+        self.radio_process_task = RadioProcessTask(
+            num_channels = self.radio_num_channels,
+            num_bins=self.radio_num_bins, 
+            num_integrations=self.radio_integ_cycles
+        )
+        #else:
+        #    self.radio_process_task = RadioProcessTask(
+        #        num_bins=self.radio_num_bins, num_integrations=self.radio_integ_cycles
+        #    )
         
         self.radio_queue = Queue()
         self.radio_save_task = None
@@ -193,7 +172,31 @@ class SmallRadioTelescopeDaemon:
         # List for data that will be plotted in the app
         self.n_point_data = []
         self.beam_switch_data = []
+        
+        # Generate Default Calibration Values
+        # Values are Set Up so that Uncalibrated and Calibrated Spectra are the Same Values
+        # Unless there is a pre-exisiting calibration from a previous run
 
+        # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins))
+        self.cal_power = np.ones(self.radio_num_channels**2)
+
+        calibration_path = Path(config_directory, "calibration.json")
+
+        if calibration_path.is_file():
+            self.load_calibration(path=calibration_path)
+            
+        #    with open(calibration_path, "r") as input_file:
+        #        try:
+        #            cal_data = json.load(input_file)
+        #            # If Calibration is of a Different Size Than The Current FFT Size, Discard
+        #            if np.shape(cal_data["cal_values"]) == (self.radio_num_channels**2, self.radio_num_bins):
+        #                self.cal_values = np.array(cal_data["cal_values"])
+        #                self.cal_power = np.array(cal_data["cal_pwr"])
+        #        except KeyError:
+        #            pass
+        
+        
     def log_message(self, message):
         """Writes Contents to a Logging List and Prints
 
@@ -536,11 +539,12 @@ class SmallRadioTelescopeDaemon:
             self.radio_save_task.terminate()
         
         # erase existing calibration
-        self.cal_values = np.ones((self.radio_num_channels,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = np.ones_like(self.temp_cal)
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones(self.radio_num_channels**2)
         
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
         '''
         simple cold sky cal for the basic SRT
@@ -624,7 +628,8 @@ class SmallRadioTelescopeDaemon:
 
         file_output = {
             "cal_pwr": cal_power.tolist(),
-            "cal_values": [vals.tolist() for vals in cal_values], #note this is not the global one
+            "cal_values_real": [vals.tolist() for vals in np.real(cal_values)], #note this is not the global one
+            "cal_values_imag": [vals.tolist() for vals in np.imag(cal_values)], #note this is not the global one
         }
         with open(calibration_path, "w") as outfile:
             json.dump(file_output, outfile)
@@ -637,13 +642,82 @@ class SmallRadioTelescopeDaemon:
         path = Path(self.config_directory, "calibration.json")
         with open(path, "r") as input_file:
             cal_data = json.load(input_file)
-            self.cal_values = np.array(cal_data["cal_values"])
+            self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
             self.cal_power = np.array(cal_data["cal_pwr"])
         self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
-        self.radio_queue.put(("cal_values", [vals.tolist() for vals in self.cal_values]))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
     
 
         self.log_message("Calibration Done")
+
+    def clear_calibration(self):
+
+        """pushes empty calibration set to radio processing script
+
+        Returns
+        -------
+        None
+        """
+
+        #kill any running file save operations since we're about to scramble them
+
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+        
+        # erase existing calibration
+        self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
+        self.cal_power = np.ones(self.radio_num_channels**2)
+        
+        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+        self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
+
+        #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
+        sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+        self.log_message("Calibration Cleared")
+
+    def load_calibration(self, path=None):
+        """ load calibration from file
+        really meant exclusively for reversing the calclear command
+        but also potentially useful for loading a known approximate cal for an overview if the configuration is changes
+
+        Returns
+        -------
+        None
+        """
+
+        if path==None:
+            path = Path(self.config_directory, "calibration.json")
+
+        #kill any running file save operations since we're going to change the calibration correction in the processing path
+
+        if self.radio_save_task is not None:
+            self.radio_save_task.terminate()
+
+ 
+        with open(path, "r") as input_file:
+            try:
+                cal_data = json.load(input_file)
+                # If Calibration is of a Different Size Than The Current FFT Size, Discard
+                if np.shape(cal_data["cal_values_real"]) == (self.radio_num_channels**2, self.radio_num_bins):
+                    self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
+                    self.cal_power = np.array(cal_data["cal_pwr"])
+
+                    self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+                    self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
+                    self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
+
+                    #wait until influence of old cal is guaranteed to be flushed from data pipeline (full integration cycle plus a bit)
+                    sleep(0.1+self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+                    self.log_message("Calibration Loaded")
+                else:
+                    self.log_message("Loading Calibration failed, cal coefficients array incorrect size")
+            except KeyError:
+                self.log_message("Bad Cal File")
+
 
     def start_recording(self, name, file_dir):
         """Starts Recording Data
@@ -658,58 +732,37 @@ class SmallRadioTelescopeDaemon:
         None
         """
         if self.radio_save_task is None:
-            if self.radio_num_channels ==2:
-                if name is None:
-                    self.radio_save_task = RadioSaveRawTaskDual(
-                        self.radio_sample_frequency, file_dir, name
-                    )
-                elif name.endswith(".rad"):
-                    name = None if name == "*.rad" else name
-                    self.radio_save_task = RadioSaveSpecRadTaskDual(
-                        self.radio_sample_frequency,
-                        self.radio_num_bins,
-                        file_dir,
-                        name,
-                    )
-                elif name.endswith(".fits"):
-                    name = None if name == "*.fits" else name
-                    self.radio_save_task = RadioSaveSpecFitsTaskDual(
-                        self.radio_sample_frequency,
-                        self.radio_num_bins,
-                        file_dir,
-                        name,
-                    )
-                else:
-                    self.radio_save_task = RadioSaveRawTaskDual(
-                        self.radio_sample_frequency, file_dir, name
-                    )
-                self.radio_save_task.start()
+            if name is None:
+                self.radio_save_task = RadioSaveRawTask(
+                    self.radio_sample_frequency, 
+                    self.radio_num_channels,
+                    file_dir, 
+                    name
+                )
+            elif name.endswith(".rad"):
+                name = None if name == "*.rad" else name
+                self.radio_save_task = RadioSaveSpecRadTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.radio_num_channels,
+                    file_dir,
+                    name,
+                )
+            elif name.endswith(".fits"):
+                name = None if name == "*.fits" else name
+                self.radio_save_task = RadioSaveSpecFitsTask(
+                    self.radio_sample_frequency,
+                    self.radio_num_bins,
+                    self.radio_num_channels,
+                    file_dir,
+                    name,
+                )
             else:
-                if name is None:
-                    self.radio_save_task = RadioSaveRawTask(
-                        self.radio_sample_frequency, file_dir, name
-                    )
-                elif name.endswith(".rad"):
-                    name = None if name == "*.rad" else name
-                    self.radio_save_task = RadioSaveSpecRadTask(
-                        self.radio_sample_frequency,
-                        self.radio_num_bins,
-                        file_dir,
-                        name,
-                    )
-                elif name.endswith(".fits"):
-                    name = None if name == "*.fits" else name
-                    self.radio_save_task = RadioSaveSpecFitsTask(
-                        self.radio_sample_frequency,
-                        self.radio_num_bins,
-                        file_dir,
-                        name,
-                    )
-                else:
-                    self.radio_save_task = RadioSaveRawTask(
-                        self.radio_sample_frequency, file_dir, name
-                    )
-                self.radio_save_task.start()
+                self.radio_save_task = RadioSaveRawTask(
+                    self.radio_sample_frequency, file_dir, name
+                )
+            self.radio_save_task.start()
+            
         else:
             self.log_message("Cannot Start Recording - Already Recording")
 
@@ -1094,6 +1147,8 @@ class SmallRadioTelescopeDaemon:
         rpc_server = ServerProxy("http://localhost:5557/")
         while True:
             method, value = self.radio_queue.get()
+            #print(method)
+            #print(np.shape(value))
             call = getattr(rpc_server, f"set_{method}")
             call(value)
             sleep(0.01)
@@ -1186,7 +1241,8 @@ Commands Coming in Over ZMQ PUSH/PULL
             "System Temp": ("tsys", self.temp_sys.tolist()),
             "Calibration Temp": ("tcal", self.temp_cal.tolist()),
             "Calibration Power": ("cal_pwr", self.cal_power.tolist()),
-            "Calibration Values": ("cal_values", [vals.tolist() for vals in self.cal_values] ),
+            "Calibration Values Real Part": ("cal_values_real", [vals.tolist() for vals in self.cal_values.real] ),
+            "Calibration Values Complex Part": ("cal_values_imag", [values.tolist() for values in self.cal_values.imag] ),
             "Is Running": ("is_running", True),
         }
         for name in radio_params:
@@ -1234,6 +1290,10 @@ Commands Coming in Over ZMQ PUSH/PULL
                     self.set_calibrator_state(False)
                 elif command_name == "calibrate":
                     self.calibrate()
+                elif command_name == "clearcal":
+                    self.clear_calibration()
+                elif command_name == "loadcal":
+                    self.load_calibration()
                 elif command_name == "npointset":
                     self.set_npoints(n=int(command_parts[1]))
                 elif command_name == "quit":
