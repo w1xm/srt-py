@@ -582,7 +582,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances
     plot_title = "Covariances vs Time" if covariances else "Power vs Time"
 
     plot_height = 300 if num_channels==1 else 150
-    right_margin = 20 in num_channels==1 else 140
+    right_margin = 20 if num_channels==1 else 140
 
     fig = go.Figure(
         layout={
@@ -693,7 +693,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
     mins = []
     maxs = []
 
-    right_margin = 20 in num_channels==1 else 140
+    right_margin = 20 if num_channels==1 else 140
 
     fig = go.Figure(
         layout={
