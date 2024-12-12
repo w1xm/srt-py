@@ -617,14 +617,14 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances
                     fig.add_trace(go.Scatter(
                         x=[datetime.utcfromtimestamp(t) for t in power_time],
                         y=np.real(calibrated_power_vals[:,index]),
-                        name=f"Re({i}x{j}*)"
+                        name=f"Re({j}x{i}*)"
                         )
                     )
 
                     fig.add_trace(go.Scatter(
                         x=[datetime.utcfromtimestamp(t) for t in power_time],
                         y=np.imag(calibrated_power_vals[:,index]),
-                        name=f"Im({i}x{j}*)"
+                        name=f"Im({j}x{i}*)"
                         )
                     )
 
@@ -730,7 +730,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                         go.Scatter(
                             x=data_range,
                             y=yrdata,
-                            name=f"Re({i}x{j}*)",
+                            name=f"Re({j}x{i}*)",
                             mode='lines',
                         ),
                     )
@@ -739,7 +739,7 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
                         go.Scatter(
                             x=data_range,
                             y=yidata,
-                            name=f"Im({i}x{j}*)",
+                            name=f"Im({j}x{i}*)",
                             mode='lines',
                         ),
                     )
