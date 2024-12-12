@@ -782,7 +782,7 @@ class SmallRadioTelescopeDaemon:
                 )
             else:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, file_dir, name
+                    self.radio_sample_frequency, self.radio_num_channels, file_dir, name
                 )
             self.radio_save_task.start()
             
