@@ -268,14 +268,14 @@ class SmallRadioTelescopeDaemon:
 
             p = np.mean(cal_spec,axis=1)
 
-            n_point_mags = np.real(p)
-            n_point_phases = np.imag(p)
+            n_point_real = np.real(p)
+            n_point_imag = np.imag(p)
             
             #sum power on the diagonal for single frame old style graph
             pwr = 0.0
             for channel in range(self.radio_num_channels):
                 i = (self.radio_num_channels+1)*channel
-                pwr += float(n_point_mags[i])
+                pwr += float(np.abs(n_point_real[i]))
             
             pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
         maxdiff = (az_dif, el_dif)
@@ -322,14 +322,14 @@ class SmallRadioTelescopeDaemon:
 
             p = np.mean(cal_spec,axis=1)
 
-            n_point_mags = np.real(p)
-            n_point_phases = np.imag(p)
+            n_point_real = np.real(p)
+            n_point_imag = np.imag(p)
             
             #sum power on the diagonal for single frame old style graph
             pwr = 0.0
             for channel in range(self.radio_num_channels):
                 i = (self.radio_num_channels+1)*channel
-                pwr += float(n_point_mags[i])
+                pwr += float(np.abs(n_point_real[i]))
             
             pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
             
