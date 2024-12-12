@@ -293,7 +293,6 @@ def generate_app(config_dir, config_dict):
             bandwidth = status["bandwidth"]
             vlsr = status["vlsr"]
             time_dif = time() - status["time"]
-            queue_size = status["queue_size"]
             if time_dif > 5:
                 status_string = "MRT Daemon Not Available"
             elif status["queue_size"] == 0 and status["queued_item"] == "None":
@@ -313,8 +312,6 @@ def generate_app(config_dir, config_dict):
         else:
             status_string = f"""
             #### {status_string}
-            - Queued Commands: {queue_size}
-            
             - Location Lat, Long: {lat:.2f}, {lon:.2f} deg
             - Motor Az, El: {az:.2f}, {el:.2f} deg
             - Motor Offsets: {az_offset:.2f}, {el_offset:.2f} deg
