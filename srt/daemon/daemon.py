@@ -623,7 +623,7 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting hot calibration reference measurement")
 
             self.set_calibrator_state(True)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            sleep(0.1+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
@@ -634,7 +634,7 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting cold calibration reference measurement")
 
             self.set_calibrator_state(False)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            sleep(0.1+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
