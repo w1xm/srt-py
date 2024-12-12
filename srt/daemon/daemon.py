@@ -995,7 +995,7 @@ class SmallRadioTelescopeDaemon:
         """
         last_updated_time = None
         #last_ephemeris_cmd_location = None
-        tracking_update_time = 5
+        tracking_update_time = 1
 
 
         while True:
@@ -1078,7 +1078,7 @@ class SmallRadioTelescopeDaemon:
                     #past_rotor_location = self.rotor_location
                     #self.rotor_location = self.rotor.get_azimuth_elevation()
 
-                    if (time() - last_time) > 5 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
+                    if (time() - last_time) > 1 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
                         self.rotor.set_azimuth_elevation(*current_rotor_cmd_location) #always reissue pointing commands periodically and let rotor decide whether to adjust
                         sleep(0.1)
 
