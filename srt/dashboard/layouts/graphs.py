@@ -794,7 +794,7 @@ def emptygraph(xlabel, ylabel, title):
 
     return fig
 
-def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
+def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_channels=1):
     """Creates the n-point graph image with raw data without interpolation
 
     Parameters
@@ -813,6 +813,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
         Center point of the object being imaged.
     sides : list
         Number of pointers per side.
+    num_channels : int
+        Number of radio RF channels
 
     Returns
     -------
@@ -831,19 +833,47 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
     az_range = np.linspace(az_center-d_az, az_center+d_az, sides[0])
     el_range = np.linspace(el_center-d_el, el_center+d_el, sides[1])
 
+    # rearrange n point data into reasonable arrangement of (num_channels**2,side_length, side_length) 
+    # eg. array of images
     pow_in = np.array(pow_in)
-    pow_grid = np.reshape(pow_in, (sides[0],sides[1]))
+    pow_grid = np.moveaxis(np.reshape(pow_in, (sides[0],sides[1],num_channels**2)),-1,0) 
+
+    #indices to define where to put data
+    indices = []
+    for i in range(num_channels**2):
+        indices.append( (int(i%num_channels), int((i/num_channels)%num_channels)) )
+
     # Make the contour plot
-    d1 = go.Contour(z=pow_grid, x=az_range, y=el_range, colorscale="Viridis")
-    fig = go.Figure(
-        data=d1,
-        layout={
-            "title": "Raw N-Point Scan",
-            "xaxis_title": "Azimuth Angle",
-            "yaxis_title": "Elevation Angle",
-            "uirevision": True,
-        },
-    )
+
+    fig = make_subplots(rows = num_channels, columns=num_channels)
+
+    for i in range(num_channels**2):
+
+        id1, id2 = indices[i]
+
+        fig.add_trace(
+            go.Contour(z=pow_grid[i], x=az_range, y=el_range, colorscale="Viridis"),
+            row = id1,
+            col = id2
+            )
+
+        fig.update_xaxes(title_text="Azimuth Offset", row = id1, col = id2)
+        fig.update_yaxes(title_text="Elevation Offset", row = id1, col = id2)
+
+    fig.update_layout(title_text="N Point Scan", height = 800, width = 800)
+
+
+
+
+    # fig = go.Figure(
+    #     data=d1,
+    #     layout={
+    #         "title": "Raw N-Point Scan",
+    #         "xaxis_title": "Azimuth Angle",
+    #         "yaxis_title": "Elevation Angle",
+    #         "uirevision": True,
+    #     },
+    # )
     #fig.add_annotation(
     #    x=xaout[10],
     #    y=xaout[20],
