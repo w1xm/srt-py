@@ -264,20 +264,96 @@ class SmallRadioTelescopeDaemon:
             
             sleep(2*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             
-            cal_spec = get_spectrum(port=5563,num_channels=self.radio_num_channels)
+            cal_spec = get_spectrum(port=5563,num_channels=self.radio_num_channels)  #pull in calibrated spectrum since we have it, none of this raw spectrum nonsense
 
-            p = np.mean(cal_spec,axis=1)
+            #for single channel the only valid data is cal_spec[0,:]
+            #for multi channel cal_spec[0:n**2, :] is valid where the first index counts left to right and then top to bottom across rows of the covariance matrix.
+
+            p = np.mean(cal_spec,axis=1) #average to powers
 
             n_point_real = np.real(p)
             n_point_imag = np.imag(p)
+
+
+            print(p)
+
+            #generate a useable index map
+            indices = []
+            for i in range(self.radio_num_channels**2):
+                indices.append( (int(i%self.radio_num_channels), int((i/self.radio_num_channels)%self.radio_num_channels)) )
+
+            data = [0.0]*self.radio_num_channels**2
+
+            #specifically do a nice thing for dual pol since it lends itself to a neat plot that nothing else really does. 
+            if self.radio_num_channels == 2:
+
+                '''
+                generate date to display as 
+
+                |   sum         real_cov    |
+                |   imag_cov    difference  |
+
+                #send as nice unwrapped list of floats
+                #note some of the tricks here are ONLY valid because this is 2 channel
+
+                '''
+
+                for i in range(self.radio_num_channels**2):
+                    id0, id1 = indices[i]
+
+                    #values on diagonal
+                    if id0==id1:
+                        #first position is sum
+                        data[0] = data[0] + float(n_point_real[i])
+                        #second position is difference
+                        if id0==0:
+                            data[self.radio_num_channels**2 - 1] = data[self.radio_num_channels**2 - 1] + float(n_point_real[i])
+                        else:
+                            data[self.radio_num_channels**2 - 1] = data[self.radio_num_channels**2 - 1] - float(n_point_real[i])
+
+                    #upper triangle is real parts
+                    elif id0<id1: 
+                        data[i] = float(n_point_real[i])
+
+                    #lower triangle is imag parts
+                    else: #id0>id1
+                        data[i] = float(-1*n_point_imag[i]) #multiply by -1 is so it corresponds to the upper covariance imaginary part
+                            
+            else:
+
+                '''
+                generate date to display as 
+
+                |   pwr         real_cov    real_cov  |
+                |   imag_cov    pwr         real_cov  |
+                |   imag_cov    imag_cov    pwr       |
+
+                '''
+
+                for i in range(self.radio_num_channels**2):
+                    id0, id1 = indices[i]
+
+                    if id0==id1: #on diagonal just display power
+
+                        data[i] = float(n_point_real[i])
+
+                    #upper triangle is real parts
+                    elif id0<id1: 
+                        data[i] = float(n_point_real[i])
+
+                    #lower triangle is imag parts
+                    else: #id0>id1
+                        data[i] = float(-1*n_point_imag[i]) #multiply by -1 is so it corresponds to the upper covariance imaginary part
+
+
             
-            #sum power on the diagonal for single frame old style graph
-            pwr = 0.0
-            for channel in range(self.radio_num_channels):
-                i = (self.radio_num_channels+1)*channel
-                pwr += float(np.abs(n_point_real[i]))
+                #just do something that looks reasonable
+                #pwr = 0.0
+                #for channel in range(self.radio_num_channels):
+                #    i = (self.radio_num_channels+1)*channel
+                #    pwr += float(np.abs(n_point_real[i]))
             
-            pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
+            pwr_list.append(data) #cast to normal float because of silly message passing restrictions
         maxdiff = (az_dif, el_dif)
 
         self.n_point_data = [scan_center, maxdiff,
