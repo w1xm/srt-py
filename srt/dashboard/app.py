@@ -274,10 +274,12 @@ def generate_app(config_dir, config_dict):
             lat = lon = np.nan
             az = el = np.nan
             az_offset = el_offset = np.nan
+            az_cmd = el_cmd = np.nan
             cf = np.nan
             bandwidth = np.nan
             status_string = "MRT Not Connected"
             vlsr = np.nan
+            queue_size = np.nan
         else:
             lat = status["location"]["latitude"]
             lon = status["location"]["longitude"]
@@ -285,6 +287,8 @@ def generate_app(config_dir, config_dict):
             el = status["motor_azel"][1]
             az_offset = status["motor_offsets"][0]
             el_offset = status["motor_offsets"][1]
+            az_cmd = status["motor_cmd_azel"][0]
+            el_cmd = status["motor_cmd_azel"][1]
             cf = status["center_frequency"]
             bandwidth = status["bandwidth"]
             vlsr = status["vlsr"]
@@ -311,6 +315,7 @@ def generate_app(config_dir, config_dict):
             - Location Lat, Long: {lat:.2f}, {lon:.2f} deg
             - Motor Az, El: {az:.2f}, {el:.2f} deg
             - Motor Offsets: {az_offset:.2f}, {el_offset:.2f} deg
+            - Pointing Error: {(az-az_cmd):.3f}, {(el-el_cmd):.3f} deg
             - Center Frequency: {cf / pow(10, 6)} MHz
             - Bandwidth: {bandwidth / pow(10, 6)} MHz
             - VLSR: {vlsr:.2f} km/s
