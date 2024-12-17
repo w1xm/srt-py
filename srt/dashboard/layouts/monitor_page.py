@@ -73,7 +73,7 @@ def generate_first_row():
             html.Div(
                 [
                     html.Div(
-                        [dcc.Graph(id="power-graph")],
+                        [dcc.Graph(id="power-history-graph")],
                         className="pretty_container six columns",
                     ),
                     html.Div(
@@ -105,7 +105,10 @@ def generate_first_row_covariance_spectra():
             html.Div(
                 [
                     html.Div(
-                        [dcc.Graph(id="power-graph")],
+                        [
+                            dcc.Graph(id="power-history-graph"),
+                            dcc.Graph(id="covariance-history-graph")
+                        ],
                         className="pretty_container six columns",
                     ),
                     html.Div(
@@ -1078,10 +1081,10 @@ def register_callbacks(
 
 
     @app.callback(
-        Output("power-graph",
-               "figure"), [Input("interval-component", "n_intervals")]
+        Output("power-history-graph", "figure"), 
+        [Input("interval-component", "n_intervals")]
     )
-    def update_power_graph(n):
+    def update_power_history_graph(n):
         status = status_thread.get_status()
         if status is None:
             return ""
@@ -1091,7 +1094,24 @@ def register_callbacks(
         power_history = raw_spectrum_thread.get_power_history()
         if power_history is None:
             return ""
-        return generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channels=num_channels)
+        return generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=False, num_channels=num_channels)
+
+    @app.callback(
+        Output("covariance-history-graph", "figure"), 
+        [Input("interval-component", "n_intervals")]
+    )
+    def update_covariance_history_graph(n):
+        status = status_thread.get_status()
+        if status is None:
+            return ""
+        tsys = np.array(status["temp_sys"])
+        tcal = np.array(status["temp_cal"])
+        cal_pwr = np.array(status["cal_power"])
+        power_history = raw_spectrum_thread.get_power_history()
+        if power_history is None:
+            return ""
+        return generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=True, num_channels=num_channels)
+
 
     @app.callback(
         Output("npoint_info", "data"),

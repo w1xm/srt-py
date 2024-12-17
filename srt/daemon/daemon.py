@@ -275,14 +275,14 @@ class SmallRadioTelescopeDaemon:
 
             p = np.mean(cal_spec,axis=1)
 
-            n_point_mags = np.real(p)
-            n_point_phases = np.imag(p)
+            n_point_real = np.real(p)
+            n_point_imag = np.imag(p)
             
             #sum power on the diagonal for single frame old style graph
             pwr = 0.0
             for channel in range(self.radio_num_channels):
                 i = (self.radio_num_channels+1)*channel
-                pwr += float(n_point_mags[i])
+                pwr += float(np.abs(n_point_real[i]))
             
             pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
         maxdiff = (az_dif, el_dif)
@@ -329,14 +329,14 @@ class SmallRadioTelescopeDaemon:
 
             p = np.mean(cal_spec,axis=1)
 
-            n_point_mags = np.real(p)
-            n_point_phases = np.imag(p)
+            n_point_real = np.real(p)
+            n_point_imag = np.imag(p)
             
             #sum power on the diagonal for single frame old style graph
             pwr = 0.0
             for channel in range(self.radio_num_channels):
                 i = (self.radio_num_channels+1)*channel
-                pwr += float(n_point_mags[i])
+                pwr += float(np.abs(n_point_real[i]))
             
             pwr_list.append(pwr) #cast to normal float because of silly message passing restrictions
             
@@ -592,8 +592,10 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting cold calibration reference measurement")
 
             #start saving new calibration file
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+
+            sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
+
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
@@ -630,7 +632,7 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting hot calibration reference measurement")
 
             self.set_calibrator_state(True)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
@@ -641,7 +643,7 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting cold calibration reference measurement")
 
             self.set_calibrator_state(False)
-            sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
+            sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
@@ -789,7 +791,7 @@ class SmallRadioTelescopeDaemon:
                 )
             else:
                 self.radio_save_task = RadioSaveRawTask(
-                    self.radio_sample_frequency, file_dir, name
+                    self.radio_sample_frequency, self.radio_num_channels, file_dir, name
                 )
             self.radio_save_task.start()
             
@@ -1002,7 +1004,7 @@ class SmallRadioTelescopeDaemon:
         """
         last_updated_time = None
         #last_ephemeris_cmd_location = None
-        tracking_update_time = 5
+        tracking_update_time = 1
 
 
         while True:
@@ -1084,7 +1086,10 @@ class SmallRadioTelescopeDaemon:
                         sleep(self.rotor.rotor_loop_cadence)
                 else:
 
-                    if (time() - last_time) > 5 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
+                    #past_rotor_location = self.rotor_location
+                    #self.rotor_location = self.rotor.get_azimuth_elevation()
+
+                    if (time() - last_time) > 1 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
 
                         self.rotor.set_azimuth_elevation(*current_rotor_cmd_location) #always reissue pointing commands periodically and let rotor decide whether to adjust
                         #sleep(0.3) #move this to the pointing routine in motors.py where it belongs

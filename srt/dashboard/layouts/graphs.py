@@ -5,6 +5,7 @@ Contains the Code for Generating Complicated Graphs
 """
 
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from datetime import datetime
 import numpy as np
 from dash import Dash, dcc, html, Input, Output, callback
@@ -557,7 +558,7 @@ def generate_el_time_graph(
     return fig
 
 
-def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channels=1):
+def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=False, num_channels=1):
     """Generates a Graph of the Power History
 
     Parameters
@@ -578,18 +579,20 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
 
 
     #if channel == None:
-    channel_title = "Power vs Time"
+    plot_title = "Covariance vs Time" if covariances else "Total Power vs Time"
 
+    plot_height = 400 if num_channels==1 else 200
+    right_margin = 20 if num_channels==1 else 140
 
     fig = go.Figure(
         layout={
-            "title": channel_title,
+            "title": plot_title,
             "xaxis_title": "Time (UTC)",
-            "yaxis_title": "Calibrated Power",
-            "height": 300,
+            "yaxis_title": "Temperature (K)",
+            "height": plot_height,
             "margin": dict(
                 l=20,
-                r=20,
+                r=right_margin,
                 b=20,
                 t=30,
                 pad=4,
@@ -598,15 +601,44 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, num_channel
         },
     )
 
-
     if power_history is None or len(power_history) == 0:
         return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
     calibrated_power_vals = power_vals/cal_pwr
-    for channel in range(num_channels):
-        i = (num_channels+1)*channel
-        fig.add_trace(go.Scatter(x=[datetime.utcfromtimestamp(t) for t in power_time], y=calibrated_power_vals[:,i],name=f"ch{channel}"))
+
+    if covariances:
+
+        for i in range(num_channels):
+            for j in range(num_channels - 1):
+                if i != j:
+                    index = num_channels*i + j #get index of covariance component
+
+                    fig.add_trace(go.Scatter(
+                        x=[datetime.utcfromtimestamp(t) for t in power_time],
+                        y=np.real(calibrated_power_vals[:,index]),
+                        name=f"Re({j}x{i}*)"
+                        )
+                    )
+
+                    fig.add_trace(go.Scatter(
+                        x=[datetime.utcfromtimestamp(t) for t in power_time],
+                        y=np.imag(calibrated_power_vals[:,index]),
+                        name=f"Im({j}x{i}*)"
+                        )
+                    )
+
+
+    else:
+
+        for channel in range(num_channels):
+            i = (num_channels+1)*channel
+            fig.add_trace(go.Scatter(
+                x=[datetime.utcfromtimestamp(t) for t in power_time],
+                y=np.abs(calibrated_power_vals[:,i]),
+                name=f"ch{channel}"
+                )
+            )
 
     return fig
 
@@ -633,37 +665,45 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
 
     #if channel == None:
     if covariances:
-        title = "Calibrated Covariance Magnitudes" if is_spec_cal else "Raw Covariance Magnitudes"
+        plottitle = "Calibrated Covariances" if is_spec_cal else "Raw Covariances"
     else:
-        title = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
+        plottitle = "Calibrated Spectrum" if is_spec_cal else "Raw Spectrum"
     #else:
     #    title = f"Channel {channel} Calibrated Spectrum" if is_spec_cal else f"Channel {channel} Raw Spectrum"
     
-    yaxis = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
+    yaxistitle = "Temperature (K)" if is_spec_cal else "Temp. (Unitless)"
 
     if cf > pow(10, 9):
         cf /= pow(10, 9)
         bandwidth /= pow(10, 9)
-        xaxis = "Frequency (GHz)"
+        xaxistitle = "Frequency (GHz)"
     elif cf > pow(10, 6):
         cf /= pow(10, 6)
         bandwidth /= pow(10, 6)
-        xaxis = "Frequency (MHz)"
+        xaxistitle = "Frequency (MHz)"
     elif cf > pow(10, 3):
         cf /= pow(10, 3)
         bandwidth /= pow(10, 3)
-        xaxis = "Frequency (kHz)"
+        xaxistitle = "Frequency (kHz)"
     else:
-        xaxis = "Frequency (Hz)"
+        xaxistitle = "Frequency (Hz)"
+    
+    
+    data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
+    mins = []
+    maxs = []
+
+    right_margin = 20 if num_channels==1 else 140
+
     fig = go.Figure(
         layout={
-            "title": title,
-            "xaxis_title": xaxis,
-            "yaxis_title": yaxis,
-            "height": 150,
+            "title": plottitle,
+            "xaxis_title": xaxistitle,
+            "yaxis_title": yaxistitle,
+            "height": 200,
             "margin": dict(
                 l=20,
-                r=20,
+                r=right_margin,
                 b=20,
                 t=30,
                 pad=4,
@@ -671,29 +711,40 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
             "uirevision": True,
         },
     )
-    data_range = np.linspace(-bandwidth / 2, bandwidth / 2, num=len(spectrum[0])) + cf
-    mins = []
-    maxs = []
 
     if covariances:
+
 
         for i in range(num_channels):
             for j in range(num_channels - 1):
                 if i != j:
                     index = num_channels*i + j #get index of covariance component
-                    ydata = np.abs(spectrum[index])
-                    mins.append(np.min(ydata))
-                    maxs.append(np.max(ydata))
+                    yrdata = np.real(spectrum[index])
+                    yidata = np.imag(spectrum[index])
+                    mins.append(np.min(yrdata))
+                    maxs.append(np.max(yrdata))
+                    mins.append(np.min(yidata))
+                    maxs.append(np.max(yidata))
 
                     fig.add_trace(
                         go.Scatter(
                             x=data_range,
-                            y=ydata,
-                            name=f"cov: {i}x{j}*",
+                            y=yrdata,
+                            name=f"Re({j}x{i}*)",
                             mode='lines',
-                        )
+                        ),
                     )
-
+                    
+                    fig.add_trace(
+                        go.Scatter(
+                            x=data_range,
+                            y=yidata,
+                            name=f"Im({j}x{i}*)",
+                            mode='lines',
+                        ),
+                    )
+       
+        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
 
     else:
 
@@ -713,8 +764,9 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
             )
 
 
-    if is_spec_cal:
-        fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
+        if is_spec_cal:
+            fig.update_yaxes(range=[np.min(mins), np.max(maxs)])
+        
     return fig
 
 
@@ -810,122 +862,3 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
     #    font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
     #)
     return fig
-
-def generate_npoint_interpolated(az_in, el_in, d_az, d_el, pow_in, cent, sides):
-    """Creates the n-point graph image.
-
-    Parameters
-    ----------
-    az_in : array_like
-        List of azimuth locations.
-    el_in : array_like
-        List of elevation locations.
-    d_az : float
-        Resolution of power measurements in the azimuth direction.
-    d_el : float
-        REsolution of power measurements in elevation direction.
-    pow_in : array_like
-        List of power measurements for the given locations of the antenna.
-    cent : array_like
-        Center point of the object being imaged.
-    sides : list
-        Number of pointers per side.
-
-    Returns
-    -------
-    fig : plotly.fig
-        Figure object.
-    """
-
-    # create the output grid
-    az_in = np.array(az_in)
-    el_in = np.array(el_in)
-    az_a = np.linspace(az_in.min(), az_in.max(), 100)
-    el_a = np.linspace(el_in.min(), el_in.max(), 100)
-
-    azout, elout = np.meshgrid(az_a, el_a)
-    pow_in = np.array(pow_in)
-    pmin = pow_in.min()
-    p_in = pow_in - pmin
-    x_l = np.linspace(-0.5, 0.5, sides[0])
-    y_l = np.linspace(-0.5, 0.5, sides[1])
-    xm, ym = np.meshgrid(x_l, y_l)
-    xf = xm.flatten()
-    yf = ym.flatten()
-    xaout = np.linspace(-0.5, 0.5, 100)
-    xo, yo = np.meshgrid(xaout, xaout)
-    # Interpolate the data
-    interp_data = sinc_interp2d(xf, yf, p_in, d_az, d_el, xo, yo)
-    # Determine center of the object and compare to desired center.
-    pow_tot = np.sum(np.sum(interp_data))
-    az_center = np.sum(np.sum(interp_data * azout)) / pow_tot
-    el_center = np.sum(np.sum(interp_data * elout)) / pow_tot
-    az_off = az_center - cent[0]
-    el_off = el_center - cent[1]
-    antext0 = "Az Center {0:.2f} deg".format(az_off)
-    antext1 = "El Center {0:.2f} deg".format(el_off)
-    # Make the contour plot
-    d1 = go.Contour(z=interp_data, x=xaout, y=xaout, colorscale="Viridis")
-    fig = go.Figure(
-        data=d1,
-        layout={
-            "title": "N Point Sinc Interpolated",
-            "xaxis_title": "Normalized x",
-            "yaxis_title": "Normalized y",
-            "uirevision": True,
-        },
-    )
-    fig.add_annotation(
-        x=xaout[10],
-        y=xaout[20],
-        xanchor="left",
-        text=antext0,
-        showarrow=False,
-        font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    )
-
-    fig.add_annotation(
-        x=xaout[10],
-        y=xaout[10],
-        text=antext1,
-        xanchor="left",
-        showarrow=False,
-        font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    )
-    return fig
-
-
-def sinc_interp2d(x, y, values, dx, dy, xout, yout):
-    """Perform a sinc interpolation
-
-    Parameters
-    ----------
-    x : array_like
-        A 1-d array of x values.
-    y : array_like
-        A 1-d array of y values.
-    values : array_like
-        A 1-d array of values that will be interpolated.
-    dx : float
-        Sampling rate along the x axis.
-    dy : float
-        Sampling rate along the y axis.
-    xout : array_like
-        2-d array for x axis sampling.
-    yout : array_like
-        2-d array for y axis sampling.
-
-    Returns
-    -------
-    val_out : array_like
-        2-d array for of the values at the new sampling sampling.
-    """
-
-    val_out = np.zeros_like(xout)
-
-    for x_c, y_c, v_c in zip(x, y, values):
-        x_1 = (xout - x_c) / dx
-        y_1 = (yout - y_c) / dy
-        val_out += float(v_c) * np.sinc(x_1) * np.sinc(y_1)
-
-    return val_out
