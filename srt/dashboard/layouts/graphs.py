@@ -857,8 +857,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
             col = id2
             )
 
-        fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1)
-        fig.update_yaxes(title_text="Elevation Offset", row = (id1+1), col = (id2+1)
+        fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1))
+        fig.update_yaxes(title_text="Elevation Offset", row = (id1+1), col = (id2+1))
 
     fig.update_layout(title_text="N Point Scan", height = 800, width = 800)
 
