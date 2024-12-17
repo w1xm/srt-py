@@ -853,8 +853,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
 
         fig.add_trace(
             go.Contour(z=pow_grid[i], x=az_range, y=el_range, colorscale="Viridis"),
-            row = id1,
-            col = id2
+            row = (id1+1),
+            col = (id2+1)
             )
 
         fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1))
