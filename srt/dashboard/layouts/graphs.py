@@ -843,9 +843,46 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
     for i in range(num_channels**2):
         indices.append( (int(i%num_channels), int((i/num_channels)%num_channels)) )
 
+    # Generate subplot title set
+
+    titles=[]
+
+    if num_channels == 1:
+        titles.append("")
+
+    elif num_channels == 2:
+        for i in range(num_channels**2):
+            id1, id2 = indices[i]
+
+            if id1==id2 & id1==0:
+                titles.append("Ch0 + Ch1")
+            elif id1==id2 & id1==1:
+                titles.append("Ch0 - Ch1")
+            elif id1<id2:
+                titles.append(f"Re[ Ch{id1} * Ch{id2}*]")
+            else: #id0>id1
+                titles.append(f"Im[ Ch{id2} * Ch{id1}*]")
+    else: #any other number of channels that doesn't do the pretty stack
+        for i in range(num_channels**2):
+            id1, id2 = indices[i]
+
+            if id1==id2:
+                titles.append(f"Mag[ Ch{id1}]")
+            elif id1<id2:
+                titles.append(f"Re[ Ch{id1} * Ch{id2}*]")
+            else: #id0>id1
+                titles.append(f"Im[ Ch{id2} * Ch{id1}*]") #yes this flipped indexing is deliberate to match daemon sign convention
+
     # Make the contour plot
 
-    fig = make_subplots(rows = num_channels, cols=num_channels)
+    fig = make_subplots(
+        rows = num_channels, 
+        cols = num_channels,
+        shared_xaxes = True,
+        shared_yaxes = True,
+        x_title = "Azimuth Offset [deg]",
+        y_title = "Elevation Offset [deg]",
+        subplot_titles = titles)
 
     for i in range(num_channels**2):
 
@@ -857,8 +894,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
             col = (id2+1)
             )
 
-        fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1))
-        fig.update_yaxes(title_text="Elevation Offset", row = (id1+1), col = (id2+1))
+
+        #fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1))
+        #fig.update_yaxes(title_text="Elevation Offset", row = (id1+1), col = (id2+1))
 
     fig.update_layout(title_text="N Point Scan", height = 800, width = 800)
 
