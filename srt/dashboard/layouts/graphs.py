@@ -845,7 +845,7 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
 
     # Make the contour plot
 
-    fig = make_subplots(rows = num_channels, columns=num_channels)
+    fig = make_subplots(rows = num_channels, cols=num_channels)
 
     for i in range(num_channels**2):
 
