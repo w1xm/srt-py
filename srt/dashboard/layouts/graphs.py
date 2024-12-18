@@ -831,8 +831,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
     az_center = az_in[idx_center]
     el_center = el_in[idx_center]
     
-    az_range = np.linspace(az_center-d_az, az_center+d_az, sides[0])
-    el_range = np.linspace(el_center-d_el, el_center+d_el, sides[1])
+    az_range = np.linspace(-1*d_az, +d_az, sides[0])
+    el_range = np.linspace(-1*d_el, +d_el, sides[1])
 
     # rearrange n point data into reasonable arrangement of (num_channels**2,side_length, side_length) 
     # eg. array of images
@@ -912,7 +912,7 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
             col = (id1+1)
             )
 
-    fig.update_layout(title_text="N Point Scan", height = 800)#, width = 800)
+    fig.update_layout(title_text=f"N Point Scan: Az = {az_center}, El = {el_center}", height = 800)#, width = 800)
 
 
     return fig
