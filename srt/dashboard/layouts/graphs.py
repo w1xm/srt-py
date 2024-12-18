@@ -912,7 +912,7 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
             col = (id1+1)
             )
 
-    fig.update_layout(title_text=f"N Point Scan: Az = {az_center}, El = {el_center}", height = 800)#, width = 800)
+    fig.update_layout(title_text=f"N Point Scan: Az = {az_center:0.2f}, El = {el_center:0.2f}", height = 800)#, width = 800)
 
 
     return fig
