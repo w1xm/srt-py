@@ -861,9 +861,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
                 else:
                     titles.append("|Ch0|^2 - |Ch1|^2")
             elif id1>id2: 
-                titles.append(f"Re[ Ch{id2} * Ch{id1}*]")
+                titles.append(f"Re[ Ch{id2} X Ch{id1}*]")
             else: #id1<id2
-                titles.append(f"Im[ Ch{id1} * Ch{id2}*]")#yes this flipped indexing is deliberate to match daemon sign convention
+                titles.append(f"Im[ Ch{id1} X Ch{id2}*]")#yes this flipped indexing is deliberate to match daemon sign convention
 
     else: #any other number of channels that doesn't do the pretty stack
         for i in range(num_channels**2):
@@ -872,9 +872,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
             if id1==id2:
                 titles.append(f"|Ch{id1}|^2")
             elif id1>id2:
-                titles.append(f"Re[ Ch{id2} * Ch{id1}*]")
+                titles.append(f"Re[ Ch{id2} X Ch{id1}*]")
             else: #id0<id1
-                titles.append(f"Im[ Ch{id1} * Ch{id2}*]") #yes this flipped indexing is deliberate to match daemon sign convention
+                titles.append(f"Im[ Ch{id1} X Ch{id2}*]") #yes this flipped indexing is deliberate to match daemon sign convention
 
     # Make the contour plot
 
@@ -915,32 +915,4 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
     fig.update_layout(title_text="N Point Scan", height = 800)#, width = 800)
 
 
-
-
-    # fig = go.Figure(
-    #     data=d1,
-    #     layout={
-    #         "title": "Raw N-Point Scan",
-    #         "xaxis_title": "Azimuth Angle",
-    #         "yaxis_title": "Elevation Angle",
-    #         "uirevision": True,
-    #     },
-    # )
-    #fig.add_annotation(
-    #    x=xaout[10],
-    #    y=xaout[20],
-    #    xanchor="left",
-    #    text=antext0,
-    #    showarrow=False,
-    #    font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    #)
-
-    #fig.add_annotation(
-    #    x=xaout[10],
-    #    y=xaout[10],
-    #    text=antext1,
-    #    xanchor="left",
-    #    showarrow=False,
-    #    font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    #)
     return fig
