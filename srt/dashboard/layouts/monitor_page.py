@@ -1195,7 +1195,7 @@ def register_callbacks(
         sc = npdata["scan_center"]
         plist = npdata["pwr"]
         sd = npdata["sides"]
-        ofig = generate_npoint_raw(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd)
+        ofig = generate_npoint_raw(az_a, el_a, mdiff[0], mdiff[1], plist, sc, sd, num_channels=num_channels)
         return ofig
         
     # @app.callback(

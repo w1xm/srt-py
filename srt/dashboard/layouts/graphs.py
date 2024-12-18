@@ -314,6 +314,7 @@ def generate_zoom_graph(
             "xanchor": "center",
             "yanchor": "top",
         },
+        height = 800,
         margin=dict(
             l=20,
             r=20,
@@ -794,7 +795,7 @@ def emptygraph(xlabel, ylabel, title):
 
     return fig
 
-def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
+def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_channels=1):
     """Creates the n-point graph image with raw data without interpolation
 
     Parameters
@@ -813,6 +814,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
         Center point of the object being imaged.
     sides : list
         Number of pointers per side.
+    num_channels : int
+        Number of radio RF channels
 
     Returns
     -------
@@ -831,34 +834,85 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides):
     az_range = np.linspace(az_center-d_az, az_center+d_az, sides[0])
     el_range = np.linspace(el_center-d_el, el_center+d_el, sides[1])
 
+    # rearrange n point data into reasonable arrangement of (num_channels**2,side_length, side_length) 
+    # eg. array of images
     pow_in = np.array(pow_in)
-    pow_grid = np.reshape(pow_in, (sides[0],sides[1]))
-    # Make the contour plot
-    d1 = go.Contour(z=pow_grid, x=az_range, y=el_range, colorscale="Viridis")
-    fig = go.Figure(
-        data=d1,
-        layout={
-            "title": "Raw N-Point Scan",
-            "xaxis_title": "Azimuth Angle",
-            "yaxis_title": "Elevation Angle",
-            "uirevision": True,
-        },
-    )
-    #fig.add_annotation(
-    #    x=xaout[10],
-    #    y=xaout[20],
-    #    xanchor="left",
-    #    text=antext0,
-    #    showarrow=False,
-    #    font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    #)
+    pow_grid = np.moveaxis(np.reshape(pow_in, (sides[0],sides[1],num_channels**2)),-1,0) 
 
-    #fig.add_annotation(
-    #    x=xaout[10],
-    #    y=xaout[10],
-    #    text=antext1,
-    #    xanchor="left",
-    #    showarrow=False,
-    #    font=dict(family="Courier New, monospace", size=13, color="#ffffff"),
-    #)
+    #indices to define where to put data
+    indices = []
+    for i in range(num_channels**2):
+        indices.append( (int(i%num_channels), int((i/num_channels)%num_channels)) )
+
+    # Generate subplot title set
+
+    titles=[]
+
+    if num_channels == 1:
+        titles.append("")
+
+    elif num_channels == 2:
+        for i in range(num_channels**2):
+            id1, id2 = indices[i]
+
+            if id1==id2:
+                if id1==0:
+                    titles.append("|Ch0|^2 + |Ch1|^2")
+                else:
+                    titles.append("|Ch0|^2 - |Ch1|^2")
+            elif id1>id2: 
+                titles.append(f"Re[ Ch{id2} X Ch{id1}*]")
+            else: #id1<id2
+                titles.append(f"Im[ Ch{id1} X Ch{id2}*]")#yes this flipped indexing is deliberate to match daemon sign convention
+
+    else: #any other number of channels that doesn't do the pretty stack
+        for i in range(num_channels**2):
+            id1, id2 = indices[i]
+
+            if id1==id2:
+                titles.append(f"|Ch{id1}|^2")
+            elif id1>id2:
+                titles.append(f"Re[ Ch{id2} X Ch{id1}*]")
+            else: #id0<id1
+                titles.append(f"Im[ Ch{id1} X Ch{id2}*]") #yes this flipped indexing is deliberate to match daemon sign convention
+
+    # Make the contour plot
+
+    fig = make_subplots(
+        rows = num_channels, 
+        cols = num_channels,
+        shared_xaxes = True,
+        shared_yaxes = True,
+        x_title = "Azimuth Offset [deg]",
+        y_title = "Elevation Offset [deg]",
+        vertical_spacing = 0.2/num_channels,
+        horizontal_spacing = 0.2/num_channels,
+        subplot_titles = titles)
+
+    for i in range(num_channels**2):
+
+        id1, id2 = indices[i]
+
+        fig.add_trace(
+            go.Contour(
+                z=pow_grid[i], 
+                x=az_range, 
+                y=el_range, 
+                colorscale="Viridis", 
+                showscale=False,
+                contours=dict(
+                    showlabels=True,
+                    labelfont = dict( # label font properties
+                        size = 12,
+                        color = 'white',
+                        ),
+                    ),
+                ),
+            row = (id2+1),
+            col = (id1+1)
+            )
+
+    fig.update_layout(title_text="N Point Scan", height = 800)#, width = 800)
+
+
     return fig
