@@ -274,9 +274,6 @@ class SmallRadioTelescopeDaemon:
             n_point_real = np.real(p)
             n_point_imag = np.imag(p)
 
-
-            print(p)
-
             #generate a useable index map
             indices = []
             for i in range(self.radio_num_channels**2):
