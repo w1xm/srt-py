@@ -890,7 +890,7 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
         id1, id2 = indices[i]
 
         fig.add_trace(
-            go.Contour(z=pow_grid[i], x=az_range, y=el_range, colorscale="Viridis"),
+            go.Contour(z=pow_grid[i], x=az_range, y=el_range, colorscale="Viridis", showscale=False),
             row = (id2+1),
             col = (id1+1)
             )
