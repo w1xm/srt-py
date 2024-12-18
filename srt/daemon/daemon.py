@@ -312,11 +312,11 @@ class SmallRadioTelescopeDaemon:
                             data[self.radio_num_channels**2 - 1] = data[self.radio_num_channels**2 - 1] - float(n_point_real[i])
 
                     #upper triangle is real parts
-                    elif id0<id1: 
+                    elif id0>id1: 
                         data[i] = float(n_point_real[i])
 
                     #lower triangle is imag parts
-                    else: #id0>id1
+                    else: #id0<id1
                         data[i] = float(-1*n_point_imag[i]) #multiply by -1 is so it corresponds to the upper covariance imaginary part
                             
             else:
@@ -338,11 +338,11 @@ class SmallRadioTelescopeDaemon:
                         data[i] = float(n_point_real[i])
 
                     #upper triangle is real parts
-                    elif id0<id1: 
+                    elif id0>id1: 
                         data[i] = float(n_point_real[i])
 
                     #lower triangle is imag parts
-                    else: #id0>id1
+                    else: #id0<id1
                         data[i] = float(-1*n_point_imag[i]) #multiply by -1 is so it corresponds to the upper covariance imaginary part
 
 

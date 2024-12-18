@@ -854,13 +854,14 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
         for i in range(num_channels**2):
             id1, id2 = indices[i]
 
-            if id1==id2 & id1==0:
-                titles.append("Ch0 + Ch1")
-            elif id1==id2 & id1==1:
-                titles.append("Ch0 - Ch1")
-            elif id1<id2:
+            if id1==id2:
+                if id1==0:
+                    titles.append("Ch0 + Ch1")
+                else:
+                    titles.append("Ch0 - Ch1")
+            elif id1>id2: 
                 titles.append(f"Re[ Ch{id1} * Ch{id2}*]")
-            else: #id0>id1
+            else: #id1<id2
                 titles.append(f"Im[ Ch{id2} * Ch{id1}*]")
     else: #any other number of channels that doesn't do the pretty stack
         for i in range(num_channels**2):
@@ -868,9 +869,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
 
             if id1==id2:
                 titles.append(f"Mag[ Ch{id1}]")
-            elif id1<id2:
+            elif id1>id2:
                 titles.append(f"Re[ Ch{id1} * Ch{id2}*]")
-            else: #id0>id1
+            else: #id0<id1
                 titles.append(f"Im[ Ch{id2} * Ch{id1}*]") #yes this flipped indexing is deliberate to match daemon sign convention
 
     # Make the contour plot
@@ -890,13 +891,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
 
         fig.add_trace(
             go.Contour(z=pow_grid[i], x=az_range, y=el_range, colorscale="Viridis"),
-            row = (id1+1),
-            col = (id2+1)
+            row = (id2+1),
+            col = (id1+1)
             )
-
-
-        #fig.update_xaxes(title_text="Azimuth Offset", row = (id1+1), col = (id2+1))
-        #fig.update_yaxes(title_text="Elevation Offset", row = (id1+1), col = (id2+1))
 
     fig.update_layout(title_text="N Point Scan", height = 800, width = 800)
 
