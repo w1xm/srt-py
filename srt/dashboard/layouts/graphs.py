@@ -900,7 +900,13 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
                 y=el_range, 
                 colorscale="Viridis", 
                 showscale=False,
-                showlabels=True,
+                contours=dict(
+                    showlabels=True,
+                    labelfont = dict( # label font properties
+                        size = 12,
+                        color = 'white',
+                        ),
+                    ),
                 ),
             row = (id2+1),
             col = (id1+1)
