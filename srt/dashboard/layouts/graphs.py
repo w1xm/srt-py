@@ -856,9 +856,9 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
 
             if id1==id2:
                 if id1==0:
-                    titles.append("Ch0 + Ch1")
+                    titles.append("Mag[Ch0] + Mag[Ch1]")
                 else:
-                    titles.append("Ch0 - Ch1")
+                    titles.append("Mag[Ch0] - Mag[Ch1]")
             elif id1>id2: 
                 titles.append(f"Re[ Ch{id1} * Ch{id2}*]")
             else: #id1<id2
@@ -883,6 +883,8 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
         shared_yaxes = True,
         x_title = "Azimuth Offset [deg]",
         y_title = "Elevation Offset [deg]",
+        vertical_spacing = 0.2/num_channels,
+        horizontal_spacing = 0.2/num_channels,
         subplot_titles = titles)
 
     for i in range(num_channels**2):
