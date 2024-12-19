@@ -524,7 +524,7 @@ class SmallRadioTelescopeDaemon:
         #    self.log_message("direct galactic coordinate commands not yet supported for your rotor. using standard tracking")
 
         self.rotor_offsets = (0.0, 0.0)
-        self.radio_queue.put(("soutrack", f"radec_{l_pos}_{b_pos}"))
+        self.radio_queue.put(("soutrack", f"galactic_{l_pos}_{b_pos}"))
 
         azel_frame = AltAz(obstime=Time.now(), location=self.ephemeris_tracker.location, alt=self.rotor_location[1] * u.deg, az=self.rotor_location[0] * u.deg)
         target_azel = sky_coord.transform_to(azel_frame)
