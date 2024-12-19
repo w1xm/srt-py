@@ -74,9 +74,9 @@ class blk(gr.sync_block):
                 hdr["CDELT3"] = 1
                 hdr["CDELT2"] = samp_rate / (1 * num_bins)  # Channel width
                 hdr["CDELT1"] = 1
+                hdr["CUNIT4"] = "Radio Channel"
                 hdr["CUNIT3"] = "Radio Channel"
-                hdr["CUNIT2"] = "Radio Channel"
-                hdr["CUNIT1"] = "Hz"
+                hdr["CUNIT2"] = "Hz"
 
                 #hdr["TELESCOP"] = "SmallRadioTelescope"
                 hdr["TELESCOP"] = "MediumRadioTelescope"
