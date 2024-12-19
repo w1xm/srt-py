@@ -124,7 +124,7 @@ blocks:
     _source_code: "\"\"\"\nBlock to save covariance spectra to a fits file\n\"\"\"\
       \n\nimport numpy as np\nfrom gnuradio import gr\nimport pmt\nimport json\n\n\
       import pathlib\nfrom datetime import datetime, timezone\nfrom astropy.io import\
-      \ fits\n\nclass blk(gr.sync_block):\n    \"\"\"Embedded Python Block - Saving\
+      \ fits\n\n\nclass blk(gr.sync_block):\n    \"\"\"Embedded Python Block - Saving\
       \ \"\"\"\n\n    def __init__(\n        self, directory=\".\", filename=\"test.fits\"\
       , spectrum_len=4096, num_channels=2\n    ):  # only default arguments here\n\
       \        \"\"\"arguments to this function show up as parameters in GRC\"\"\"\
@@ -165,9 +165,9 @@ blocks:
       CRVAL2\"] = freq  # Center, USRP, frequency\n                hdr[\"CRVAL1\"\
       ] = 0\n                hdr[\"CDELT4\"] = 1\n                hdr[\"CDELT3\"]\
       \ = 1\n                hdr[\"CDELT2\"] = samp_rate / (1 * num_bins)  # Channel\
-      \ width\n                hdr[\"CDELT1\"] = 1\n                hdr[\"CUNIT3\"\
-      ] = \"Radio Channel\"\n                hdr[\"CUNIT2\"] = \"Radio Channel\"\n\
-      \                hdr[\"CUNIT1\"] = \"Hz\"\n\n                #hdr[\"TELESCOP\"\
+      \ width\n                hdr[\"CDELT1\"] = 1\n                hdr[\"CUNIT4\"\
+      ] = \"Radio Channel\"\n                hdr[\"CUNIT3\"] = \"Radio Channel\"\n\
+      \                hdr[\"CUNIT2\"] = \"Hz\"\n\n                #hdr[\"TELESCOP\"\
       ] = \"SmallRadioTelescope\"\n                hdr[\"TELESCOP\"] = \"MediumRadioTelescope\"\
       \n                hdr[\"OBJECT\"] = soutrack\n                hdr[\"OBSTIME\"\
       ] = (num_bins * num_integrations) / samp_rate\n\n                hdr[\"DATE-OBS\"\
