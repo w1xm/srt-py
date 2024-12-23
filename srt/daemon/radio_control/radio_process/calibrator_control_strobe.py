@@ -16,7 +16,7 @@ import time
 import uhd
 
 class msg_blk(gr.sync_block):
-    def __init__(self, calibrator_mask=0xFFF,cal_state=False):
+    def __init__(self, calibrator_mask=0xFFF,cal_state=0):
         gr.sync_block.__init__(
             self,
             name="calibrator_msg_block",
@@ -30,7 +30,7 @@ class msg_blk(gr.sync_block):
 
         #derived variables
 
-        self.last_cal_state = False
+        self.last_cal_state = 0
         #self.cal_value = 0x000
         
         self.message_port_register_in(pmt.intern('strobe'))
@@ -43,10 +43,7 @@ class msg_blk(gr.sync_block):
         #send message to define next calibrator state change
 
         if self.last_cal_state != self.cal_state:
-            if self.cal_state:
-                cal_value = 0xFFF
-            else:
-                cal_value = 0x000
+            cal_value = self.cal_state
                 
             #issue command to toggle gpio
             set_gpio = pmt.make_dict()

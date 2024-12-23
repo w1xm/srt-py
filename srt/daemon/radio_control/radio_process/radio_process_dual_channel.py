@@ -73,7 +73,7 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_values_imag = cal_values_imag = np.zeros((num_channels**2,num_bins))
         self.cal_values = cal_values = cal_values_real+1j*cal_values_imag
         self.cal_pwr = cal_pwr = np.array([1]*num_channels**2)
-        self.cal_on = cal_on = False
+        self.cal_on = cal_on = 0
         self.beam_switch = beam_switch = 0
 
         ##################################################
