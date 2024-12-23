@@ -143,8 +143,6 @@ class radio_process_dual_channel(gr.top_block):
         #self.uhd_usrp_source_1.set_lo_export_enabled(True, uhd.ALL_LOS, 0)
         #self.uhd_usrp_source_1.set_lo_source('external', uhd.ALL_LOS, 1)
         #self.uhd_usrp_source_1.set_lo_export_enabled(False, uhd.ALL_LOS, 1)
-        
-        time.sleep(1) #give all that a moment to actually happen
 
         ##### timed tuning command 
 
