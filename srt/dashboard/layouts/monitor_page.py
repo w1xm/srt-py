@@ -731,6 +731,41 @@ def generate_popups(software):
             ),
             dbc.Modal(
                 [
+                    dbc.ModalHeader("Enter the New Calibrator State"),
+                    dbc.ModalBody(
+                        [
+                            dcc.Input(
+                                id="cal_state",
+                                type="number",
+                                debounce=True,
+                                placeholder="Reference State (0-3)",
+                                style={"width": "100%"},
+                            ),
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Yes",
+                                id="setcal-btn-yes",
+                                className="ml-auto",
+                                # block=True,
+                                color="primary",
+                            ),
+                            dbc.Button(
+                                "No",
+                                id="setcal-btn-no",
+                                className="ml-auto",
+                                # block=True,
+                                color="secondary",
+                            ),
+                        ]
+                    ),
+                ],
+                id="setcal-modal",
+            ),
+            dbc.Modal(
+                [
                     dbc.ModalHeader("Enter the Motor Offsets"),
                     dbc.ModalBody(
                         [
@@ -946,10 +981,11 @@ def generate_layout(software,num_channels):
         ],
         "Calibration": [
             dbc.DropdownMenuItem("Calibrate", id="btn-calibrate"),
-            dbc.DropdownMenuItem("Noise Reference on", id="btn-calon"),
-            dbc.DropdownMenuItem("Noise Reference off", id="btn-caloff"),
+            dbc.DropdownMenuItem("Noise References on", id="btn-calon"),
+            dbc.DropdownMenuItem("Noise References off", id="btn-caloff"),
             dbc.DropdownMenuItem("Clear Calibration", id="btn-clearcal"),
             dbc.DropdownMenuItem("Load Calibration", id="btn-loadcal"),
+            dbc.DropdownMenuItem("Manual Reference State", id="btn-setcal"),
         ],
         "Routine": [
             dbc.DropdownMenuItem("Start Recording", id="btn-start-record"),
@@ -1589,6 +1625,30 @@ def register_callbacks(
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
             if button_id == "freq-btn-yes":
                 command_thread.add_to_queue(f"freq {freq}")
+            if n_clicks_yes or n_clicks_no or n_clicks_btn:
+                return not is_open
+            return is_open
+
+    @app.callback(
+        Output("setcal-modal", "is_open"),
+        [
+            Input("btn-setcal", "n_clicks"),
+            Input("setcal-btn-yes", "n_clicks"),
+            Input("setcal-btn-no", "n_clicks"),
+        ],
+        [
+            State("setcal-modal", "is_open"),
+            State("cal_state", "value"),
+        ],
+    )
+    def gain_click_func(n_clicks_btn, n_clicks_yes, n_clicks_no, is_open, cal_state):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open
+        else:
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "setcal-btn-yes":
+                command_thread.add_to_queue(f"calset {cal_state}")
             if n_clicks_yes or n_clicks_no or n_clicks_btn:
                 return not is_open
             return is_open

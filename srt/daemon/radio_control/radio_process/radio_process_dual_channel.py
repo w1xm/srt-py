@@ -73,7 +73,7 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_values_imag = cal_values_imag = np.zeros((num_channels**2,num_bins))
         self.cal_values = cal_values = cal_values_real+1j*cal_values_imag
         self.cal_pwr = cal_pwr = np.array([1]*num_channels**2)
-        self.cal_on = cal_on = False
+        self.cal_on = cal_on = 0
         self.beam_switch = beam_switch = 0
 
         ##################################################
@@ -147,8 +147,8 @@ class radio_process_dual_channel(gr.top_block):
         ##### timed tuning command 
 
         self.uhd_usrp_source_1.clear_command_time()
-        now_time = self.uhd_usrp_source_1.get_time_now()
-        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec_t(full_secs=2, frac_secs=0))
+        now_time = self.uhd_usrp_source_1.get_time_last_pps()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
         
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
@@ -363,7 +363,7 @@ class radio_process_dual_channel(gr.top_block):
 
         self.uhd_usrp_source_1.clear_command_time()
         now_time = self.uhd_usrp_source_1.get_time_last_pps()
-        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) 
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
 
         self.rf_freq = rf_freq
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
@@ -441,10 +441,10 @@ class radio_process_dual_channel(gr.top_block):
     def set_calibrator_mask(self, calibrator_mask):
         self.calibrator_mask = calibrator_mask
         self.calibrator_control_strobe.calibrator_mask = self.calibrator_mask
-        ##### Configure USRP GPIO
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
+        ##### Configure USRP GPIO (not on the fly though, that's silly)
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
         
     def get_cal_values_real(self):
         return self.cal_values_real
@@ -508,6 +508,8 @@ def argument_parser():
 def main(top_block_cls=radio_process_dual_channel, options=None):
     if options is None:
         options = argument_parser().parse_args()
+    if gr.enable_realtime_scheduling() != gr.RT_OK:
+        gr.logger("realtime").warn("Error: failed to enable real-time scheduling.")
     tb = top_block_cls(num_bins=options.num_bins, num_integrations=options.num_integrations)
 
     def sig_handler(sig=None, frame=None):
