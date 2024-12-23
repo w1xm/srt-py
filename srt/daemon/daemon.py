@@ -1395,10 +1395,10 @@ Commands Coming in Over ZMQ PUSH/PULL
                 elif command_name == "cal":
                     self.point_at_azel(*self.cal_location)
                 elif command_name == "calon":
-                    self.set_calibrator_state(True, calibrator_selection=(True if len(command_parts) <= 1 else list(command_parts[1])))
+                    self.set_calibrator_state(True, calibrator_selection=(int(0.5*self.radio_num_channels*(self.radio_num_channels+1)) if len(command_parts) <= 1 else list(command_parts[1])))
                     #if the command has a value attached it should be an int corresponding to the binary number describing the calibrator selection
                 elif command_name == "caloff":
-                    self.set_calibrator_state(False, calibrator_selection=(True if len(command_parts) <= 1 else list(command_parts[1])))
+                    self.set_calibrator_state(False, calibrator_selection=(int(0.5*self.radio_num_channels*(self.radio_num_channels+1)) if len(command_parts) <= 1 else list(command_parts[1])))
                 elif command_name == "calibrate":
                     self.calibrate()
                 elif command_name == "clearcal":
