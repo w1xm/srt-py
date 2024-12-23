@@ -508,6 +508,8 @@ def argument_parser():
 def main(top_block_cls=radio_process_dual_channel, options=None):
     if options is None:
         options = argument_parser().parse_args()
+    if gr.enable_realtime_scheduling() != gr.RT_OK:
+        gr.logger("realtime").warn("Error: failed to enable real-time scheduling.")
     tb = top_block_cls(num_bins=options.num_bins, num_integrations=options.num_integrations)
 
     def sig_handler(sig=None, frame=None):

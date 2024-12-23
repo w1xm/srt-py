@@ -16,7 +16,7 @@ options:
     output_language: python
     placement: (0,0)
     qt_qss_theme: ''
-    realtime_scheduling: ''
+    realtime_scheduling: '1'
     run: 'True'
     run_command: '{python} -u {filename}'
     run_options: run
@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: 'False'
+    value: '0'
   states:
     bus_sink: false
     bus_source: false
@@ -751,26 +751,26 @@ blocks:
       \ it finds\nto get ports and parameters of your block. The arguments to __init__\
       \  will\nbe the parameters. All of them are required to have default values!\n\
       \"\"\"\nimport numpy as np\nfrom gnuradio import gr \nimport pmt\nimport time\n\
-      import uhd\n\nclass msg_blk(gr.sync_block):\n    def __init__(self, calibrator_mask=0xFFF,\
-      \ cal_state=False):\n        gr.sync_block.__init__(\n            self,\n  \
-      \          name=\"calibrator_msg_block\",\n            in_sig=None,\n      \
-      \     out_sig=None\n        )\n\n        #input parameters\n        self.calibrator_mask\
-      \ = calibrator_mask\n        self.cal_state = cal_state\n\n        #derived\
-      \ variables\n\n        self.last_cal_state = False\n    \n        self.message_port_register_in(pmt.intern('strobe'))\n\
+      import uhd\n\nclass msg_blk(gr.sync_block):\n    def __init__(self, calibrator_mask=0xFFF,cal_state=0):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name=\"calibrator_msg_block\"\
+      ,\n            in_sig=None,\n           out_sig=None\n        )\n\n        #input\
+      \ parameters\n        self.calibrator_mask = calibrator_mask\n        self.cal_state\
+      \ = cal_state\n\n        #derived variables\n\n        self.last_cal_state =\
+      \ 0\n        #self.cal_value = 0x000\n        \n        self.message_port_register_in(pmt.intern('strobe'))\n\
       \        self.message_port_register_out(pmt.intern('command'))\n        \n \
       \       self.set_msg_handler(pmt.intern('strobe'), self.handle_msg)\n\n    def\
       \ handle_msg(self, msg):\n\n        #send message to define next calibrator\
       \ state change\n\n        if self.last_cal_state != self.cal_state:\n      \
-      \      if self.cal_state:\n                new_cal_value = 0xFFF\n         \
-      \   else:\n                new_cal_value = 0x000\n\n        #issue command to\
-      \ set toggle gpio\n\n        set_gpio = pmt.make_dict()\n        set_gpio =\
-      \ pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))\n        set_gpio\
-      \ = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))\n        set_gpio\
-      \ = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(new_cal_value))\n\
-      \        set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.calibrator_mask))\n\
-      \n        msg = pmt.make_dict()\n        msg = pmt.dict_add(msg, pmt.to_pmt('gpio'),\
-      \ set_gpio)\n\n        self.message_port_pub(pmt.intern('command'), msg) #issue\
-      \ message\n\n        self.last_cal_state = self.cal_state\n\n        "
+      \      cal_value = self.cal_state\n                \n            #issue command\
+      \ to toggle gpio\n            set_gpio = pmt.make_dict()\n            set_gpio\
+      \ = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))\n       \
+      \     set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))\n\
+      \            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(cal_value))\n\
+      \            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.calibrator_mask))\n\
+      \            \n            msg = pmt.make_dict()\n            msg = pmt.dict_add(msg,\
+      \ pmt.to_pmt('gpio'), set_gpio)\n            self.message_port_pub(pmt.intern('command'),\
+      \ msg) #issue message\n            \n            self.last_cal_state = self.cal_state\n\
+      \            \n        #otherwise do nothing        \n"
     affinity: ''
     alias: ''
     cal_state: cal_on
@@ -780,7 +780,7 @@ blocks:
     minoutbuf: '0'
   states:
     _io_cache: ('calibrator_msg_block', 'msg_blk', [('calibrator_mask', '4095'), ('cal_state',
-      'False')], [('strobe', 'message', 1)], [('command', 'message', 1)], '', ['cal_state',
+      '0')], [('strobe', 'message', 1)], [('command', 'message', 1)], '', ['cal_state',
       'calibrator_mask'])
     bus_sink: false
     bus_source: false
