@@ -106,9 +106,10 @@ class radio_process_dual_channel(gr.top_block):
             ),
         )
 
-        self.uhd_usrp_source_1.set_samp_rate(samp_rate)
+        
         self.uhd_usrp_source_1.set_clock_source("external")
         self.uhd_usrp_source_1.set_time_source("external")
+        self.uhd_usrp_source_1.set_samp_rate(samp_rate)
         _last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
         # Poll get_time_last_pps() every 50 ms until a change is seen
         while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
@@ -170,7 +171,7 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_multiply_const_vxx_1_0_0 = blocks.multiply_const_vcc(cal_values[1])
         self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vcc(cal_values[3])
         self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vcc(cal_values[0])
-        self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), 100)
+        self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), int(tag_period/samp_rate*1000))
         self.blocks_integrate_xx_0 = blocks.integrate_cc(num_integrations, (num_bins*(num_channels**2)))
         self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         self.blocks_add_xx_0_0 = blocks.add_vcc(1)
@@ -313,6 +314,7 @@ class radio_process_dual_channel(gr.top_block):
         self.tag_period = tag_period
         self.add_clock_tags.nsamps = self.tag_period
         self.add_clock_tags_0.nsamps = self.tag_period
+        self.blocks_message_strobe_0.set_period((int(self.tag_period/self.samp_rate*1000)))
         self.blocks_tags_strobe_0.set_nsamps(self.tag_period)
         self.blocks_tags_strobe_0_0.set_nsamps(self.tag_period)
 
@@ -331,6 +333,7 @@ class radio_process_dual_channel(gr.top_block):
         self.samp_rate = samp_rate
         self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
+        self.blocks_message_strobe_0.set_period((int(self.tag_period/self.samp_rate*1000)))
 
         ##### timed tuning command 
 

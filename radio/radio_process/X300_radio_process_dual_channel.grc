@@ -401,19 +401,19 @@ blocks:
       \ GRC will instantiate the first class it finds\nto get ports and parameters\
       \ of your block. The arguments to __init__  will\nbe the parameters. All of\
       \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      from gnuradio import gr\nimport time\nimport pmt\n\ndef make_time_pair(t):\n\
-      \    return pmt.make_tuple(pmt.to_pmt(int(np.trunc(t))), pmt.to_pmt(t - int(np.trunc(t))))\n\
-      \nclass clk(gr.sync_block):\n    def __init__(self, nsamps=8192):\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Add Clock Tags',\n            in_sig=[np.complex64],\n\
-      \            out_sig=[np.complex64]\n        )\n        self.pmt_key = pmt.intern(\"\
-      rx_time\")\n        self.offset = 0\n        self.nsamps = nsamps\n \n    def\
-      \ work(self, input_items, output_items):\n        nitems = len(input_items[0])\
-      \ + self.nitems_written(0)\n        if self.nitems_written(0) == 0:\n      \
-      \      self.add_item_tag(0, 0, self.pmt_key, make_time_pair(time.time()))\n\
-      \        while ((nitems - self.offset) > self.nsamps):\n            self.offset\
+      from gnuradio import gr\nimport time\nimport pmt\n\n\ndef make_time_pair(t):\n\
+      \    return pmt.make_tuple(\n        pmt.to_pmt(int(np.trunc(t))), pmt.to_pmt(t\
+      \ - int(np.trunc(t)))\n    )\n\n\nclass clk(gr.sync_block):\n    def __init__(self,\
+      \ nsamps=8192):\n        gr.sync_block.__init__(\n            self, name=\"\
+      Add Clock Tags\", in_sig=[np.complex64], out_sig=[np.complex64]\n        )\n\
+      \        self.pmt_key = pmt.intern(\"rx_time\")\n        self.offset = 0\n \
+      \       self.nsamps = nsamps\n\n    def work(self, input_items, output_items):\n\
+      \        nitems = len(input_items[0]) + self.nitems_written(0)\n        if self.nitems_written(0)\
+      \ == 0:\n            self.add_item_tag(0, 0, self.pmt_key, make_time_pair(time.time()))\n\
+      \        while (nitems - self.offset) > self.nsamps:\n            self.offset\
       \ += self.nsamps\n            self.add_item_tag(0, self.offset, self.pmt_key,\
       \ make_time_pair(time.time()))\n        output_items[0][:] = input_items[0]\
-      \ # copy input to output\n        return len(output_items[0])\n"
+      \  # copy input to output\n        return len(output_items[0])\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -527,12 +527,12 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     msg: pmt.to_pmt(is_running)
-    period: '100'
+    period: int(tag_period/samp_rate*1000)
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [312, 172.0]
+    coordinate: [544, 244.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_1
@@ -1290,7 +1290,7 @@ blocks:
     start_time: '-1.0'
     stream_args: ''
     stream_chans: '[]'
-    sync: gps_time
+    sync: pc_clock_next_pps
     time_source0: ''
     time_source1: ''
     time_source2: ''
