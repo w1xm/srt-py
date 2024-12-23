@@ -1002,7 +1002,7 @@ class SmallRadioTelescopeDaemon:
             #set calibrator mask
             cal_mask_command = 0b000000000011 & calibrator_selection
 
-            self.radio_queue.put(("set_calibrator_mask", cal_mask_command))
+            self.radio_queue.put(("calibrator_mask", cal_mask_command))
             self.radio_queue.put(("cal_on", self.radio_calibrator_state))
             #sleep(0.1)
             
