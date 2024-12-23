@@ -109,7 +109,7 @@ class SmallRadioTelescopeDaemon:
         self.dashboard_refresh_rate = config_dict["DASHBOARD_REFRESH_MS"]/1000.0
         
         self.npoints = 5 #default size of grid for npoint scan
-        self.radio_calibrator_state = False
+        self.radio_calibrator_state = 0 #valid assuming one calibrator control per channel
 
         #print(f'tsys = {self.temp_sys}')
         #print(f'tcal = {self.temp_cal}')
@@ -695,7 +695,7 @@ class SmallRadioTelescopeDaemon:
 
             self.log_message("Starting hot calibration reference measurement")
 
-            self.set_calibrator_state(True)
+            self.set_calibrator_state(True, int(0.5*self.radio_num_channels*(self.radio_num_channels+1)))
             sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
@@ -706,7 +706,7 @@ class SmallRadioTelescopeDaemon:
 
             self.log_message("Starting cold calibration reference measurement")
 
-            self.set_calibrator_state(False)
+            self.set_calibrator_state(False, int(0.5*self.radio_num_channels*(self.radio_num_channels+1)))
             sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
@@ -973,23 +973,36 @@ class SmallRadioTelescopeDaemon:
         self.radio_queue.put(("rf_gain", self.radio_rf_gain))
         #self.radio_queue.put(("cal_values", self.cal_values))
         
-    def set_calibrator_state(self, calibrator_state):
-        """Set the state of the calibrator via radio GPIO
+    def set_calibrator_state(self, calibrator_state, calibrator_selection):
+        """Set the state of the calibrators via GPIO
 
         Note that this is highly system specific and must be programmed appropriately
 
+        in W1XM BIGDISH case the bitmask to describe the calibrator control sginals is
+        calibrator_mask = 0b000000000011
+
+        so control mapping is easy
+
         Parameters
         ----------
-        calibrator_state : boolean
-            whether the calibrator is on
+        calibrator_state : boolean 
+            whether the calibrators are to be switched on or off
+        calibrator_selection : int
+            which calibrators we are commanding
 
         Returns
         -------
         None
         """
+
         if self.cal_type == "NOISE_DIODE":
+            
             #customize for appropriate control scheme
             self.radio_calibrator_state = calibrator_state
+            #set calibrator mask
+            cal_mask_command = 0b000000000011 & calibrator_selection
+
+            self.radio_queue.put(("set_calibrator_mask", cal_mask_command))
             self.radio_queue.put(("cal_on", self.radio_calibrator_state))
             #sleep(0.1)
             
@@ -1382,9 +1395,10 @@ Commands Coming in Over ZMQ PUSH/PULL
                 elif command_name == "cal":
                     self.point_at_azel(*self.cal_location)
                 elif command_name == "calon":
-                    self.set_calibrator_state(True)
+                    self.set_calibrator_state(True, calibrator_selection=(True if len(command_parts) <= 1 else list(command_parts[1])))
+                    #if the command has a value attached it should be an int corresponding to the binary number describing the calibrator selection
                 elif command_name == "caloff":
-                    self.set_calibrator_state(False)
+                    self.set_calibrator_state(False, calibrator_selection=(True if len(command_parts) <= 1 else list(command_parts[1])))
                 elif command_name == "calibrate":
                     self.calibrate()
                 elif command_name == "clearcal":

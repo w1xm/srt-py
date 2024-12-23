@@ -751,12 +751,12 @@ blocks:
       \ it finds\nto get ports and parameters of your block. The arguments to __init__\
       \  will\nbe the parameters. All of them are required to have default values!\n\
       \"\"\"\nimport numpy as np\nfrom gnuradio import gr \nimport pmt\nimport time\n\
-      import uhd\n\nclass msg_blk(gr.sync_block):\n    def __init__(self, calibrator_mask=0xFFF,cal_state=False):\n\
-      \        gr.sync_block.__init__(\n            self,\n            name=\"calibrator_msg_block\"\
-      ,\n            in_sig=None,\n           out_sig=None\n        )\n\n        #input\
-      \ parameters\n        self.calibrator_mask = calibrator_mask\n        self.cal_state\
-      \ = cal_state\n\n        #derived variables\n\n        self.last_cal_state =\
-      \ False\n    \n        self.message_port_register_in(pmt.intern('strobe'))\n\
+      import uhd\n\nclass msg_blk(gr.sync_block):\n    def __init__(self, calibrator_mask=0xFFF,\
+      \ cal_state=False):\n        gr.sync_block.__init__(\n            self,\n  \
+      \          name=\"calibrator_msg_block\",\n            in_sig=None,\n      \
+      \     out_sig=None\n        )\n\n        #input parameters\n        self.calibrator_mask\
+      \ = calibrator_mask\n        self.cal_state = cal_state\n\n        #derived\
+      \ variables\n\n        self.last_cal_state = False\n    \n        self.message_port_register_in(pmt.intern('strobe'))\n\
       \        self.message_port_register_out(pmt.intern('command'))\n        \n \
       \       self.set_msg_handler(pmt.intern('strobe'), self.handle_msg)\n\n    def\
       \ handle_msg(self, msg):\n\n        #send message to define next calibrator\
@@ -1363,6 +1363,7 @@ blocks:
     address: tcp://127.0.0.1:5558
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1384,6 +1385,7 @@ blocks:
     address: tcp://127.0.0.1:5559
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1405,6 +1407,7 @@ blocks:
     address: tcp://127.0.0.1:5563
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1426,6 +1429,7 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1447,6 +1451,7 @@ blocks:
     address: tcp://127.0.0.1:5560
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1468,6 +1473,7 @@ blocks:
     address: tcp://127.0.0.1:5561
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1525,4 +1531,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
+  grc_version: 3.10.10.0

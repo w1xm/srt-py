@@ -441,10 +441,10 @@ class radio_process_dual_channel(gr.top_block):
     def set_calibrator_mask(self, calibrator_mask):
         self.calibrator_mask = calibrator_mask
         self.calibrator_control_strobe.calibrator_mask = self.calibrator_mask
-        ##### Configure USRP GPIO
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
+        ##### Configure USRP GPIO (not on the fly though, that's silly)
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
+        #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', 0x000 , calibrator_mask)
         
     def get_cal_values_real(self):
         return self.cal_values_real
