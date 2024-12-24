@@ -97,8 +97,9 @@ class radio_process_dual_channel(gr.top_block):
 
         #blocks_tags_strobe blocks need to come before slow radio startup commands for some silly reason
         #self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
-        self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, metadata_dict, tag_period, pmt.intern("metadata"))
+        #self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, metadata_dict, tag_period, pmt.intern("metadata"))
         self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
+        self.calibrator_control_strobe_0 = calibrator_control_strobe.blk(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, metadata_pmt=metadata_dict)
 
 
         self.uhd_usrp_source_1 = uhd.usrp_source(
@@ -165,7 +166,6 @@ class radio_process_dual_channel(gr.top_block):
 
 
 
-        self.calibrator_control_strobe_0 = calibrator_control_strobe.blk(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, metadata_pmt=metadata_dict)
         #self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
         self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_gr_complex*num_bins, (num_channels**2))
         self.blocks_streams_to_vector_1 = blocks.streams_to_vector(gr.sizeof_gr_complex*num_bins, (num_channels**2))
@@ -229,8 +229,8 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.blocks_streams_to_vector_1, 0), (self.blocks_integrate_xx_0, 0))
         self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0, 0))
         self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0_0, 0))
-        self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0, 2))
-        self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0_0, 2))
+        #self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0, 2))
+        #self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0_0, 2))
         self.connect((self.blocks_vector_to_streams_0, 0), (self.blocks_multiply_const_vxx_1, 0))
         self.connect((self.blocks_vector_to_streams_0, 3), (self.blocks_multiply_const_vxx_1_0, 0))
         self.connect((self.blocks_vector_to_streams_0, 1), (self.blocks_multiply_const_vxx_1_0_0, 0))
@@ -546,7 +546,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_metadata_dict(self, metadata_dict):
         self.metadata_dict = metadata_dict
-        self.blocks_tags_strobe_0_0.set_value(self.metadata_dict)
+        #self.blocks_tags_strobe_0_0.set_value(self.metadata_dict)
         self.calibrator_control_strobe_0.metadata_pmt = self.metadata_dict
 
 

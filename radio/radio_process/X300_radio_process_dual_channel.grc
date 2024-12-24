@@ -488,14 +488,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_inputs: '3'
+    num_inputs: '2'
     type: complex
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1464, 112.0]
+    coordinate: [1496, 104.0]
     rotation: 0
     state: true
 - name: blocks_add_xx_0_0_0
@@ -506,7 +506,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_inputs: '3'
+    num_inputs: '2'
     type: complex
     vlen: '1'
   states:
@@ -732,9 +732,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1152, 468.0]
+    coordinate: [1152, 460.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: blocks_vector_to_streams_0
   id: blocks_vector_to_streams
   parameters:
@@ -892,7 +892,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1096, 136.0]
+    coordinate: [1080, 124.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -1624,8 +1624,6 @@ connections:
 - [blocks_streams_to_vector_1, '0', blocks_integrate_xx_0, '0']
 - [blocks_tags_strobe_0, '0', blocks_add_xx_0_0, '0']
 - [blocks_tags_strobe_0, '0', blocks_add_xx_0_0_0, '0']
-- [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0, '2']
-- [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0_0, '2']
 - [blocks_vector_to_streams_0, '0', blocks_multiply_const_vxx_1, '0']
 - [blocks_vector_to_streams_0, '1', blocks_multiply_const_vxx_1_0_0, '0']
 - [blocks_vector_to_streams_0, '2', blocks_multiply_const_vxx_1_0_0_0, '0']
