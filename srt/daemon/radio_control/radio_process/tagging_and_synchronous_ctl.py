@@ -75,7 +75,9 @@ class tagging_and_ctl(gr.sync_block):
 
             writeindex = len(input_items[0]) - n_last_sample
 
-            #generate tag to be applied to data (pmt.cons does not work here, needs to be dict)
+            #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
+            #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
+            #since we really want that to line up with the transition.
 
             key = pmt.intern('metadata')
             value = self.metadata_pmt
@@ -90,46 +92,47 @@ class tagging_and_ctl(gr.sync_block):
                 self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
 
 
-            #send message to define next calibrator state change
+            if self.last_cal_state != self.cal_state:
 
-            ########################################
-            #issue command to usrp for next state of calibrator, 
-            #needs to be a timed command
-            #######################################
+                ########################################
+                #issue command to usrp for next state of calibrator, 
+                #needs to be a timed command so it ends up synced with the integration periods
+                #only do this if we are changing things
+                #######################################
 
-            #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
-            #I probably need to fix this to actually match the time as recorded by the SDR
+                #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
+                #I probably need to fix this to actually match the time as recorded by the SDR
 
-            command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
-            msg = pmt.make_dict()
-            msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
+                command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
 
-            self.message_port_pub(pmt.intern('command'), msg) #issue message
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
 
-            #issue command to toggle gpio
+                #issue command to toggle gpio
 
-            set_gpio = pmt.make_dict()
-            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
-            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
-            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
-            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
+                set_gpio = pmt.make_dict()
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
 
-            msg = pmt.make_dict()
-            msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
 
-            self.message_port_pub(pmt.intern('command'), msg) #issue message
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
 
 
-            #clear command time 
+                #clear command time 
 
-            msg = pmt.make_dict()
-            msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
 
-            self.message_port_pub(pmt.intern('command'), msg) #issue message
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
 
-            #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
+                #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
-            self.last_cal_state = self.cal_state
+                self.last_cal_state = self.cal_state
 
         for i in range(self.num_channels):
             output_items[i][:] = input_items[i]
