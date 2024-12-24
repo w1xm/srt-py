@@ -32,8 +32,8 @@ import numpy as np
 from . import add_clock_tags
 from . import covariance_matrix
 from . import weighted_overlap_fft  # grc-generated hier_block manually relocated to directory
-#from . import calibrator_control_strobe
-from . import calibrator_timestamping_block_with_full_time_synchronization as calibrator_control_strobe
+#from . import tagging_and_ctl
+from . import tagging_and_synchronous_ctl as tagging_and_ctl
 
 
 class radio_process_dual_channel(gr.top_block):
@@ -95,11 +95,8 @@ class radio_process_dual_channel(gr.top_block):
         self.xmlrpc_server_0_thread.daemon = True
         self.xmlrpc_server_0_thread.start()
 
-        #blocks_tags_strobe blocks need to come before slow radio startup commands for some silly reason
-        #self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch, "cal_on":cal_on}), tag_period, pmt.intern("metadata"))
-        #self.blocks_tags_strobe_0_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, metadata_dict, tag_period, pmt.intern("metadata"))
-        self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
-        self.calibrator_control_strobe_0 = calibrator_control_strobe.blk(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, metadata_pmt=metadata_dict)
+        #self.blocks_tags_strobe_0 = blocks.tags_strobe(gr.sizeof_gr_complex*1, pmt.to_pmt(float(freq)), tag_period, pmt.intern("rx_freq"))
+        self.tagging_and_ctl_0 = tagging_and_ctl.tagging_and_ctl(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, center_frequency=rf_freq, metadata_pmt=metadata_dict)
 
 
         self.uhd_usrp_source_1 = uhd.usrp_source(
@@ -166,7 +163,6 @@ class radio_process_dual_channel(gr.top_block):
 
 
 
-        #self.calibrator_control_strobe = calibrator_control_strobe.msg_blk(calibrator_mask=calibrator_mask, cal_state=cal_on)
         self.blocks_vector_to_streams_0 = blocks.vector_to_streams(gr.sizeof_gr_complex*num_bins, (num_channels**2))
         self.blocks_streams_to_vector_1 = blocks.streams_to_vector(gr.sizeof_gr_complex*num_bins, (num_channels**2))
         self.blocks_streams_to_vector_0_0_0 = blocks.streams_to_vector(gr.sizeof_gr_complex*num_bins, 4)
@@ -176,12 +172,9 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_multiply_const_vxx_1_0_0 = blocks.multiply_const_vcc(cal_values[1])
         self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vcc(cal_values[3])
         self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vcc(cal_values[0])
-        #self.blocks_message_strobe_0 = blocks.message_strobe(pmt.to_pmt(is_running), int(tag_period/samp_rate*1000))
         self.blocks_integrate_xx_0 = blocks.integrate_cc(num_integrations, (num_bins*(num_channels**2)))
-        self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
-        self.blocks_add_xx_0_0 = blocks.add_vcc(1)
-        #self.add_clock_tags_0 = add_clock_tags.clk(nsamps=tag_period)
-        #self.add_clock_tags = add_clock_tags.clk(nsamps=tag_period)
+        #self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
+        #self.blocks_add_xx_0_0 = blocks.add_vcc(1)
 
         self.weighted_overlap_fft_0_0 = weighted_overlap_fft.weighted_overlap_fft(
             fft_window=fft_window,
@@ -198,8 +191,8 @@ class radio_process_dual_channel(gr.top_block):
         ##################################################
         # Connections
         ##################################################
-        #self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.calibrator_control_strobe, 'strobe'))
-        self.msg_connect((self.calibrator_control_strobe_0, 'command'), (self.uhd_usrp_source_1, 'command'))
+        #self.msg_connect((self.blocks_message_strobe_0, 'strobe'), (self.tagging_and_ctl, 'strobe'))
+        self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))
         self.connect((self.covariance_matrix_1, 2), (self.blocks_streams_to_vector_1, 2))
         self.connect((self.covariance_matrix_1, 3), (self.blocks_streams_to_vector_1, 3))
         self.connect((self.covariance_matrix_1, 1), (self.blocks_streams_to_vector_1, 1))
@@ -209,10 +202,10 @@ class radio_process_dual_channel(gr.top_block):
         #self.connect((self.add_clock_tags, 0), (self.blocks_add_xx_0_0, 1))
         #self.connect((self.add_clock_tags_0, 0), (self.blocks_add_xx_0_0_0, 1))
 
-        self.connect((self.blocks_add_xx_0_0, 0), (self.weighted_overlap_fft_0, 0))
-        self.connect((self.blocks_add_xx_0_0, 0), (self.blocks_streams_to_vector_0, 0))
-        self.connect((self.blocks_add_xx_0_0_0, 0), (self.weighted_overlap_fft_0_0, 0))
-        self.connect((self.blocks_add_xx_0_0_0, 0), (self.blocks_streams_to_vector_0, 1))
+        #self.connect((self.blocks_add_xx_0_0, 0), (self.weighted_overlap_fft_0, 0))
+        #self.connect((self.blocks_add_xx_0_0, 0), (self.blocks_streams_to_vector_0, 0))
+        #self.connect((self.blocks_add_xx_0_0_0, 0), (self.weighted_overlap_fft_0_0, 0))
+        #self.connect((self.blocks_add_xx_0_0_0, 0), (self.blocks_streams_to_vector_0, 1))
 
         self.connect((self.blocks_integrate_xx_0, 0), (self.blocks_multiply_const_xx_0_0_0_0, 0))
         self.connect((self.blocks_multiply_const_vxx_1, 0), (self.blocks_streams_to_vector_0_0_0, 0))
@@ -227,8 +220,8 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.blocks_streams_to_vector_0_0_0, 0), (self.zeromq_pub_sink_1, 0))
         self.connect((self.blocks_streams_to_vector_0_0_0, 0), (self.zeromq_pub_sink_1_0, 0))
         self.connect((self.blocks_streams_to_vector_1, 0), (self.blocks_integrate_xx_0, 0))
-        self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0, 0))
-        self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0_0, 0))
+        #self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0, 0))
+        #self.connect((self.blocks_tags_strobe_0, 0), (self.blocks_add_xx_0_0_0, 0))
         #self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0, 2))
         #self.connect((self.blocks_tags_strobe_0_0, 0), (self.blocks_add_xx_0_0_0, 2))
         self.connect((self.blocks_vector_to_streams_0, 0), (self.blocks_multiply_const_vxx_1, 0))
@@ -237,10 +230,14 @@ class radio_process_dual_channel(gr.top_block):
         self.connect((self.blocks_vector_to_streams_0, 2), (self.blocks_multiply_const_vxx_1_0_0_0, 0))
         #self.connect((self.uhd_usrp_source_1, 0), (self.add_clock_tags, 0))
         #self.connect((self.uhd_usrp_source_1, 1), (self.add_clock_tags_0, 0))
-        self.connect((self.calibrator_control_strobe_0, 0), (self.blocks_add_xx_0_0, 1))
-        self.connect((self.calibrator_control_strobe_0, 1), (self.blocks_add_xx_0_0_0, 1))
-        self.connect((self.uhd_usrp_source_1, 0), (self.calibrator_control_strobe_0, 0))
-        self.connect((self.uhd_usrp_source_1, 1), (self.calibrator_control_strobe_0, 1))
+        #self.connect((self.tagging_and_ctl_0, 0), (self.blocks_add_xx_0_0, 1))
+        #self.connect((self.tagging_and_ctl_0, 1), (self.blocks_add_xx_0_0_0, 1))
+        self.connect((self.tagging_and_ctl_0, 1), (self.blocks_streams_to_vector_0, 1))
+        self.connect((self.tagging_and_ctl_0, 0), (self.blocks_streams_to_vector_0, 0))
+        self.connect((self.tagging_and_ctl_0, 0), (self.weighted_overlap_fft_0, 0))
+        self.connect((self.tagging_and_ctl_0, 1), (self.weighted_overlap_fft_0_0, 0))
+        self.connect((self.uhd_usrp_source_1, 0), (self.tagging_and_ctl_0, 0))
+        self.connect((self.uhd_usrp_source_1, 1), (self.tagging_and_ctl_0, 1))
 
 
     def get_num_bins(self):
@@ -296,7 +293,8 @@ class radio_process_dual_channel(gr.top_block):
     def set_freq(self, freq):
         self.freq = freq
         self.set_rf_freq(self.freq)
-        self.blocks_tags_strobe_0.set_value(pmt.to_pmt(float(self.freq)))
+        self.tagging_and_ctl_0.center_frequency = self.freq
+        #self.blocks_tags_strobe_0.set_value(pmt.to_pmt(float(self.freq)))
         #self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         #self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch}))
         self.set_metadata_dict(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch}))
@@ -336,9 +334,9 @@ class radio_process_dual_channel(gr.top_block):
         #self.add_clock_tags.nsamps = self.tag_period
         #self.add_clock_tags_0.nsamps = self.tag_period
         #self.blocks_message_strobe_0.set_period((int(self.tag_period/self.samp_rate*1000)))
-        self.blocks_tags_strobe_0.set_nsamps(self.tag_period)
-        self.blocks_tags_strobe_0_0.set_nsamps(self.tag_period)
-        self.calibrator_control_strobe_0.cal_interval = self.tag_period/self.samp_rate
+        #self.blocks_tags_strobe_0.set_nsamps(self.tag_period)
+        #self.blocks_tags_strobe_0_0.set_nsamps(self.tag_period)
+        self.tagging_and_ctl_0.cal_interval = self.tag_period/self.samp_rate
 
     def get_soutrack(self):
         return self.soutrack
@@ -361,8 +359,8 @@ class radio_process_dual_channel(gr.top_block):
         
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
         #self.blocks_message_strobe_0.set_period((int(self.tag_period/self.samp_rate*1000)))
-        self.calibrator_control_strobe_0.cal_interval = self.tag_period/self.samp_rate
-        self.calibrator_control_strobe_0.samp_rate = self.samp_rate
+        self.tagging_and_ctl_0.cal_interval = self.tag_period/self.samp_rate
+        self.tagging_and_ctl_0.samp_rate = self.samp_rate
 
         ##### timed tuning command 
 
@@ -417,7 +415,7 @@ class radio_process_dual_channel(gr.top_block):
         self.set_tcal(np.array([290]*self.num_channels))
         self.set_tsys(np.array([171]*self.num_channels))
         self.covariance_matrix_1.num_channels = self.num_channels
-        self.calibrator_control_strobe_0.num_channels = self.num_channels
+        self.tagging_and_ctl_0.num_channels = self.num_channels
 
     def get_motor_el(self):
         return self.motor_el
@@ -481,8 +479,8 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_calibrator_mask(self, calibrator_mask):
         self.calibrator_mask = calibrator_mask
-        #self.calibrator_control_strobe.calibrator_mask = self.calibrator_mask
-        self.calibrator_control_strobe_0.cal_mask = self.calibrator_mask
+        #self.tagging_and_ctl.calibrator_mask = self.calibrator_mask
+        self.tagging_and_ctl_0.cal_mask = self.calibrator_mask
         ##### Configure USRP GPIO (not on the fly though, that's silly)
         #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual
         #self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, calibrator_mask) #set pins 2 and 3 as output
@@ -528,9 +526,9 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_on = cal_on
         #self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch, "cal_on":self.cal_on}))
         #self.blocks_tags_strobe_0_0.set_value(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch}))
-        #self.calibrator_control_strobe.cal_state = self.cal_on
+        #self.tagging_and_ctl.cal_state = self.cal_on
         self.set_metadata_dict(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch}))        
-        self.calibrator_control_strobe_0.cal_state = self.cal_on
+        self.tagging_and_ctl_0.cal_state = self.cal_on
 
     def get_beam_switch(self):
         return self.beam_switch
@@ -547,7 +545,7 @@ class radio_process_dual_channel(gr.top_block):
     def set_metadata_dict(self, metadata_dict):
         self.metadata_dict = metadata_dict
         #self.blocks_tags_strobe_0_0.set_value(self.metadata_dict)
-        self.calibrator_control_strobe_0.metadata_pmt = self.metadata_dict
+        self.tagging_and_ctl_0.metadata_pmt = self.metadata_dict
 
 
 def argument_parser():
