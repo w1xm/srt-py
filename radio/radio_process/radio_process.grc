@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: 'False'
+    value: '0'
   states:
     bus_sink: false
     bus_source: false
@@ -189,6 +189,22 @@ blocks:
     coordinate: [14, 726]
     rotation: 0
     state: true
+- name: metadata_dict
+  id: variable
+  parameters:
+    comment: ''
+    value: 'pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations":
+      num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq,
+      "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr":
+      [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack":
+      soutrack, "bsw": beam_switch})'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 564.0]
+    rotation: 0
+    state: enabled
 - name: motor_az
   id: variable
   parameters:
@@ -367,25 +383,7 @@ blocks:
     bus_structure: null
     coordinate: [1024, 300.0]
     rotation: 0
-    state: true
-- name: blocks_add_xx_0_0
-  id: blocks_add_xx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '3'
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1280, 272.0]
-    rotation: 0
-    state: true
+    state: disabled
 - name: blocks_integrate_xx_0
   id: blocks_integrate_xx
   parameters:
@@ -420,7 +418,7 @@ blocks:
     bus_structure: null
     coordinate: [496, 212.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: blocks_multiply_conjugate_cc_0
   id: blocks_multiply_conjugate_cc
   parameters:
@@ -492,7 +490,7 @@ blocks:
     bus_structure: null
     coordinate: [1016, 204.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: blocks_tags_strobe_0_0
   id: blocks_tags_strobe
   parameters:
@@ -516,7 +514,7 @@ blocks:
     bus_structure: null
     coordinate: [976, 364.0]
     rotation: 0
-    state: true
+    state: disabled
 - name: calibrator_control_strobe
   id: epy_block
   parameters:
@@ -563,7 +561,112 @@ blocks:
     bus_structure: null
     coordinate: [496, 348.0]
     rotation: 0
-    state: true
+    state: disabled
+- name: calibrator_control_strobe_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nblock to generate calibrator control commands for the X300\
+      \ radio. \nnote that this block assumes a latency lower than the calibrator\
+      \ cycle time\nand will break if that condition is not met. modified to add timestamps\
+      \ on 2024/12/23\n\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\nimport numpy as np\nfrom\
+      \ gnuradio import gr \nimport pmt\nimport time\nimport uhd\n\ndef make_time_pair(t):\n\
+      \    return pmt.make_tuple(\n        pmt.to_pmt(int(np.trunc(t))), pmt.to_pmt(t\
+      \ - int(np.trunc(t)))\n    )\n\nclass tagging_and_ctl(gr.sync_block):\n    def\
+      \ __init__(self, num_channels=1, cal_mask=0xFFF, cal_state=0, cal_interval=1.0,\
+      \ samp_rate=32e3, center_frequency=1.42e9, metadata_pmt=pmt.to_pmt({\"num_bins\"\
+      :512})):\n        gr.sync_block.__init__(\n            self,\n            name=\"\
+      metadata_tagging_and_control\",\n            in_sig=[np.complex64]*num_channels,\n\
+      \            out_sig=[np.complex64]*num_channels\n        )\n\n        #input\
+      \ parameters\n        self.cal_mask = cal_mask\n        self.cal_interval =\
+      \ cal_interval\n        self.cal_state = cal_state\n        self.samp_rate =\
+      \ samp_rate\n        self.num_channels = num_channels\n        self.metadata_pmt\
+      \ = metadata_pmt\n        self.center_frequency=center_frequency\n\n       \
+      \ #fixed derived variables\n\n        self.calibrator_sample_interval = int(self.samp_rate\
+      \ * self.cal_interval)\n\n        self.last_cal_state = False\n        self.rx_time\
+      \ = pmt.to_python(pmt.cons(pmt.from_uint64(int(0)),pmt.from_double(0)))\n\n\
+      \        #self.message_port_register_in(pmt.intern('get_gpio'))\n        self.message_port_register_out(pmt.intern('command'))\n\
+      \        #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)\n\
+      \n    def work(self, input_items, output_items):\n\n\n        #when SDR first\
+      \ starts capture its timestamp off the first sample. use to time all subsequent\
+      \ events\n\n        tags = self.get_tags_in_window(0, 0, len(input_items[0]))\n\
+      \n        for tag in tags:\n            key = pmt.to_python(tag.key) # convert\
+      \ from PMT to python string\n            if key == \"rx_time\":\n          \
+      \      self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can\
+      \ be several things, it depends what PMT type it was\n                #print('key\
+      \ entry:', key)\n                #print('value:', self.rx_time[0],self.rx_time[1],\
+      \ type(self.rx_time))\n                #print('')\n\n        #determine what\
+      \ the sample number of the last sample in the input is\n\n        n_last_sample\
+      \ = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval\n\
+      \n        #determine calibrator state at samples being recieved\n\n        #check\
+      \ if we are seeing a sample we are interested in adding a tag to\n        if\
+      \ (n_last_sample-len(input_items[0])) <= 0:\n\n            writeindex = len(input_items[0])\
+      \ - n_last_sample\n\n            #generate tags to be applied to data (pmt.cons\
+      \ does not work for metadata here, needs to be dict)\n            #we take in\
+      \ all the radio state from an external metadata constructor EXCEPT for cal state\
+      \ \n            #since we really want that to line up with the transition.\n\
+      \n            key = pmt.intern('metadata')\n            value = self.metadata_pmt\n\
+      \            value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))\n\
+      \            #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))\n\
+      \n            #apply tags\n\n            for i in range(self.num_channels):\n\
+      \                self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)\n\
+      \                self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern(\"\
+      rx_time\"), make_time_pair(time.time()))\n                self.add_item_tag(i,\
+      \ self.nitems_written(0) + writeindex, pmt.intern(\"rx_freq\"), pmt.to_pmt(float(self.center_frequency)))\n\
+      \n\n            if self.last_cal_state != self.cal_state:\n\n              \
+      \  ########################################\n                #issue command\
+      \ to usrp for next state of calibrator, \n                #needs to be a timed\
+      \ command so it ends up synced with the integration periods\n              \
+      \  #only do this if we are changing things\n                #######################################\n\
+      \n                #set command time for approx 1 cycle hence (winds up being\
+      \ less when recieved at SDR)\n                #I probably need to fix this to\
+      \ actually match the time as recorded by the SDR\n\n                command_time\
+      \ = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))\n\
+      \                msg = pmt.make_dict()\n                msg = pmt.dict_add(msg,\
+      \ pmt.to_pmt('time'), command_time)\n\n                self.message_port_pub(pmt.intern('command'),\
+      \ msg) #issue message\n\n                #issue command to toggle gpio\n\n \
+      \               set_gpio = pmt.make_dict()\n                set_gpio = pmt.dict_add(set_gpio,\
+      \ pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))\n                set_gpio = pmt.dict_add(set_gpio,\
+      \ pmt.to_pmt('attr'), pmt.to_pmt('OUT'))\n                set_gpio = pmt.dict_add(set_gpio,\
+      \ pmt.to_pmt('value'), pmt.from_double(self.cal_state))\n                set_gpio\
+      \ = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))\n\
+      \n                msg = pmt.make_dict()\n                msg = pmt.dict_add(msg,\
+      \ pmt.to_pmt('gpio'), set_gpio)\n\n                self.message_port_pub(pmt.intern('command'),\
+      \ msg) #issue message\n\n\n                #clear command time \n\n        \
+      \        msg = pmt.make_dict()\n                msg = pmt.dict_add(msg, pmt.to_pmt('time'),\
+      \ pmt.PMT_NIL)\n\n                self.message_port_pub(pmt.intern('command'),\
+      \ msg) #issue message\n\n                #self.message_port_pub(pmt.intern('command'),\
+      \ pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))\n\n                self.last_cal_state\
+      \ = self.cal_state\n\n        for i in range(self.num_channels):\n         \
+      \   output_items[i][:] = input_items[i]\n        return len(output_items[0])\n\
+      \        "
+    affinity: ''
+    alias: ''
+    cal_interval: tag_period/samp_rate
+    cal_mask: calibrator_mask
+    cal_state: cal_on
+    center_frequency: freq
+    comment: ''
+    maxoutbuf: '0'
+    metadata_pmt: metadata_dict
+    minoutbuf: '0'
+    num_channels: num_channels
+    samp_rate: samp_rate
+  states:
+    _io_cache: ('metadata_tagging_and_control', 'tagging_and_ctl', [('num_channels',
+      '1'), ('cal_mask', '4095'), ('cal_state', '0'), ('cal_interval', '1.0'), ('samp_rate',
+      '32000.0'), ('center_frequency', '1420000000.0'), ('metadata_pmt', '((num_bins
+      . 512))')], [('0', 'complex', 1)], [('0', 'complex', 1), ('command', 'message',
+      1)], '', ['cal_interval', 'cal_mask', 'cal_state', 'center_frequency', 'metadata_pmt',
+      'num_channels', 'samp_rate'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1112, 468.0]
+    rotation: 0
+    state: enabled
 - name: import_0
   id: import
   parameters:
@@ -588,6 +691,19 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [795, 11]
+    rotation: 0
+    state: enabled
+- name: import_0_0_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import pmt
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [720, 68.0]
     rotation: 0
     state: enabled
 - name: num_bins
@@ -995,7 +1111,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [728, 164.0]
+    coordinate: [720, 212.0]
     rotation: 0
     state: disabled
 - name: snippet_0
@@ -1454,7 +1570,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [752, 244.0]
+    coordinate: [800, 476.0]
     rotation: 0
     state: true
 - name: weighted_overlap_fft_0
@@ -1495,6 +1611,7 @@ blocks:
     address: tcp://127.0.0.1:5558
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1507,7 +1624,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 388.0]
+    coordinate: [1528, 388.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_0_0
@@ -1516,6 +1633,7 @@ blocks:
     address: tcp://127.0.0.1:5559
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1528,7 +1646,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 500.0]
+    coordinate: [1528, 508.0]
     rotation: 0
     state: enabled
 - name: zeromq_pub_sink_1
@@ -1537,6 +1655,7 @@ blocks:
     address: tcp://127.0.0.1:5563
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1558,6 +1677,7 @@ blocks:
     address: tcp://127.0.0.1:5562
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1579,6 +1699,7 @@ blocks:
     address: tcp://127.0.0.1:5560
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1600,6 +1721,7 @@ blocks:
     address: tcp://127.0.0.1:5561
     affinity: ''
     alias: ''
+    bind: 'True'
     comment: ''
     drop_on_hwm: 'True'
     hwm: '-1'
@@ -1617,10 +1739,6 @@ blocks:
     state: true
 
 connections:
-- [add_clock_tags, '0', blocks_add_xx_0_0, '1']
-- [blocks_add_xx_0_0, '0', weighted_overlap_fft_0, '0']
-- [blocks_add_xx_0_0, '0', zeromq_pub_sink_0, '0']
-- [blocks_add_xx_0_0, '0', zeromq_pub_sink_0_0, '0']
 - [blocks_integrate_xx_0, '0', blocks_multiply_const_xx_0_0_0_0, '0']
 - [blocks_message_strobe_0, strobe, calibrator_control_strobe, strobe]
 - [blocks_multiply_conjugate_cc_0, '0', blocks_integrate_xx_0, '0']
@@ -1629,14 +1747,17 @@ connections:
 - [blocks_multiply_const_xx_0_0_0_0, '0', blocks_multiply_const_vxx_1, '0']
 - [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2, '0']
 - [blocks_multiply_const_xx_0_0_0_0, '0', zeromq_pub_sink_2_0, '0']
-- [blocks_tags_strobe_0, '0', blocks_add_xx_0_0, '0']
-- [blocks_tags_strobe_0_0, '0', blocks_add_xx_0_0, '2']
 - [calibrator_control_strobe, command, uhd_usrp_source_1, command]
+- [calibrator_control_strobe_0, '0', weighted_overlap_fft_0, '0']
+- [calibrator_control_strobe_0, '0', zeromq_pub_sink_0, '0']
+- [calibrator_control_strobe_0, '0', zeromq_pub_sink_0_0, '0']
+- [calibrator_control_strobe_0, command, uhd_usrp_source_1, command]
 - [osmosdr_source_0, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
+- [uhd_usrp_source_1, '0', calibrator_control_strobe_0, '0']
 - [weighted_overlap_fft_0, '0', blocks_multiply_conjugate_cc_0, '0']
 - [weighted_overlap_fft_0, '0', blocks_multiply_conjugate_cc_0, '1']
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
+  grc_version: 3.10.10.0

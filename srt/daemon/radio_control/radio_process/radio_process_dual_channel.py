@@ -29,10 +29,9 @@ from xmlrpc.server import SimpleXMLRPCServer
 import threading
 import math
 import numpy as np
-from . import add_clock_tags
+#from . import add_clock_tags
 from . import covariance_matrix
 from . import weighted_overlap_fft  # grc-generated hier_block manually relocated to directory
-#from . import tagging_and_ctl
 from . import tagging_and_synchronous_ctl as tagging_and_ctl
 
 
@@ -95,6 +94,7 @@ class radio_process_dual_channel(gr.top_block):
         self.xmlrpc_server_0_thread.daemon = True
         self.xmlrpc_server_0_thread.start()
 
+        #tagging stuff neeeds to come before radio for some odd race condition related reason
         self.tagging_and_ctl_0 = tagging_and_ctl.tagging_and_ctl(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, center_frequency=rf_freq, metadata_pmt=metadata_dict)
 
 
