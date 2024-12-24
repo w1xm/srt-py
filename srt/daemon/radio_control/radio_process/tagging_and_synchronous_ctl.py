@@ -66,7 +66,7 @@ class tagging_and_ctl(gr.sync_block):
                 msg = pmt.dict_add(msg, pmt.to_pmt('radio_start_time'), pmt.to_pmt(self.rx_time[0]+self.rx_time[1]))
                 self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
                 #print('key entry:', key)
-                #print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
+                print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
                 #print('')
 
         #determine what the sample number of the last sample in the input is
