@@ -15,6 +15,7 @@ The SRT software accepts commands in order to change settings at runtime as well
 | calibrate    | None       | 2     | Runs antenna calibration routine           |
 | calon        | None       | 6     | Enable calibration noise source            |
 | caloff       | None       | 6     | Disable calibration noise source           |
+| calset       | [int state]    | 9     | set multiple calibrators to a specific state |
 | freq         | [cf]       |       | Sets Center Frequency in MHz to 'cf'       |
 | n            | None       |       | Run an N point scan and display results    |
 | npointset    | [n]        |       | set number of points to a grid side in n point scan |
@@ -40,6 +41,7 @@ Additional Notes:
  6. calon and caloff commands are valid only for antennas with some form of noise injection or dicke switching.
  7. ICRS coordinates, expects decimal degrees for both Ra and Dec
  8. will accept standard iso formatted utc timestamp to any precision
+ 9. highly specific to system/customized in daemon. for W1XMBIGDISH 0-3 are valid and mapped to corresponding binary masks for the X300 radio GPIO
 
 ##### Building Command Files
 

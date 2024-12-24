@@ -715,7 +715,6 @@ def generate_spectrum_graph(bandwidth, cf, spectrum, is_spec_cal, covariances=Fa
 
     if covariances:
 
-
         for i in range(num_channels):
             for j in range(num_channels - 1):
                 if i != j:
@@ -898,7 +897,7 @@ def generate_npoint_raw(az_in, el_in, d_az, d_el, pow_in, cent, sides, num_chann
                 z=pow_grid[i], 
                 x=az_range, 
                 y=el_range, 
-                colorscale="Viridis", 
+                colorscale="jet", 
                 showscale=False,
                 contours=dict(
                     showlabels=True,
