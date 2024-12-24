@@ -47,7 +47,7 @@ class tagging_and_ctl(gr.sync_block):
 
         #self.message_port_register_in(pmt.intern('get_gpio'))
         self.message_port_register_out(pmt.intern('command'))
-        self.message_port_register_out(pmt.intern('radio_time_reference'))
+        self.message_port_register_out(pmt.intern('time_reference'))
         #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)
 
     def work(self, input_items, output_items):
@@ -67,7 +67,7 @@ class tagging_and_ctl(gr.sync_block):
 
                     rx_time_float = self.rx_time[0]+self.rx_time[1]
                     msg = pmt.cons(pmt.string_to_symbol('radio_start_time'),pmt.to_pmt(float(self.rx_time[0]+self.rx_time[1])))
-                    self.message_port_pub(pmt.intern('radio_time_reference'), msg) #issue message
+                    self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
                     #print('key entry:', key)
                     print('rx_time:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
                     #print('')
