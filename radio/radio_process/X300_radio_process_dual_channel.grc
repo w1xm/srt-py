@@ -510,21 +510,6 @@ blocks:
     coordinate: [1912, 588.0]
     rotation: 0
     state: enabled
-- name: blocks_message_debug_0
-  id: blocks_message_debug
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    en_uvec: 'True'
-    log_level: info
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1352, 584.0]
-    rotation: 0
-    state: enabled
 - name: blocks_message_strobe_0
   id: blocks_message_strobe
   parameters:
@@ -1659,7 +1644,6 @@ connections:
 - [calibrator_control_strobe_0, '1', blocks_streams_to_vector_0, '1']
 - [calibrator_control_strobe_0, '1', weighted_overlap_fft_0_0, '0']
 - [calibrator_control_strobe_0, command, uhd_usrp_source_1, command]
-- [calibrator_control_strobe_0, time_reference, blocks_message_debug_0, print]
 - [calibrator_control_strobe_0, time_reference, blocks_msgpair_to_var_0, inpair]
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '0', calibrator_control_strobe_0, '0']

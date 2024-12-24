@@ -168,7 +168,6 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_integrate_xx_0 = blocks.integrate_cc(num_integrations, (num_bins*(num_channels**2)))
 
         self.blocks_msgpair_to_var_0 = blocks.msg_pair_to_var(self.set_radio_start_time)
-        self.blocks_message_debug_0 = blocks.message_debug(True, gr.log_levels.info)
         #self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         #self.blocks_add_xx_0_0 = blocks.add_vcc(1)
 
@@ -188,9 +187,7 @@ class radio_process_dual_channel(gr.top_block):
         # Connections
         ##################################################
 
-        self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_message_debug_0, 'print'))
         self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_msgpair_to_var_0, 'inpair'))
-
         self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))
         self.connect((self.covariance_matrix_1, 2), (self.blocks_streams_to_vector_1, 2))
         self.connect((self.covariance_matrix_1, 3), (self.blocks_streams_to_vector_1, 3))

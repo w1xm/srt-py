@@ -43,101 +43,106 @@ class tagging_and_ctl(gr.sync_block):
         self.calibrator_sample_interval = int(self.samp_rate * self.cal_interval)
 
         self.last_cal_state = False
-        self.rx_time = pmt.to_python(pmt.cons(pmt.from_uint64(int(0)),pmt.from_double(0)))
+        self.rx_time = None
 
         #self.message_port_register_in(pmt.intern('get_gpio'))
         self.message_port_register_out(pmt.intern('command'))
-        self.message_port_register_out(pmt.intern('time_reference'))
+        self.message_port_register_out(pmt.intern('radio_time_reference'))
         #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)
 
     def work(self, input_items, output_items):
 
 
         #when SDR first starts capture its timestamp off the first sample. use to time all subsequent events
+        #ONLY accept radio timestamp once. it gets resent upon tuning commands and thoroughly borks things
 
-        tags = self.get_tags_in_window(0, 0, len(input_items[0]))
+        if self.rx_time == None:
 
-        for tag in tags:
-            key = pmt.to_python(tag.key) # convert from PMT to python string
-            if key == "rx_time":
-                self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can be several things, it depends what PMT type it was
+            tags = self.get_tags_in_window(0, 0, len(input_items[0]))
 
-                rx_time_float = self.rx_time[0]+self.rx_time[1]
-                msg = pmt.cons(pmt.string_to_symbol('radio_start_time'),pmt.to_pmt(float(self.rx_time[0]+self.rx_time[1])))
-                self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
-                #print('key entry:', key)
-                print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
-                #print('')
+            for tag in tags:
+                key = pmt.to_python(tag.key) # convert from PMT to python string
+                if key == "rx_time":
+                    self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can be several things, it depends what PMT type it was
 
-        #determine what the sample number of the last sample in the input is
+                    rx_time_float = self.rx_time[0]+self.rx_time[1]
+                    msg = pmt.cons(pmt.string_to_symbol('radio_start_time'),pmt.to_pmt(float(self.rx_time[0]+self.rx_time[1])))
+                    self.message_port_pub(pmt.intern('radio_time_reference'), msg) #issue message
+                    #print('key entry:', key)
+                    print('rx_time:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
+                    #print('')
 
-        n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
+        else:
 
-        #determine calibrator state at samples being recieved
+            #determine what the sample number of the last sample in the input is
 
-        #check if we are seeing a sample we are interested in adding a tag to
-        if (n_last_sample-len(input_items[0])) <= 0:
+            n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
 
-            writeindex = len(input_items[0]) - n_last_sample
+            #determine calibrator state at samples being recieved
 
-            #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
-            #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
-            #since we really want that to line up with the transition.
+            #check if we are seeing a sample we are interested in adding a tag to
+            if (n_last_sample-len(input_items[0])) <= 0:
 
-            key = pmt.intern('metadata')
-            value = self.metadata_pmt
-            value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))
-            #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))
+                writeindex = len(input_items[0]) - n_last_sample
 
-            #apply tags
+                #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
+                #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
+                #since we really want that to line up with the transition.
 
-            for i in range(self.num_channels):
-                self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)
-                self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
-                self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
+                key = pmt.intern('metadata')
+                value = self.metadata_pmt
+                value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))
+                #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))
 
+                #apply tags
 
-            if self.last_cal_state != self.cal_state:
-
-                ########################################
-                #issue command to usrp for next state of calibrator, 
-                #needs to be a timed command so it ends up synced with the integration periods
-                #only do this if we are changing things
-                #######################################
-
-                #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
-                #I probably need to fix this to actually match the time as recorded by the SDR
-
-                command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
-                msg = pmt.make_dict()
-                msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
-
-                self.message_port_pub(pmt.intern('command'), msg) #issue message
-
-                #issue command to toggle gpio
-
-                set_gpio = pmt.make_dict()
-                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
-                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
-                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
-                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
-
-                msg = pmt.make_dict()
-                msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
-
-                self.message_port_pub(pmt.intern('command'), msg) #issue message
+                for i in range(self.num_channels):
+                    self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)
+                    self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
+                    self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
 
 
-                #clear command time 
+                if self.last_cal_state != self.cal_state:
 
-                msg = pmt.make_dict()
-                msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
+                    ########################################
+                    #issue command to usrp for next state of calibrator, 
+                    #needs to be a timed command so it ends up synced with the integration periods
+                    #only do this if we are changing things
+                    #######################################
 
-                self.message_port_pub(pmt.intern('command'), msg) #issue message
+                    #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
+                    #I probably need to fix this to actually match the time as recorded by the SDR
 
-                #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
+                    command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
+                    msg = pmt.make_dict()
+                    msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
 
-                self.last_cal_state = self.cal_state
+                    self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+                    #issue command to toggle gpio
+
+                    set_gpio = pmt.make_dict()
+                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
+                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
+                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
+                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
+
+                    msg = pmt.make_dict()
+                    msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
+
+                    self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+
+                    #clear command time 
+
+                    msg = pmt.make_dict()
+                    msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
+
+                    self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+                    #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
+
+                    self.last_cal_state = self.cal_state
 
         for i in range(self.num_channels):
             output_items[i][:] = input_items[i]
