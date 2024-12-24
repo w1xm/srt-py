@@ -73,9 +73,10 @@ class radio_process(gr.top_block):
         self.cal_values_imag = cal_values_imag = np.zeros((num_channels**2,num_bins))
         self.cal_values = cal_values = cal_values_real+1j*cal_values_imag
         self.cal_pwr = cal_pwr = np.array([1.0]*num_channels**2)
-        self.metadata_dict = metadata_dict = pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch})
         self.cal_on = cal_on = 0
         self.beam_switch = beam_switch = 0
+        self.metadata_dict = metadata_dict = pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch})
+
 
         ##################################################
         # Blocks
