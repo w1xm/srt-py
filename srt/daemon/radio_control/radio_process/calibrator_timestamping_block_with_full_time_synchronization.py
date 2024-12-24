@@ -91,9 +91,6 @@ class blk(gr.sync_block):
 
             #send message to define next calibrator state change
 
-            if self.last_cal_state != self.cal_state:
-                new_cal_value = self.cal_state
-
             ########################################
             #issue command to usrp for next flip of calibrator, 
             #needs to be a timed command
@@ -113,7 +110,7 @@ class blk(gr.sync_block):
             set_gpio = pmt.make_dict()
             set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
             set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
-            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(new_cal_value))
+            set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
             set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
 
             msg = pmt.make_dict()
@@ -131,7 +128,7 @@ class blk(gr.sync_block):
 
             #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
-            self.last_cal_state = ~self.last_cal_state
+            self.last_cal_state = self.cal_state
 
 
         output_items[0][:] = input_items[0]
