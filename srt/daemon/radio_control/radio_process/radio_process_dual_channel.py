@@ -189,7 +189,6 @@ class radio_process_dual_channel(gr.top_block):
         ##################################################
 
         self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_message_debug_0, 'print'))
-        self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_message_debug_0, 'print_pdu'))
         self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_msgpair_to_var_0, 'inpair'))
 
         self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))

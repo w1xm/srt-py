@@ -1660,7 +1660,6 @@ connections:
 - [calibrator_control_strobe_0, '1', weighted_overlap_fft_0_0, '0']
 - [calibrator_control_strobe_0, command, uhd_usrp_source_1, command]
 - [calibrator_control_strobe_0, time_reference, blocks_message_debug_0, print]
-- [calibrator_control_strobe_0, time_reference, blocks_message_debug_0, print_pdu]
 - [calibrator_control_strobe_0, time_reference, blocks_msgpair_to_var_0, inpair]
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '0', calibrator_control_strobe_0, '0']
