@@ -21,12 +21,12 @@ def make_time_pair(t):
     )
 
 class blk(gr.sync_block):
-    def __init__(self, cal_mask=0xFFF, cal_state=0, cal_interval=1.0, samp_rate=32e3):
+    def __init__(self, num_channels=2, cal_mask=0xFFF, cal_state=0, cal_interval=1.0, samp_rate=32e3, metadata_pmt=pmt.to_pmt({"num_bins":512})):
         gr.sync_block.__init__(
             self,
-            name="calibrator_control_and_timestamp",
-            in_sig=[np.complex64, np.complex64],
-            out_sig=[np.complex64, np.complex64]
+            name="calibrator_control_and_stream_tagging",
+            in_sig=[np.complex64]*num_channels,
+            out_sig=[np.complex64]*num_channels
         )
 
         #input parameters
@@ -34,6 +34,8 @@ class blk(gr.sync_block):
         self.cal_interval = cal_interval
         self.cal_state = cal_state
         self.samp_rate = samp_rate
+        self.num_channels = num_channels
+        self.metadata_pmt = metadata_pmt
 
         #fixed derived variables
 
@@ -75,19 +77,16 @@ class blk(gr.sync_block):
             #generate tag to be applied to data (pmt.cons does not work here, needs to be dict)
 
             key = pmt.intern('metadata')
-            value = pmt.make_dict()
-            value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.from_bool(self.last_cal_state))
+            value = self.metadata_pmt
+            value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.from_double(self.last_cal_state))
             #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))
 
             #apply tag
 
-            self.add_item_tag(0, self.nitems_written(0) + writeindex,key,value)
-            self.add_item_tag(1, self.nitems_written(0) + writeindex,key,value)
+            for i in range(self.num_channels):
+                self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)
+                self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
 
-            #apply time
-
-            self.add_item_tag(0, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
-            self.add_item_tag(1, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
 
             #send message to define next calibrator state change
 
