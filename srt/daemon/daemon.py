@@ -708,9 +708,9 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting hot calibration reference measurement")
 
             self.set_calibrator_state(calibrator_state=3) #all on
-            sleep(2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration
+            sleep(3*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration (note that this should mean we save the third cycle after the command normally
             self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
-            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
+            sleep(self.cal_cycles*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
             #disable calibrator and wait for the idiotically long settling time the filters currently have 
@@ -719,9 +719,9 @@ class SmallRadioTelescopeDaemon:
             self.log_message("Starting cold calibration reference measurement")
 
             self.set_calibrator_state(calibrator_state=0) #all off
-            sleep(2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration
+            sleep(3*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration
             self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
-            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
+            sleep(self.cal_cycles*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
             cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
