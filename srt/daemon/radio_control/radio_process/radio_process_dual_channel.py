@@ -143,7 +143,7 @@ class radio_process_dual_channel(gr.top_block):
 
         #self.uhd_usrp_source_1.clear_command_time()
         #now_time = self.uhd_usrp_source_1.get_time_last_pps()
-        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
+        #self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
         
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
