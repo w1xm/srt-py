@@ -1,13 +1,12 @@
 """
-block to generate calibrator control commands for the X300 radio. 
+
+This block generates synchronous calibrator control commands timed to the edge of
+integration periodsb to control the X300 radio GPIO. 
+It also manages all metadata tagging to enable an applied lag for the calibrator state information
+
 note that this block assumes a latency lower than the calibrator cycle time
 and will break if that condition is not met. modified to add timestamps on 2024/12/23
 
-Embedded Python Blocks:
-
-Each time this file is saved, GRC will instantiate the first class it finds
-to get ports and parameters of your block. The arguments to __init__  will
-be the parameters. All of them are required to have default values!
 """
 import numpy as np
 from gnuradio import gr 
@@ -53,8 +52,8 @@ class tagging_and_ctl(gr.sync_block):
     def work(self, input_items, output_items):
 
 
-        #when SDR first starts capture its timestamp off the first sample. use to time all subsequent events
-        #ONLY accept radio timestamp once. it gets resent upon tuning commands and thoroughly borks things
+        #when SDR first starts, capture its internal timestamp off the first sample. use to time all subsequent events
+        #ONLY accept radio timestamp once. It gets resent upon tuning commands and thoroughly borks things
 
         if self.rx_time == None:
 
@@ -63,13 +62,13 @@ class tagging_and_ctl(gr.sync_block):
             for tag in tags:
                 key = pmt.to_python(tag.key) # convert from PMT to python string
                 if key == "rx_time":
-                    self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can be several things, it depends what PMT type it was
+                    self.rx_time = pmt.to_python(tag.value) 
 
                     rx_time_float = self.rx_time[0]+self.rx_time[1]
                     msg = pmt.cons(pmt.string_to_symbol('radio_start_time'),pmt.to_pmt(float(self.rx_time[0]+self.rx_time[1])))
                     self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
                     #print('key entry:', key)
-                    print('rx_time:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
+                    #print('rx_time:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
                     #print('')
 
         else:
