@@ -63,7 +63,7 @@ class tagging_and_ctl(gr.sync_block):
                 self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can be several things, it depends what PMT type it was
 
                 msg = pmt.make_dict()
-                msg = pmt.dict_add(msg, pmt.to_pmt('radio_start_time'), pmt.to_python(self.rx_time))
+                msg = pmt.dict_add(msg, pmt.to_pmt('radio_start_time'), pmt.to_pmt(self.rx_time))
                 self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
                 #print('key entry:', key)
                 #print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
