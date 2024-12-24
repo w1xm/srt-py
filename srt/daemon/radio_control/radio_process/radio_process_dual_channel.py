@@ -75,6 +75,7 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_pwr = cal_pwr = np.array([1]*num_channels**2)
         self.cal_on = cal_on = 0
         self.beam_switch = beam_switch = 0
+        self.radio_start_time = radio_start_time = 0
         self.metadata_dict = metadata_dict = pmt.to_pmt({"num_bins": num_bins, "samp_rate": samp_rate, "num_integrations": num_integrations, "motor_az": motor_az, "motor_el": motor_el, "freq": freq, "tsys": [float(n) for n in tsys], "tcal": [float(n) for n in tcal], "cal_pwr": [float(n) for n in cal_pwr], "vlsr": vlsr, "glat": glat, "glon": glon, "soutrack": soutrack, "bsw": beam_switch})
 
 
@@ -165,6 +166,9 @@ class radio_process_dual_channel(gr.top_block):
         self.blocks_multiply_const_vxx_1_0 = blocks.multiply_const_vcc(cal_values[3])
         self.blocks_multiply_const_vxx_1 = blocks.multiply_const_vcc(cal_values[0])
         self.blocks_integrate_xx_0 = blocks.integrate_cc(num_integrations, (num_bins*(num_channels**2)))
+
+        self.blocks_msgpair_to_var_0 = blocks.msg_pair_to_var(self.set_radio_start_time)
+        self.blocks_message_debug_0 = blocks.message_debug(True, gr.log_levels.info)
         #self.blocks_add_xx_0_0_0 = blocks.add_vcc(1)
         #self.blocks_add_xx_0_0 = blocks.add_vcc(1)
 
@@ -183,6 +187,10 @@ class radio_process_dual_channel(gr.top_block):
         ##################################################
         # Connections
         ##################################################
+
+        self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_message_debug_0, 'print'))
+        self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_message_debug_0, 'print_pdu'))
+        self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_msgpair_to_var_0, 'inpair'))
 
         self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))
         self.connect((self.covariance_matrix_1, 2), (self.blocks_streams_to_vector_1, 2))
@@ -483,6 +491,12 @@ class radio_process_dual_channel(gr.top_block):
     def set_metadata_dict(self, metadata_dict):
         self.metadata_dict = metadata_dict
         self.tagging_and_ctl_0.metadata_pmt = self.metadata_dict
+
+    def get_radio_start_time(self):
+        return self.radio_start_time
+
+    def set_radio_start_time(self, radio_start_time):
+        self.radio_start_time = radio_start_time
 
 
 def argument_parser():

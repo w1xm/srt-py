@@ -47,6 +47,7 @@ class tagging_and_ctl(gr.sync_block):
 
         #self.message_port_register_in(pmt.intern('get_gpio'))
         self.message_port_register_out(pmt.intern('command'))
+        self.message_port_register_out(pmt.intern('time_reference'))
         #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)
 
     def work(self, input_items, output_items):
@@ -60,6 +61,10 @@ class tagging_and_ctl(gr.sync_block):
             key = pmt.to_python(tag.key) # convert from PMT to python string
             if key == "rx_time":
                 self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can be several things, it depends what PMT type it was
+
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('radio_start_time'), pmt.to_python(self.rx_time))
+                self.message_port_pub(pmt.intern('time_reference'), msg) #issue message
                 #print('key entry:', key)
                 #print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
                 #print('')

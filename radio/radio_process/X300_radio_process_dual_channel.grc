@@ -241,6 +241,18 @@ blocks:
     coordinate: [512, 84.0]
     rotation: 0
     state: true
+- name: radio_start_time
+  id: variable
+  parameters:
+    comment: ''
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [560, 772.0]
+    rotation: 0
+    state: true
 - name: rf_freq
   id: variable
   parameters:
@@ -498,6 +510,21 @@ blocks:
     coordinate: [1912, 588.0]
     rotation: 0
     state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1352, 584.0]
+    rotation: 0
+    state: enabled
 - name: blocks_message_strobe_0
   id: blocks_message_strobe
   parameters:
@@ -515,6 +542,20 @@ blocks:
     coordinate: [360, 236.0]
     rotation: 0
     state: disabled
+- name: blocks_msgpair_to_var_0
+  id: blocks_msgpair_to_var
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    target: radio_start_time
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1304, 292.0]
+    rotation: 0
+    state: enabled
 - name: blocks_multiply_const_vxx_1
   id: blocks_multiply_const_vxx
   parameters:
@@ -790,29 +831,33 @@ blocks:
       \ * self.cal_interval)\n\n        self.last_cal_state = False\n        self.rx_time\
       \ = pmt.to_python(pmt.cons(pmt.from_uint64(int(0)),pmt.from_double(0)))\n\n\
       \        #self.message_port_register_in(pmt.intern('get_gpio'))\n        self.message_port_register_out(pmt.intern('command'))\n\
-      \        #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)\n\
-      \n    def work(self, input_items, output_items):\n\n\n        #when SDR first\
+      \        self.message_port_register_out(pmt.intern('time_reference'))\n    \
+      \    #self.set_msg_handler(pmt.intern('gpio_command'), self.handle_msg)\n\n\
+      \    def work(self, input_items, output_items):\n\n\n        #when SDR first\
       \ starts capture its timestamp off the first sample. use to time all subsequent\
       \ events\n\n        tags = self.get_tags_in_window(0, 0, len(input_items[0]))\n\
       \n        for tag in tags:\n            key = pmt.to_python(tag.key) # convert\
       \ from PMT to python string\n            if key == \"rx_time\":\n          \
       \      self.rx_time = pmt.to_python(tag.value) # Note that the type(value) can\
-      \ be several things, it depends what PMT type it was\n                #print('key\
-      \ entry:', key)\n                #print('value:', self.rx_time[0],self.rx_time[1],\
-      \ type(self.rx_time))\n                #print('')\n\n        #determine what\
-      \ the sample number of the last sample in the input is\n\n        n_last_sample\
-      \ = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval\n\
-      \n        #determine calibrator state at samples being recieved\n\n        #check\
-      \ if we are seeing a sample we are interested in adding a tag to\n        if\
-      \ (n_last_sample-len(input_items[0])) <= 0:\n\n            writeindex = len(input_items[0])\
-      \ - n_last_sample\n\n            #generate tags to be applied to data (pmt.cons\
-      \ does not work for metadata here, needs to be dict)\n            #we take in\
-      \ all the radio state from an external metadata constructor EXCEPT for cal state\
-      \ \n            #since we really want that to line up with the transition.\n\
-      \n            key = pmt.intern('metadata')\n            value = self.metadata_pmt\n\
-      \            value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))\n\
-      \            #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))\n\
-      \n            #apply tags\n\n            for i in range(self.num_channels):\n\
+      \ be several things, it depends what PMT type it was\n\n                msg\
+      \ = pmt.make_dict()\n                msg = pmt.dict_add(msg, pmt.to_pmt('radio_start_time'),\
+      \ pmt.to_python(self.rx_time))\n                self.message_port_pub(pmt.intern('time_reference'),\
+      \ msg) #issue message\n                #print('key entry:', key)\n         \
+      \       #print('value:', self.rx_time[0],self.rx_time[1], type(self.rx_time))\n\
+      \                #print('')\n\n        #determine what the sample number of\
+      \ the last sample in the input is\n\n        n_last_sample = (self.nitems_written(0)\
+      \ + len(input_items[0])) % self.calibrator_sample_interval\n\n        #determine\
+      \ calibrator state at samples being recieved\n\n        #check if we are seeing\
+      \ a sample we are interested in adding a tag to\n        if (n_last_sample-len(input_items[0]))\
+      \ <= 0:\n\n            writeindex = len(input_items[0]) - n_last_sample\n\n\
+      \            #generate tags to be applied to data (pmt.cons does not work for\
+      \ metadata here, needs to be dict)\n            #we take in all the radio state\
+      \ from an external metadata constructor EXCEPT for cal state \n            #since\
+      \ we really want that to line up with the transition.\n\n            key = pmt.intern('metadata')\n\
+      \            value = self.metadata_pmt\n            value = pmt.dict_add(value,\
+      \ pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))\n            #value\
+      \ = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))\n\n \
+      \           #apply tags\n\n            for i in range(self.num_channels):\n\
       \                self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)\n\
       \                self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern(\"\
       rx_time\"), make_time_pair(time.time()))\n                self.add_item_tag(i,\
@@ -861,8 +906,9 @@ blocks:
       '2'), ('cal_mask', '4095'), ('cal_state', '0'), ('cal_interval', '1.0'), ('samp_rate',
       '32000.0'), ('center_frequency', '1420000000.0'), ('metadata_pmt', '((num_bins
       . 512))')], [('0', 'complex', 1), ('1', 'complex', 1)], [('0', 'complex', 1),
-      ('1', 'complex', 1), ('command', 'message', 1)], '', ['cal_interval', 'cal_mask',
-      'cal_state', 'center_frequency', 'metadata_pmt', 'num_channels', 'samp_rate'])
+      ('1', 'complex', 1), ('time_reference', 'message', 1), ('command', 'message',
+      1)], '', ['cal_interval', 'cal_mask', 'cal_state', 'center_frequency', 'metadata_pmt',
+      'num_channels', 'samp_rate'])
     bus_sink: false
     bus_source: false
     bus_structure: null
@@ -1613,6 +1659,9 @@ connections:
 - [calibrator_control_strobe_0, '1', blocks_streams_to_vector_0, '1']
 - [calibrator_control_strobe_0, '1', weighted_overlap_fft_0_0, '0']
 - [calibrator_control_strobe_0, command, uhd_usrp_source_1, command]
+- [calibrator_control_strobe_0, time_reference, blocks_message_debug_0, print]
+- [calibrator_control_strobe_0, time_reference, blocks_message_debug_0, print_pdu]
+- [calibrator_control_strobe_0, time_reference, blocks_msgpair_to_var_0, inpair]
 - [uhd_usrp_source_1, '0', add_clock_tags, '0']
 - [uhd_usrp_source_1, '0', calibrator_control_strobe_0, '0']
 - [uhd_usrp_source_1, '1', add_clock_tags_0, '0']
