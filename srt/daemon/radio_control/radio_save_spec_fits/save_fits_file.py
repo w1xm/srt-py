@@ -40,9 +40,10 @@ class blk(gr.sync_block):
         file_path = pathlib.Path(self.directory, self.filename)
 
         with open(file_path, "ab+") as file:
-            for input_array in input_items[0]:
+            for i,input_array in enumerate(input_items[0]):
 
-                tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
+                #tags_0 = self.get_tags_in_window(0, 0, len(input_items[0]))
+                tags_0 = self.get_tags_in_window(0, i, i+1) #get tags in i'th segment
                 #tags_1 = self.get_tags_in_window(0, 0, len(input_items[1]))
                 tags_dict_0 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_0}
                 #tags_dict_1 = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}

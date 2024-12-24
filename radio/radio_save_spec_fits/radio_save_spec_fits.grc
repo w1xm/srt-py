@@ -141,9 +141,10 @@ blocks:
       \ because they will be, and for now assume they share the same metadata \n \
       \       #not too worried babout getting this perfect because I'll need to rewrite\
       \ this later anyway\n        file_path = pathlib.Path(self.directory, self.filename)\n\
-      \n        with open(file_path, \"ab+\") as file:\n            for input_array\
-      \ in input_items[0]:\n\n                tags_0 = self.get_tags_in_window(0,\
-      \ 0, len(input_items[0]))\n                #tags_1 = self.get_tags_in_window(0,\
+      \n        with open(file_path, \"ab+\") as file:\n            for i,input_array\
+      \ in enumerate(input_items[0]):\n\n                #tags_0 = self.get_tags_in_window(0,\
+      \ 0, len(input_items[0]))\n                tags_0 = self.get_tags_in_window(0,\
+      \ i, i+1) #get tags in i'th segment\n                #tags_1 = self.get_tags_in_window(0,\
       \ 0, len(input_items[1]))\n                tags_dict_0 = {pmt.to_python(tag.key):\
       \ pmt.to_python(tag.value) for tag in tags_0}\n                #tags_dict_1\
       \ = {pmt.to_python(tag.key): pmt.to_python(tag.value) for tag in tags_1}\n\n\
@@ -232,4 +233,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.9.2
+  grc_version: 3.10.10.0

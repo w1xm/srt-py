@@ -31,6 +31,7 @@ class clk(gr.sync_block):
         nitems = len(input_items[0]) + self.nitems_written(0)
         if self.nitems_written(0) == 0:
             self.add_item_tag(0, 0, self.pmt_key, make_time_pair(time.time()))
+
         while (nitems - self.offset) > self.nsamps:
             self.offset += self.nsamps
             self.add_item_tag(0, self.offset, self.pmt_key, make_time_pair(time.time()))

@@ -1105,7 +1105,7 @@ def register_callbacks(
         Output("covariance-spectrum-histogram", "figure"),
         [Input("interval-component", "n_intervals")],
     )
-    def update_cal_spectrum_histogram(n):
+    def update_cov_spectrum_histogram(n):
         spectrum = cal_spectrum_thread.get_spectrum()
         status = status_thread.get_status()
         if status is None or spectrum is None:
