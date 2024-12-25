@@ -16,6 +16,8 @@ The SRT software accepts commands in order to change settings at runtime as well
 | calon        | None       | 6     | Enable calibration noise source            |
 | caloff       | None       | 6     | Disable calibration noise source           |
 | calset       | [int state]    | 9     | set multiple calibrators to a specific state |
+| clearcal     | None       |       | Unload calibration corrections             |
+| loadcal      | None       |       | Reload calibration corrections             |
 | freq         | [cf]       |       | Sets Center Frequency in MHz to 'cf'       |
 | n            | None       |       | Run an N point scan and display results    |
 | npointset    | [n]        |       | set number of points to a grid side in n point scan |
