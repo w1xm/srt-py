@@ -665,7 +665,7 @@ class SmallRadioTelescopeDaemon:
 
         #get calibration control sequence info from calibration utilities so it doesn't need to live hardcoded here 
 
-        wait_cycles, cal_states = calibration_command_parameters(cal_type=self.cal_type, num_channels=self.radio_num_channels, cal_duration=self.cal_cycles, valid_states=range(len(self.valid_cal_masks)))
+        wait_cycles, cal_states = calibration_command_parameters(cal_type=self.cal_type, num_channels=self.radio_num_channels, cal_duration=self.cal_cycles, valid_masks=self.valid_cal_masks)
 
         #define filenames for calibration measurements and erase if there's a preexisting version of it
         calibration_file_name = 'cal_data_recording.fits'
@@ -692,8 +692,8 @@ class SmallRadioTelescopeDaemon:
         #shut down calibrator
         self.set_calibrator_state(calibrator_state=0) #all off
 
-        cal_values, cal_power = calculate_calibration_corrections(ref_file=cal_data_file, cal_type=self.cal_type, tsys=self.temp_sys, tref=self.temp_cal, num_channels=self.radio_num_channels, valid_states=range(len(self.valid_cal_masks)))
-
+        cal_values = calculate_calibration_corrections(ref_file=cal_data_file, cal_type=self.cal_type, tsys=self.temp_sys, tref=self.temp_cal, num_channels=self.radio_num_channels, valid_masks=self.valid_cal_masks)
+        cal_power = np.ones(self.radio_num_channels**2) #because this is used nowhere but I haven't eradicated it yet
         #erase old cal file to prevent wierdness
 
         calibration_path = Path(self.config_directory, "calibration.json")
