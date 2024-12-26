@@ -246,9 +246,11 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
                     amplitude_correction_mat[i,j] = np.sqrt(amplitude_correction_mat[i,i]*amplitude_correction_mat[j,j])
 
         #Phase Cal
-        cal_1_phase = np.unwrap(np.angle(cal_1_subtracted))
-        cal_2_phase = np.unwrap(np.angle(cal_2_subtracted))
-        phase_error = 0.5*(cal_1_phase[0,1] + cal_2_phase[0,1])
+        cal_1_phasors_norm = cal_1_subtracted/np.abs(cal_1_subtracted)
+        cal_2_phasors_norm = cal_2_subtracted/np.abs(cal_2_subtracted)
+        error_vector=cal_1_phasors_norm+cal_2_phasors_norm #vector carrying the mean phase of the two calibrator covariance matrices.
+        phase_error=np.unwrap(np.angle(error_vector[0,1]))
+
 
         phasefit = stats.linregress(relative_freq_values,phase_error)
         print(f'r value = {phasefit.rvalue}')
