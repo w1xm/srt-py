@@ -12,135 +12,260 @@ and adds additional capabilities for more advanced telescopes.
 
 import numpy as np
 import numpy.polynomial.polynomial as poly
+import scipy.stats as stats
+import json
 from astropy.io import fits
 
-def get_averaged_spectrum(fits_file):
+def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, valid_masks=[0,1]):
+    '''
+    return basic control parameters fromm the daemon that are not easily executed from this file
+    if you have a system with anything interesting going on you'll probably need to modify this.
+
+    Inputs
+    ------
+
+    num_channels : integer
+        number of radio channels in use
+    cal_type : string
+        type of calibration to perform
+    cal_duration : integer
+        nebulously corresponds to the number of integration cycles the cal sequence should run for
+    valid_masks :
+        list of valid calibrator masks that cal_on can take, the index into this is what actually needs to be sent back to the daemon
+        assumes valid_masks[0] is all off and valid_masks[-1], for middle states likely need to customize for a specific telescope
+
+    Returns
+    -------
+
+    wait_cycles : list of integers
+        list of calibrator periods for which to wait in between antenna commands
+    cal_states : list of integers
+        calibrator state to set prior to each wait period 
+    '''
+
+    if cal_type=='COLD_SKY':
+        #no active calibrators involved
+        #just take a single measurement at the position the telescope is pointed at
+        wait_cycles = [cal_duration]
+        cal_states = [0]
+
+    elif cal_type=='NOISE_DIODE':
+        #sequence on off measurements of active noise calibrator without phase calibration
+        #assumes crosscoupling is low enough to not matter much but for 2 channel cal also mostly cancels it out anyway (only like 0.2K error on W1XMBIGDISH regardless)
+        wait_cycles = [cal_duration]*4
+
+        if num_channels==2: #there's a cute crosstalk cancelling sequence to be had for this case
+            cal_states = [0,1,2,3] #half overlap calibrator pulses
+        else:
+            cal_states = []
+            for i in len(wait_cycles):
+                cal_states.append(0 if i%2==0 else len(valid_masks)-1)
+
+        #pad the end to account for calibrator control latency (unavoidable due to integration time)
+        wait_cycles.append(3)
+        cal_states.append(cal_states[-1])
+
+    elif cal_type=='REFL_PHASE':
+        #ONLY VALID for dual pol feeds, Hyperspecific to implementation
+        #no attempt has been made to generalize this for different channel counts
+        if num_channels !=2:
+            raise ValueError(f"cal_type: 'REFL_PHASE' only valid for dual pol feeds")
+
+        cycle_time = max(int(cal_duration/3),5) #min 5 periods per state to cal
+        num_cycles = max(int(cal_duration/(cycle_time*3))*3,3)
+
+        wait_cycles=[cycle_time]*num_cycles
+        cal_states =[0,1,2]*int(num_cycles/3)
+
+        #pad the end to account for calibrator control latency (unavoidable due to integration time)
+        wait_cycles.append(3)
+        cal_states.append(cal_states[-1])
+
+    else:
+        raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
+
+    return wait_cycles, cal_states
+
+
+def get_fits_data(fits_file):
     """
-    open fits file, reconstruct complex array, and average all included spectra together
-    
-    returns the average covariance matrix as a complex array (or a single spectrum if using only one channel)
-    """
-    spectrum_file = fits.open(fits_file)
-    
-    average_spectrum = np.zeros(np.shape(spectrum_file[0].data)[0:-1],dtype=np.complex64) 
-    #use array of same dimesions as fits file except for last axis (real vs complex) 
-    #print(f'spectrum data shape: {np.shape(spectrum_file[0].data)}')
-    #print(f'spectrum file shape: {np.shape(average_spectrum)}')
+    open fits file and return numpy array of data plus list of metadata
 
-    num_spectra = len(spectrum_file)
-    
-    #average all integration periods together
-    for i in range(0,num_spectra):
-        spectrum=spectrum_file[i]
-        average_spectrum += spectrum.data[:,:,:,0]+1j*spectrum.data[:,:,:,1]
+    Inputs
+    ------
+    fits_file : path to fits file
 
-    average_spectrum /= num_spectra
-
-    return average_spectrum
-
-
-def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=np.array([300]), t_cal=np.array([300]), num_channels=1, polynomial_order=20):
-    """
-    very basic calibration for single point temperature reference measurement. 
-    calculates a polynomial fit for the spectrum and appropriately normalizes it
-    only accounts for amplitude and assumes noise covariance between channels is zero for reference observation
+    Returns
+    -------
+    data : numpy array dtype=complex64
+        data from fits file as complex numpy array
+    metadata : list
+        list of metadata from fits file
     """
 
-    average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath) 
-    #average_cold_sky_spectrum_real = average_cold_sky_spectrum[:,:,:,0] #only get real values for now
-    average_cold_sky_spectrum_real = np.real(average_cold_sky_spectrum)
-    relative_freq_values = np.linspace(-1, 1, np.shape(average_cold_sky_spectrum_real)[2])
+    hdul = fits.open(fits_file)
 
-    smoothed_cold_sky_spectrum =np.ones_like(average_cold_sky_spectrum_real[0]) #drop a dimension to save my sanity here. 
-    #this is ONLY calculating the diagonal elements
+    #get metadata and rf data out into a more useful form for my purpose
+    fits_data = []
+    fits_metadata = []
+
+    for i, hdu in enumerate(hdul):
+        fits_metadata.append(json.loads(hdu.header["METADATA"]))
+        fits_data.append(np.array(hdu.data[:,:,:,0] +1j*hdu.data[:,:,:,1]))
+
+    hdul.close()
+
+    #make data into nice big numpy array
+    fits_data=np.array(fits_data)
+
+    return fits_data, fits_metadata
 
 
-    for i in range(num_channels):
-        polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_cold_sky_spectrum_real[i,i], polynomial_order,)
-        smoothed_cold_sky_spectrum[i] = polynomial_fit(relative_freq_values)
 
-    #calculate gain corrections for the diagonal terms
+def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), tref=np.array([300]), num_channels=1, valid_masks=range(2)):
 
-    average_value = np.mean(smoothed_cold_sky_spectrum, axis=1)
-    #following nonsense is needed because of handling pultiple channels
-    normalized_gain_spectrum = smoothed_cold_sky_spectrum/(average_value*np.ones_like(smoothed_cold_sky_spectrum).transpose()).transpose()
-    average_gain_correction = average_value/(t_sys+t_cal)
+    """
+    takes in a bunch of parameters plus a fits file with recorded calibration data and returns calibration corrections for the telescope. 
+    accuracy and complexity dependent on calibration type
 
-    full_normalized_spectra = np.ones_like(average_cold_sky_spectrum)
-    cal_coefficients = np.ones_like(average_cold_sky_spectrum)
-    full_average_gains = np.ones((num_channels,num_channels))
+    Returns
+    -------
 
-    #infer gain corrections for the off-diagonal terms from the individual channel gains
-
-    for i in range(num_channels):
-        for j in range(num_channels):
-            if i==j:
-                full_normalized_spectra[i,j] = normalized_gain_spectrum[i]
-                full_average_gains[i,j] = average_gain_correction[i]
-                cal_coefficients[i,j] = 1.0/(full_normalized_spectra[i,j]*full_average_gains[i,j])
-
-            else: #gain correction is just product of corrections of the path gains
-                full_normalized_spectra[i,j] = np.sqrt(normalized_gain_spectrum[i]*normalized_gain_spectrum[j]) 
-                full_average_gains[i,j] = np.sqrt(average_gain_correction[i]*average_gain_correction[j])
-                cal_coefficients[i,j] = 1.0/(full_normalized_spectra[i,j]*full_average_gains[i,j])
-
-    return cal_coefficients.reshape(num_channels**2,-1), full_average_gains.reshape(num_channels**2)
-
-    
-def additive_noise_calibration_fit(cold_sky_reference_filepath, calibrator_reference_filepath, t_sys=np.array([300]), t_cal=np.array([300]), num_channels=1, polynomial_order=20):
-
-    """calibration using injected noise calibrator added to background signal
-    only accounts for amplitude and assumes noise covariance between channels is zero for now
+    correction_mat : numpy array
+        complex calibration correctionn matrix to be applied to data coming out of the radio
     """
 
-    average_cold_sky_spectrum = get_averaged_spectrum(cold_sky_reference_filepath)
-    #average_cold_sky_spectrum_real = average_cold_sky_spectrum[:,:,:,0] #only get real values for now
-    average_cold_sky_spectrum_real = np.real(average_cold_sky_spectrum)
-    average_calibrator_plus_sky_spectrum = get_averaged_spectrum(calibrator_reference_filepath)
-    #average_calibrator_plus_sky_spectrum_real = average_calibrator_plus_sky_spectrum[:,:,:,0] #only get real values for now
-    average_calibrator_plus_sky_spectrum_real = np.real(average_calibrator_plus_sky_spectrum)
-    average_calibrator_spectrum = average_calibrator_plus_sky_spectrum_real - average_cold_sky_spectrum_real
-    
+    #internal variables
+    polynomial_order=20
 
-    smoothed_calibrator_spectrum =np.ones_like(average_calibrator_spectrum[0]) #collapse to a single dimension corresponding to the diagonal
+    #start by pulling in fits file data and metadata
+    fits_data, fits_metadata = get_fits_data(ref_file)
+    #and create a reference axis for fitting data
+    relative_freq_values = np.linspace(1419e6, 1420e6, len(fits_data[0,0,0])) #this doesn't actually matter as long as it's a linear range with the right number of points
 
-    relative_freq_values = np.linspace(-1, 1, np.shape(average_cold_sky_spectrum)[2])
-    #print(f'calibrator spectrum shape {np.shape(average_calibrator_spectrum)}')
+    if cal_type=="COLD_SKY":
 
-    #compute corrections on the diagonal
+        #just average across the whole data set and try to correct for estimated total temperature
+        average_spectra = np.mean(fits_data,axis=0)
+        correction_mat = np.ones_like(average_spectra)
 
-    for i in range(num_channels):
-        polynomial_fit = poly.Polynomial.fit(relative_freq_values, average_calibrator_spectrum[i,i], polynomial_order,)
-        smoothed_calibrator_spectrum[i] = polynomial_fit(relative_freq_values)
+        #compute corections for diagonal of covariance matrix
 
-    average_value = np.mean(smoothed_calibrator_spectrum,axis=1)
-    #following nonsense is needed because of handling pultiple channels
-    normalized_gain_spectrum = smoothed_calibrator_spectrum/(average_value*np.ones_like(smoothed_calibrator_spectrum).transpose()).transpose()
-    average_gain_correction = average_value/t_cal
+        for i in range(num_channels):
+            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(average_spectra[i,i]), polynomial_order)
+            correction_mat[i,i] = (tref[i]+tsys[i])/poly_fit(relative_freq_values)
 
-    full_normalized_spectra = np.ones_like(average_cold_sky_spectrum)
-    cal_coefficients = np.ones_like(average_cold_sky_spectrum)
-    full_average_gains = np.ones((num_channels,num_channels))
+        #propagate to off-diagonal terms in the matrix
 
-    #infer gain corrections for the off-diagonal terms from the individual channel gains
+        for i in range(num_channels):
+            for j in range(num_channels):
+                if i!=j:
+                    correction_mat[i,j] = np.sqrt(correction_mat[i,i]*correction_mat[j,j])
 
-    for i in range(num_channels):
-        for j in range(num_channels):
-            if i==j:
-                full_normalized_spectra[i,j] = normalized_gain_spectrum[i]
-                full_average_gains[i,j] = average_gain_correction[i]
-                cal_coefficients[i,j] = 1.0/(full_normalized_spectra[i,j]*full_average_gains[i,j])
+    elif cal_type=="NOISE_DIODE":
 
-            else: #gain correction is just product of corrections of the path gains
-                full_normalized_spectra[i,j] = np.sqrt(normalized_gain_spectrum[i]*normalized_gain_spectrum[j])
-                full_average_gains[i,j] = np.sqrt(average_gain_correction[i]*average_gain_correction[j])
-                cal_coefficients[i,j] = 1.0/(full_normalized_spectra[i,j]*full_average_gains[i,j])
-    
-    return cal_coefficients.reshape(num_channels**2,-1), full_average_gains.reshape(num_channels**2)
+        #select out and average specific calibration states based on metadata
+        state_averages = np.zeros((len(valid_masks),np.shape(fits_data[0])[0],np.shape(fits_data[0])[1],np.shape(fits_data[0])[2]),dtype=np.complex64)
+        correction_mat = np.ones_like(fits_data[0])
+
+        for i, cal_state in enumerate(valid_masks):
+            count = 0
+            temp_array = np.zeros_like(fits_data[0])
+
+            for j in range(len(fits_metadata)):
+                if fits_metadata[j]["cal_on"] == cal_state:
+                    temp_array = temp_array + fits_data[j]
+                    count +=1
+
+            if count !=0:
+                state_averages[i] = temp_array/count
+
+        #baseline subtraction for difference estimation
+
+        if num_channels==2: #handle the clever overlap from above
+            calibrator_diag_spectra = [np.mean(np.array([state_averages[1,0,0],state_averages[3,0,0]]),axis=0)-np.mean(np.array([state_averages[0,0,0],state_averages[2,0,0]]),axis=0),
+                                        np.mean(np.array([state_averages[2,1,1],state_averages[3,1,1]]),axis=0)-np.mean(np.array([state_averages[0,1,1],state_averages[1,1,1]]),axis=0)]
+        else:
+            calibrator_diag_spectra = [state_averages[-1,i,i]-state_averages[0,i,i] for i in range(num_channels)] #assume first is off state and last is all on
+
+        #compute corections for diagonal of covariance matrix
+
+        for i in range(num_channels):
+            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(calibrator_diag_spectra[i]), polynomial_order)
+            correction_mat[i,i] = tref[i]/poly_fit(relative_freq_values)
+
+        #propagate to off-diagonal terms in the matrix
+
+        for i in range(num_channels):
+            for j in range(num_channels):
+                if i!=j:
+                    correction_mat[i,j] = np.sqrt(correction_mat[i,i]*correction_mat[j,j])
+
+    elif cal_type=='REFL_PHASE':
+        #just assume this needs to be customized for a given telescope
+        if num_channels !=2:
+            raise ValueError(f"cal_type: 'REFL_PHASE' only valid for dual pol feeds")
+
+        #select out and average specific calibration states based on metadata
+        state_averages = np.zeros((len(valid_masks),np.shape(fits_data[0])[0],np.shape(fits_data[0])[1],np.shape(fits_data[0])[2]),dtype=np.complex64)
+        amplitude_correction_mat = np.ones_like(fits_data[0])
+        phase_correction_mat = np.ones_like(fits_data[0])
+
+        for i, cal_state in enumerate(valid_masks):
+            count = 0
+            temp_array = np.zeros_like(fits_data[0])
+
+            for j in range(len(fits_metadata)):
+                if fits_metadata[j]["cal_on"] == cal_state:
+                    temp_array = temp_array + fits_data[j]
+                    count +=1
+            if count !=0:
+                state_averages[i] = temp_array/count
 
 
+        #baseline subtraction HARD CODED FOR WR66
+
+        cal_1_subtracted = state_averages[1] - state_averages[0]
+        cal_2_subtracted = state_averages[2] - state_averages[0]
+
+        #values to feed into amplitude cal matrix
+
+        diag_spectra = [cal_1_subtracted[0,0],cal_2_subtracted[1,1]]
+
+        #compute diagonal of amplitude correction matrix
+
+        for i in range(num_channels):
+            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(diag_spectra[i]), polynomial_order)
+            amplitude_correction_mat[i,i] = tref[i]/poly_fit(relative_freq_values)
+
+        #propagate to off-diagonal terms in the matrix
+
+        for i in range(num_channels):
+            for j in range(num_channels):
+                if i!=j:
+                    amplitude_correction_mat[i,j] = np.sqrt(amplitude_correction_mat[i,i]*amplitude_correction_mat[j,j])
+
+        #Phase Cal
+        cal_1_phasors_norm = cal_1_subtracted/np.abs(cal_1_subtracted)
+        cal_2_phasors_norm = cal_2_subtracted/np.abs(cal_2_subtracted)
+        error_vector=cal_1_phasors_norm+cal_2_phasors_norm #vector carrying the mean phase of the two calibrator covariance matrices.
+        phase_error=np.unwrap(np.angle(error_vector[0,1]))
 
 
+        phasefit = stats.linregress(relative_freq_values,phase_error)
+        print(f'r value = {phasefit.rvalue}')
+        print(f'p value = {phasefit.pvalue}')
 
+        fitphase = phasefit.intercept*np.ones_like(relative_freq_values) + phasefit.slope*relative_freq_values
 
+        phase_correction_mat[0,1] = np.exp(-1j*fitphase)
+        phase_correction_mat[1,0] = np.exp(1j*fitphase)
 
+        correction_mat = amplitude_correction_mat * phase_correction_mat
+
+    else:
+        raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
+
+    average_gains = 1/np.mean(correction_mat,axis=2)
+
+    return correction_mat.reshape(num_channels**2,-1), average_gains.reshape(num_channels**2)
