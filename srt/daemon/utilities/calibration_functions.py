@@ -259,7 +259,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         phase_correction_mat[0,1] = np.exp(-1j*fitphase)
         phase_correction_mat[1,0] = np.exp(1j*fitphase)
 
-        correction_mat = amplitude_correction_mat * phase_correction_mat
+        correction_mat = amplitude_correction_mat #* phase_correction_mat
 
     else:
         raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
