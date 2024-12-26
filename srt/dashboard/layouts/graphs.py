@@ -606,7 +606,7 @@ def generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances
         return ""
     power_time, powers = zip(*power_history)
     power_vals = np.array(powers) #so that I can index into it neatly
-    calibrated_power_vals = power_vals#/cal_pwr
+    calibrated_power_vals = power_vals/cal_pwr
 
     if covariances:
 

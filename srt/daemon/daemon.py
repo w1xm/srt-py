@@ -194,7 +194,7 @@ class SmallRadioTelescopeDaemon:
 
         # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins))
-        self.cal_power = np.ones(self.radio_num_channels**2)
+        self.cal_power = np.ones(self.radio_num_channels**2,dtype=np.comlex64)
 
         calibration_path = Path(config_directory, "calibration.json")
 
@@ -653,9 +653,9 @@ class SmallRadioTelescopeDaemon:
         
         # erase existing calibration
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = np.ones(self.radio_num_channels**2)
+        self.cal_power = np.ones(self.radio_num_channels**2, dtype=np.complex64)
         
-        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist()))) #this doesn't actually matter, just here for metadata and not really useful there
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
@@ -703,7 +703,8 @@ class SmallRadioTelescopeDaemon:
         #save result
 
         file_output = {
-            "cal_pwr": cal_power.tolist(),
+            "cal_pwr_real": np.real(cal_power).tolist(),
+            "cal_pwr_imag": np.imag(cal_power).tolist(),
             "cal_values_real": [vals.tolist() for vals in np.real(cal_values)], #note this is not the global one
             "cal_values_imag": [vals.tolist() for vals in np.imag(cal_values)], #note this is not the global one
         }
@@ -719,8 +720,8 @@ class SmallRadioTelescopeDaemon:
         with open(path, "r") as input_file:
             cal_data = json.load(input_file)
             self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
-            self.cal_power = np.array(cal_data["cal_pwr"])
-        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+            self.cal_power = np.array(cal_data["cal_pwr_real"]) +1j*np.array(cal_data["cal_pwr_imag"])
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
     
@@ -743,9 +744,9 @@ class SmallRadioTelescopeDaemon:
         
         # erase existing calibration
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
-        self.cal_power = np.ones(self.radio_num_channels**2)
+        self.cal_power = np.ones(self.radio_num_channels**2,dtype=np.complex64)
         
-        self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
@@ -779,9 +780,9 @@ class SmallRadioTelescopeDaemon:
                 # If Calibration is of a Different Size Than The Current FFT Size, Discard
                 if np.shape(cal_data["cal_values_real"]) == (self.radio_num_channels**2, self.radio_num_bins):
                     self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
-                    self.cal_power = np.array(cal_data["cal_pwr"])
+                    self.cal_power = np.array(cal_data["cal_pwr_real"]) +1j*np.array(cal_data["cal_pwr_imag"])
 
-                    self.radio_queue.put(("cal_pwr", self.cal_power.tolist()))
+                    self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
                     self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
                     self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
@@ -1214,7 +1215,8 @@ class SmallRadioTelescopeDaemon:
                 "error_logs": self.command_error_logs,
                 "temp_cal": self.temp_cal.tolist(),
                 "temp_sys": self.temp_sys.tolist(),
-                "cal_power": self.cal_power.tolist(),
+                "cal_power_real": np.real(self.cal_power).tolist(),
+                "cal_power_imag": np.imag(self.cal_power).tolist(),
                 "n_point_data": self.n_point_data,
                 "beam_switch_data": self.beam_switch_data,
                 "time": time(),
@@ -1328,7 +1330,7 @@ Commands Coming in Over ZMQ PUSH/PULL
             "Object Tracking": ("soutrack", "at_stow"),
             "System Temp": ("tsys", self.temp_sys.tolist()),
             "Calibration Temp": ("tcal", self.temp_cal.tolist()),
-            "Calibration Power": ("cal_pwr", self.cal_power.tolist()),
+            "Calibration Power": ("cal_pwr", np.abs(self.cal_power).tolist()), #because this has no meaningful role in anything here and I eventually want to remove it from the metadata anyway
             "Calibration Values Real Part": ("cal_values_real", [vals.tolist() for vals in self.cal_values.real] ),
             "Calibration Values Complex Part": ("cal_values_imag", [values.tolist() for values in self.cal_values.imag] ),
             "Is Running": ("is_running", True),
