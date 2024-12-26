@@ -194,7 +194,7 @@ class SmallRadioTelescopeDaemon:
 
         # self.cal_values = [1.0 for _ in range(self.radio_num_bins)]
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins))
-        self.cal_power = np.ones(self.radio_num_channels**2,dtype=np.comlex64)
+        self.cal_power = np.ones(self.radio_num_channels**2,dtype=np.complex64)
 
         calibration_path = Path(config_directory, "calibration.json")
 
@@ -655,7 +655,7 @@ class SmallRadioTelescopeDaemon:
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
         self.cal_power = np.ones(self.radio_num_channels**2, dtype=np.complex64)
         
-        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist()))) #this doesn't actually matter, just here for metadata and not really useful there
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power).tolist())) #this doesn't actually matter, just here for metadata and not really useful there
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
@@ -721,7 +721,7 @@ class SmallRadioTelescopeDaemon:
             cal_data = json.load(input_file)
             self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
             self.cal_power = np.array(cal_data["cal_pwr_real"]) +1j*np.array(cal_data["cal_pwr_imag"])
-        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power).tolist()))
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
     
@@ -746,7 +746,7 @@ class SmallRadioTelescopeDaemon:
         self.cal_values = np.ones((self.radio_num_channels**2,self.radio_num_bins))+1j*np.zeros((self.radio_num_channels**2,self.radio_num_bins)) #[1.0 for _ in range(self.radio_num_bins)]
         self.cal_power = np.ones(self.radio_num_channels**2,dtype=np.complex64)
         
-        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
+        self.radio_queue.put(("cal_pwr", np.abs(self.cal_power).tolist()))
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
@@ -782,7 +782,7 @@ class SmallRadioTelescopeDaemon:
                     self.cal_values = np.array(np.array(cal_data["cal_values_real"])+1j*np.array(cal_data["cal_values_imag"]))
                     self.cal_power = np.array(cal_data["cal_pwr_real"]) +1j*np.array(cal_data["cal_pwr_imag"])
 
-                    self.radio_queue.put(("cal_pwr", np.abs(self.cal_power.tolist())))
+                    self.radio_queue.put(("cal_pwr", np.abs(self.cal_power).tolist()))
                     self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
                     self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
