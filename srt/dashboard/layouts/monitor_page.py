@@ -1127,7 +1127,7 @@ def register_callbacks(
         tsys = np.array(status["temp_sys"])
         tcal = np.array(status["temp_cal"])
         cal_pwr = np.array(status["cal_power"])
-        power_history = raw_spectrum_thread.get_power_history()
+        power_history = cal_spectrum_thread.get_power_history()
         if power_history is None:
             return ""
         return generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=False, num_channels=num_channels)
@@ -1143,7 +1143,7 @@ def register_callbacks(
         tsys = np.array(status["temp_sys"])
         tcal = np.array(status["temp_cal"])
         cal_pwr = np.array(status["cal_power"])
-        power_history = raw_spectrum_thread.get_power_history()
+        power_history = cal_spectrum_thread.get_power_history()
         if power_history is None:
             return ""
         return generate_power_history_graph(tsys, tcal, cal_pwr, power_history, covariances=True, num_channels=num_channels)
