@@ -121,7 +121,7 @@ def get_fits_data(fits_file):
 
 
 
-def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), tref=np.array([300]), num_channels=1, valid_masks=range(len(2))):
+def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), tref=np.array([300]), num_channels=1, valid_masks=range(2)):
 
     """
     takes in a bunch of parameters plus a fits file with recorded calibration data and returns calibration corrections for the telescope. 
