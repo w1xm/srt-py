@@ -14,6 +14,75 @@ import numpy as np
 import numpy.polynomial.polynomial as poly
 from astropy.io import fits
 
+def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, valid_states=[0,1]):
+    '''
+    return basic control parameters fromm the daemon that are not easily executed from this file
+    if you have a system with anything interesting going on you'll probably need to modify this.
+
+    Inputs
+    ------
+
+    num_channels : integer
+        number of radio channels in use
+    cal_type : string
+        type of calibration to perform
+    cal_duration : integer
+        nebulously corresponds to the number of integration cycles the cal sequence should run for
+    valid_states :
+        list of valid calibrator states
+        assumes valid_states[0] is all off and valid_states[-1], for middle states likely need to customize for a specific telescope
+
+    Returns
+    -------
+
+    wait_cycles : list of integers
+        list of calibrator periods for which to wait in between antenna commands
+    cal_states : list of integers
+        calibrator state to set prior to each wait period 
+    '''
+
+    if cal_type=='COLD_SKY':
+        #no active calibrators involved
+        #just take a single measurement at the position the telescope is pointed at
+        wait_cycles = [cal_duration]
+        cal_states = [0]
+
+    elif cal_type=='NOISE_DIODE':
+        #sequence on off measurements of active noise calibrator without phase calibration
+        #assumes crosscoupling is low enough to not matter much but for 2 channel cal also mostly cancels it out anyway (only like 0.2K error on W1XMBIGDISH regardless)
+        wait_cycles = [cal_duration]*4
+
+        if num_channels==2: #there's a cute crosstalk cancelling sequence to be had for this case
+            cal_states = [0,1,2,3] #half overlap calibrator pulses
+        else:
+            cal_states = []
+            for i in len(wait_cycles):
+                cal_states.append(valid_states[0] if i%2==0 else valid_states[-1])
+
+        #pad the end to account for calibrator control latency (unavoidable due to integration time)
+        wait_cycles.append(3)
+        cal_states.append(cal_states[-1])
+
+    elif cal_type=='REFL_PHASE':
+        #ONLY VALID for dual pol feeds, Hyperspecific to implementation
+        #no attempt has been made to generalize this for different channel counts
+        cycle_time = 3 #just lock it in at this speed
+        num_cycles = max(int(cal_duration/(cycle_time*3)),3)
+
+        wait_cycles=[cal_duration]*num_cycles
+        cal_states =[0,1,2]*int(num_cycles/3)
+
+        #pad the end to account for calibrator control latency (unavoidable due to integration time)
+        wait_cycles.append(3)
+        cal_states.append(cal_states[-1])
+
+    else:
+        raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
+
+    return wait_cycles, cal_states
+
+
+
 def get_averaged_spectrum(fits_file):
     """
     open fits file, reconstruct complex array, and average all included spectra together
@@ -37,6 +106,90 @@ def get_averaged_spectrum(fits_file):
     average_spectrum /= num_spectra
 
     return average_spectrum
+
+
+def get_fits_data(fits_file):
+    """
+    open fits file and return numpy array of data plus list of metadata
+
+    Inputs
+    ------
+    fits_file : path to fits file
+
+    Returns
+    -------
+    data : numpy array dtype=complex64
+        data from fits file as complex numpy array
+    metadata : list
+        list of metadata from fits file
+    """
+
+    hdul = fits.open(fits_file)
+
+    #get metadata and rf data out into a more useful form for my purpose
+    fits_data = []
+    fits_metadata = []
+
+    for i, hdu in enumerate(hdul):
+        fits_metadata.append(json.loads(hdu.header["METADATA"]))
+        fits_data.append(np.array(hdu.data[:,:,:,0] +1j*hdu.data[:,:,:,1]))
+
+    hdul.close()
+
+    #make data into nice big numpy array
+    fits_data=np.array(fits_data)
+
+    return fits_data, fits_metadata
+
+
+
+def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), tref=np.array([300]), num_channels=1, valid_states=range(len(2))):
+
+    """
+    takes in a bunch of parameters plus a fits file with recorded calibration data and returns calibration corrections for the telescope. 
+    accuracy and complexity dependent on calibration type
+
+    Returns
+    -------
+
+    cal_values : numpy array
+        complex calibration correctionn matrix to be applied to data coming out of the radio
+    """
+
+    #internal variables
+    polynomial_order=20
+
+    #start by pulling in fits file data and metadata
+    fits_data, fits_metadata = get_fits_data(fits_file)
+    #and create a reference axis for fitting data
+    relative_freq_values = np.linspace(-1, 1, len(fits_data[0,0,0]))
+
+    if cal_type=="COLD_SKY":
+
+        #just average across the whole data set and try to correct for estimated total temperature
+        average_spectra = np.mean(fits_data,axis=0)
+        amplitude_correction_mat = np.ones_like(average_spectra)
+
+        #compute corections for diagonal of covariance matrix
+
+        for i in range(num_channels):
+            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(average_spectra[i,i]), polynomial_order)
+            amplitude_correction_mat[i,i] = (tref[i]+tsys[i])/poly_fit(relative_freq_values)
+
+        #compute corections for diagonal of covariance matrix
+
+    elif cal_type=="NOISE_DIODE":
+
+    elif cal_type=='REFL_PHASE':
+
+    else:
+        raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
+
+    return cal_values
+
+
+
+
 
 
 def basic_cold_sky_calibration_fit(cold_sky_reference_filepath, t_sys=np.array([300]), t_cal=np.array([300]), num_channels=1, polynomial_order=20):

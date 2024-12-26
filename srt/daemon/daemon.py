@@ -30,7 +30,7 @@ from .radio_control.radio_task_starter import (
 
 from .utilities.object_tracker import EphemerisTracker
 from .utilities.functions import azel_within_range, get_spectrum
-from .utilities.calibration_functions import basic_cold_sky_calibration_fit, additive_noise_calibration_fit
+from .utilities.calibration_functions import calibration_command_parameters, calculate_calibration_corrections
 
 #pull astropy things into the daemon too for now so we can create skycoord objects here more easily
 
@@ -125,6 +125,9 @@ class SmallRadioTelescopeDaemon:
 
         #print(f'tsys = {self.temp_sys}')
         #print(f'tcal = {self.temp_cal}')
+
+        #because this is a very useful number to not need to keep writing out
+        self.integration_cycle_time = self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency
 
 
 
@@ -641,6 +644,8 @@ class SmallRadioTelescopeDaemon:
         None
         """
 
+
+
         #kill any running file save operations since we're about to scramble them
 
         if self.radio_save_task is not None:
@@ -654,77 +659,40 @@ class SmallRadioTelescopeDaemon:
         self.radio_queue.put(("cal_values_real", [vals.tolist() for vals in np.real(self.cal_values)]))
         self.radio_queue.put(("cal_values_imag", [vals.tolist() for vals in np.imag(self.cal_values)]))
 
-        '''
-        simple cold sky cal for the basic SRT
-        '''
+        ######################
+        # run cal sequence
+        ######################
 
-        if self.cal_type == "COLD_SKY":
-            #define filenames for calibration measurements
-            cold_sky_name = "cold_sky.fits"
+        #get calibration control sequence info from calibration utilities so it doesn't need to live hardcoded here 
 
-            #erase prior calibration files if present
-            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
-            if os.path.exists(cold_sky_file):
-                os.remove(cold_sky_file)
+        wait_cycles, cal_states = calibration_command_parameters(cal_type=self.cal_type, num_channels=self.radio_num_channels, cal_duration=self.cal_cycles, valid_states=range(len(self.valid_cal_masks)))
 
-            self.log_message("Starting cold calibration reference measurement")
+        #define filenames for calibration measurements and erase if there's a preexisting version of it
+        calibration_file_name = 'cal_data_recording.fits'
+        cal_data_file =str(Path(self.config_directory, calibration_file_name).absolute())
+        if os.path.exists(cal_data_file):
+            os.remove(cal_data_file)
 
-            #start saving new calibration file
-            sleep(2+4*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-            self.start_recording(name=cold_sky_name, file_dir=self.config_dir)
-            sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-            self.stop_recording()
+        # make sure calibrators are off before start of recording
+        self.set_calibrator_state(calibrator_state=0) #all off
+        sleep(3*self.integration_cycle_time)
 
-            
-            ### compute calibration corrections
+        #start recording
+        self.start_recording(name=calibration_file_name, file_dir=self.config_dir)
+        self.log_message("Starting calibration reference measurement")
 
-            cal_values, cal_power = basic_cold_sky_calibration_fit(cold_sky_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
+        #run cal control sequence
+        for wait_time, cal_state in zip(wait_cycles, cal_states):
+            self.set_calibrator_state(calibrator_state=cal_state)
+            self.log_message(f"setting calibrator state {cal_state}")
+            sleep(wait_time*self.integration_cycle_time)
 
+        #stop recording
+        self.stop_recording()
+        #shut down calibrator
+        self.set_calibrator_state(calibrator_state=0) #all off
 
-
-
-        '''
-        if we have a noise diode to use for calibration we need to make multiple measurements
-        '''
-
-        if self.cal_type == "NOISE_DIODE":
-            #define filenames for calibration measurements
-            cold_sky_name = "cold_sky.fits"
-            cal_ref_name = "cold_sky_plus_cal.fits"
-
-            #erase prior calibration files if present
-            cold_sky_file=str(Path(self.config_directory, cold_sky_name).absolute())
-            cal_ref_file=str(Path(self.config_directory, cal_ref_name).absolute())
-
-            if os.path.exists(cold_sky_file):
-                os.remove(cold_sky_file)
-
-            if os.path.exists(cal_ref_file):
-                os.remove(cal_ref_file)
-
-            #enable calibrator and wait for the idiotically long settling time the filters currently have 
-            #(need to fix that eventually so integration intervals are fully independent like they should be)
-
-            self.log_message("Starting hot calibration reference measurement")
-
-            self.set_calibrator_state(calibrator_state=3) #all on
-            sleep(3*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration (note that this should mean we save the third cycle after the command normally
-            self.start_recording(name=cal_ref_name, file_dir=self.config_directory)
-            sleep(self.cal_cycles*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-            self.stop_recording()
-
-            #disable calibrator and wait for the idiotically long settling time the filters currently have 
-            #(need to fix that eventually so integration intervals are fully independent like they should be)
-
-            self.log_message("Starting cold calibration reference measurement")
-
-            self.set_calibrator_state(calibrator_state=0) #all off
-            sleep(3*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency) #wait long enough to flush previous state from integration
-            self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
-            sleep(self.cal_cycles*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
-            self.stop_recording()
-
-            cal_values, cal_power = additive_noise_calibration_fit(cold_sky_file, cal_ref_file, self.temp_sys, self.temp_cal, self.radio_num_channels, 20)
+        cal_values, cal_power = calculate_calibration_corrections(ref_file=cal_data_file, cal_type=self.cal_type, tsys=self.temp_sys, tref=self.temp_cal, num_channels=self.radio_num_channels, valid_states=range(len(self.valid_cal_masks)))
 
         #erase old cal file to prevent wierdness
 
