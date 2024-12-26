@@ -264,4 +264,4 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
         average_gains = 1/np.real(np.mean(correction_mat,axis=2))
 
-    return correction_mat.reshape(num_channels**2,-1) average_gains.reshape(num_channels**2)
+    return correction_mat.reshape(num_channels**2,-1), average_gains.reshape(num_channels**2)
