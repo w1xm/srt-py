@@ -973,7 +973,7 @@ class SmallRadioTelescopeDaemon:
         None
         """
 
-        if self.cal_type == "NOISE_DIODE":
+        if self.cal_type == "NOISE_DIODE" or self.cal_type == 'REFL_PHASE':
             
             #customize for appropriate control scheme
             if calibrator_state<len(self.valid_cal_masks):
