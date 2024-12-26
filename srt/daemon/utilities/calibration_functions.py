@@ -177,7 +177,10 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
                     temp_array = temp_array + fits_data[j]
                     count +=1
 
-            state_averages[i] = temp_array/count
+            try:
+                state_averages[i] = temp_array/count
+            except:
+                state_averages[i] = state_averages[i]
 
         #baseline subtraction for difference estimation
 
@@ -218,8 +221,10 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
                 if fits_metadata[j]["cal_on"] == cal_state:
                     temp_array = temp_array + fits_data[j]
                     count +=1
-
-            state_averages[i] = temp_array/count
+            try:
+                state_averages[i] = temp_array/count
+            except:
+                state_averages[i] = state_averages[i]
 
         #baseline subtraction HARD CODED FOR WR66
 
