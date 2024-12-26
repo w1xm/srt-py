@@ -72,9 +72,9 @@ def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, va
             raise ValueError(f"cal_type: 'REFL_PHASE' only valid for dual pol feeds")
 
         cycle_time = 3 #just lock it in at this speed
-        num_cycles = max(int(cal_duration/(cycle_time*3)),3)
+        num_cycles = max(int(cal_duration/(cycle_time*3))*3,3)
 
-        wait_cycles=[cal_duration]*num_cycles
+        wait_cycles=[cycle_time]*num_cycles
         cal_states =[0,1,2]*int(num_cycles/3)
 
         #pad the end to account for calibrator control latency (unavoidable due to integration time)
