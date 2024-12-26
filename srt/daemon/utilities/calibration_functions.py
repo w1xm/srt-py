@@ -71,7 +71,7 @@ def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, va
         if num_channels !=2:
             raise ValueError(f"cal_type: 'REFL_PHASE' only valid for dual pol feeds")
 
-        cycle_time = 5 #just lock it in at this speed
+        cycle_time = max(int(cal_duration/3),5) #min 5 periods per state to cal
         num_cycles = max(int(cal_duration/(cycle_time*3))*3,3)
 
         wait_cycles=[cycle_time]*num_cycles
