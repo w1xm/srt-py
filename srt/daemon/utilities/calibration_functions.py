@@ -13,6 +13,7 @@ and adds additional capabilities for more advanced telescopes.
 import numpy as np
 import numpy.polynomial.polynomial as poly
 import scipy.stats as stats
+import json
 from astropy.io import fits
 
 def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, valid_masks=[0,1]):
