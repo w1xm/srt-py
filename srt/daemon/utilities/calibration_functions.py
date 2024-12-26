@@ -141,7 +141,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
     #start by pulling in fits file data and metadata
     fits_data, fits_metadata = get_fits_data(ref_file)
     #and create a reference axis for fitting data
-    relative_freq_values = np.linspace(-1, 1, len(fits_data[0,0,0]))
+    relative_freq_values = np.linspace(1419e6, 1420e6, len(fits_data[0,0,0])) #this doesn't actually matter as long as it's a linear range with the right number of points
 
     if cal_type=="COLD_SKY":
 
@@ -230,7 +230,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
         #values to feed into amplitude cal matrix
 
-        diag_spectra = [cal_1_subtracted[0,0],cal_1_subtracted[1,1]]
+        diag_spectra = [cal_1_subtracted[0,0],cal_2_subtracted[1,1]]
 
         #compute diagonal of amplitude correction matrix
 
@@ -259,7 +259,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         phase_correction_mat[0,1] = np.exp(-1j*fitphase)
         phase_correction_mat[1,0] = np.exp(1j*fitphase)
 
-        correction_mat = amplitude_correction_mat #* phase_correction_mat
+        correction_mat = amplitude_correction_mat * phase_correction_mat
 
     else:
         raise ValueError(f"Bad cal_type: {cal_type} is not a recognized calibration type")
