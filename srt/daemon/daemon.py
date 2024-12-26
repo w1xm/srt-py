@@ -678,7 +678,7 @@ class SmallRadioTelescopeDaemon:
         sleep(3*self.integration_cycle_time)
 
         #start recording
-        self.start_recording(name=calibration_file_name, file_dir=self.config_dir)
+        self.start_recording(name=calibration_file_name, file_dir=self.config_directory)
         self.log_message("Starting calibration reference measurement")
 
         #run cal control sequence
