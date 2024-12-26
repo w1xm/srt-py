@@ -174,7 +174,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
             for j in range(len(fits_metadata)):
                 if fits_metadata[j]["cal_on"] == cal_state:
-                    temp_array = temp_array + corrected_data[j]
+                    temp_array = temp_array + fits_data[j]
                     count +=1
 
             state_averages[i] = temp_array/count
@@ -216,7 +216,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
             for j in range(len(fits_metadata)):
                 if fits_metadata[j]["cal_on"] == cal_state:
-                    temp_array = temp_array + corrected_data[j]
+                    temp_array = temp_array + fits_data[j]
                     count +=1
 
             state_averages[i] = temp_array/count
