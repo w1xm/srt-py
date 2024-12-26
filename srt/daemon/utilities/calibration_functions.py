@@ -138,7 +138,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
     polynomial_order=20
 
     #start by pulling in fits file data and metadata
-    fits_data, fits_metadata = get_fits_data(fits_file)
+    fits_data, fits_metadata = get_fits_data(ref_file)
     #and create a reference axis for fitting data
     relative_freq_values = np.linspace(-1, 1, len(fits_data[0,0,0]))
 
