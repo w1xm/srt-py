@@ -507,7 +507,7 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.clear_command_time()
         self.uhd_usrp_source_1.set_command_time(uhd.time_spec(self.radio_start_time + (current_num_integration_cycles+1)*integration_time)) #occur at next integration edge
         
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', self.cal_on , calibrator_mask) #set to state self.cal_on
+        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', self.cal_on & 1 , self.cal_on) #set to state self.cal_on
         self.uhd_usrp_source_1.clear_command_time()
 
     def get_beam_switch(self):
