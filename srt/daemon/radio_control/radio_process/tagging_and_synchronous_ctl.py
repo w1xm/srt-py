@@ -81,7 +81,7 @@ class tagging_and_ctl(gr.sync_block):
         else:
 
             #determine what the sample number of the last sample in the input is
-            n_items = len(input_items[0]) + self.nitems_written(0)
+            nitems = len(input_items[0]) + self.nitems_written(0)
             #n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
 
             #while there are integration period boundaries present
