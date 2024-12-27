@@ -86,14 +86,13 @@ class tagging_and_ctl(gr.sync_block):
 
             #while there are integration period boundaries present
             while (nitems - self.offset) > self.calibrator_sample_interval:
-                
-                self.offset += self.calibrator_sample_interval
 
+                self.offset += self.calibrator_sample_interval
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + float(self.offset)/self.samp_rate
 
                 if self.next_cal_time:
-                    if current_rx_time == self.next_cal_time: #actually only want this flag a full period after the calibrator switches
+                    if current_rx_time >= self.next_cal_time+self.integration_time: #actually only want this flag a full period after the calibrator switches
                         self.last_cal_state = self.cal_state
                         self.next_cal_time = None
 
@@ -127,8 +126,8 @@ class tagging_and_ctl(gr.sync_block):
                     #I probably need to fix this to actually match the time as recorded by the SDR
 
                     rftime = time.time() - float(self.rx_time[0]+self.rx_time[1])  #get the actual exact time since the radio started sampling
-                    current_num_integration_cycles = int((rftime+0.01)/self.integration_time) #number of cycles that have been completed before now with just a little padding to ensure theres time to send it
-                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles+1)*self.integration_time #one cycle ahead of now
+                    current_num_integration_cycles = int((rftime)/self.integration_time) #number of cycles that have been completed before
+                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles+1)*self.integration_time #one cycle out from now
 
                     command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
                     #command_time = make_time_pair(self.next_cal_time)
@@ -161,6 +160,8 @@ class tagging_and_ctl(gr.sync_block):
                     #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
                     #self.last_cal_state = self.cal_state
+
+
 
         for i in range(self.num_channels):
             output_items[i][:] = input_items[i]
