@@ -95,7 +95,7 @@ class tagging_and_ctl(gr.sync_block):
                 #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
                 #since we really want that to line up with the transition.
 
-                current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset*self.samp_rate
+                current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset/self.samp_rate
 
                 if self.next_cal_time:
                     if (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
