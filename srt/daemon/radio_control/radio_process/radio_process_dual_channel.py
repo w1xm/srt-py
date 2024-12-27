@@ -188,7 +188,7 @@ class radio_process_dual_channel(gr.top_block):
         ##################################################
 
         self.msg_connect((self.tagging_and_ctl_0, 'time_reference'), (self.blocks_msgpair_to_var_0, 'inpair'))
-        #self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))
+        self.msg_connect((self.tagging_and_ctl_0, 'command'), (self.uhd_usrp_source_1, 'command'))
         self.connect((self.covariance_matrix_1, 2), (self.blocks_streams_to_vector_1, 2))
         self.connect((self.covariance_matrix_1, 3), (self.blocks_streams_to_vector_1, 3))
         self.connect((self.covariance_matrix_1, 1), (self.blocks_streams_to_vector_1, 1))
@@ -414,7 +414,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_is_running(self, is_running):
         self.is_running = is_running
-        #self.blocks_message_strobe_0.set_msg(pmt.to_pmt(self.is_running))
+        self.blocks_message_strobe_0.set_msg(pmt.to_pmt(self.is_running))
 
     def get_glon(self):
         return self.glon
@@ -494,22 +494,6 @@ class radio_process_dual_channel(gr.top_block):
         self.cal_on = cal_on
         self.set_metadata_dict(pmt.to_pmt({"num_bins": self.num_bins, "samp_rate": self.samp_rate, "num_integrations": self.num_integrations, "motor_az": self.motor_az, "motor_el": self.motor_el, "freq": self.freq, "tsys": [float(n) for n in self.tsys], "tcal": [float(n) for n in self.tcal], "cal_pwr": [float(n) for n in self.cal_pwr], "vlsr": self.vlsr, "glat": self.glat, "glon": self.glon, "soutrack": self.soutrack, "bsw": self.beam_switch}))        
         self.tagging_and_ctl_0.cal_state = self.cal_on
-
-        #figure out where the next integration edge is
-        pad_time = 0.01 #10ms pad ahead of next integration cycle edge so I don't issue a command that can't execute on time
-        integration_time = float(self.tag_period)/self.samp_rate
-        nowtime = time.time()
-        rftime = nowtime - self.radio_start_time + pad_time
-        current_num_integration_cycles = int(rftime/integration_time) #number of cycles that have been completed before now with a little padding
-
-        ##### timed command 
-
-        self.uhd_usrp_source_1.clear_command_time()
-        self.uhd_usrp_source_1.set_command_time(uhd.time_spec(self.radio_start_time + (current_num_integration_cycles+1)*integration_time)) #occur at next integration edge
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ self.calibrator_mask)  #set pins 2 and 3 manual
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'DDR', 0xFFF, self.calibrator_mask) #set pins 2 and 3 as output
-        self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'OUT', self.cal_on , self.cal_on, self.calibrator_mask) #set to state self.cal_on
-        self.uhd_usrp_source_1.clear_command_time()
 
     def get_beam_switch(self):
         return self.beam_switch
