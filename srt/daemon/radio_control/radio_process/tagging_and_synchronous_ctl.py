@@ -20,7 +20,7 @@ def make_time_pair(t):
     )
 
 class tagging_and_ctl(gr.sync_block):
-    def __init__(self, num_channels=2, cal_mask=0xFFF, cal_state=0, cal_interval=1.0, samp_rate=32e3, center_frequency=1.42e9, metadata_pmt=pmt.to_pmt({"num_bins":512})):
+    def __init__(self, num_channels=2, cal_mask=0xFFF, cal_state=0, integration_time=1.0, samp_rate=32e3, center_frequency=1.42e9, metadata_pmt=pmt.to_pmt({"num_bins":512})):
         gr.sync_block.__init__(
             self,
             name="metadata_tagging_and_control",
@@ -30,7 +30,7 @@ class tagging_and_ctl(gr.sync_block):
 
         #input parameters
         self.cal_mask = cal_mask
-        self.cal_interval = cal_interval
+        self.integration_time = integration_time
         self.cal_state = cal_state
         self.samp_rate = samp_rate
         self.num_channels = num_channels
@@ -39,10 +39,14 @@ class tagging_and_ctl(gr.sync_block):
 
         #fixed derived variables
 
-        self.calibrator_sample_interval = int(self.samp_rate * self.cal_interval)
+        self.calibrator_sample_interval = int(self.samp_rate * self.integration_time)
 
         self.last_cal_state = False
         self.rx_time = None
+        self.next_cal_time = None
+
+        self.offset = 0
+        self.nsamps = nsamps
 
         #self.message_port_register_in(pmt.intern('get_gpio'))
         self.message_port_register_out(pmt.intern('command'))
@@ -71,34 +75,46 @@ class tagging_and_ctl(gr.sync_block):
                     #print('rx_time:', self.rx_time[0],self.rx_time[1], type(self.rx_time))
                     #print('')
 
+        ################################################
+        # Main Work Function
+        ################################################
+
         else:
 
             #determine what the sample number of the last sample in the input is
+            n_items = len(input_items[0]) + self.nitems_written(0)
+            #n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
 
-            n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
+            #while there are integration period boundaries present
+            while (nitems - self.offset) > self.calibrator_sample_interval:
+                
+                self.offset += self.calibrator_sample_interval
 
-            #determine calibrator state at samples being recieved
-
-            #check if we are seeing a sample we are interested in adding a tag to
-            if (n_last_sample-len(input_items[0])) <= 0:
-
-                writeindex = len(input_items[0]) - n_last_sample
+                #writeindex = len(input_items[0]) - n_last_sample
 
                 #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
                 #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
                 #since we really want that to line up with the transition.
 
+                current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset*self.samp_rate
+
+                if self.next_cal_time && current_rx_time >= self.next_cal_time: #trigger cal state flag change on correct sample even if multiple cycles ahead
+                    self.last_cal_state = self.cal_state
+                    self.next_cal_time = None
+
                 key = pmt.intern('metadata')
                 value = self.metadata_pmt
                 value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))
-                #value = pmt.cons(pmt.to_pmt('cal_on'), pmt.from_bool(self.last_cal_state))
 
                 #apply tags
 
+
+
                 for i in range(self.num_channels):
-                    self.add_item_tag(i, self.nitems_written(0) + writeindex,key,value)
-                    self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_time"), make_time_pair(time.time()))
-                    self.add_item_tag(i, self.nitems_written(0) + writeindex, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
+                    self.add_item_tag(i, self.offset,key,value)
+                    #self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(time.time()))
+                    self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(current_rx_time)) #true to radio  timestamp
+                    self.add_item_tag(i, self.offset, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
 
 
                 if self.last_cal_state != self.cal_state:
@@ -112,7 +128,12 @@ class tagging_and_ctl(gr.sync_block):
                     #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
                     #I probably need to fix this to actually match the time as recorded by the SDR
 
-                    command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
+                    rftime = time.time() - float(self.rx_time[0]+self.rx_time[1])  #get the actual exact time since the radio started sampling
+                    current_num_integration_cycles = int((rftime+0.01)/self.integration_time) #number of cycles that have been completed before now with a little padding for command execution
+                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles +1)*self.integration_time
+
+                    #command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
+                    command_time = make_time_pair(self.next_cal_time)
                     msg = pmt.make_dict()
                     msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
 
@@ -141,7 +162,7 @@ class tagging_and_ctl(gr.sync_block):
 
                     #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
-                    self.last_cal_state = self.cal_state
+                    #self.last_cal_state = self.cal_state
 
         for i in range(self.num_channels):
             output_items[i][:] = input_items[i]

@@ -96,7 +96,7 @@ class radio_process_dual_channel(gr.top_block):
         self.xmlrpc_server_0_thread.start()
 
         #tagging stuff neeeds to come before radio for some odd race condition related reason
-        self.tagging_and_ctl_0 = tagging_and_ctl.tagging_and_ctl(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, cal_interval=tag_period/samp_rate, samp_rate=samp_rate, center_frequency=rf_freq, metadata_pmt=metadata_dict)
+        self.tagging_and_ctl_0 = tagging_and_ctl.tagging_and_ctl(num_channels=num_channels, cal_mask=calibrator_mask, cal_state=cal_on, integration_time=tag_period/samp_rate, samp_rate=samp_rate, center_frequency=rf_freq, metadata_pmt=metadata_dict)
 
 
         self.uhd_usrp_source_1 = uhd.usrp_source(
