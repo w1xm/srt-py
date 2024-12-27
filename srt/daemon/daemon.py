@@ -692,6 +692,8 @@ class SmallRadioTelescopeDaemon:
         #shut down calibrator
         self.set_calibrator_state(calibrator_state=0) #all off
 
+        sleep(1) #give filesystem a moment before we read back result
+
         cal_values, cal_power = calculate_calibration_corrections(ref_file=cal_data_file, cal_type=self.cal_type, tsys=self.temp_sys, tref=self.temp_cal, num_channels=self.radio_num_channels, valid_masks=self.valid_cal_masks)
         #cal_power = np.ones(self.radio_num_channels**2) #still needed for power history plot
         #erase old cal file to prevent wierdness
