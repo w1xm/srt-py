@@ -98,7 +98,7 @@ class tagging_and_ctl(gr.sync_block):
 
                 command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
                 #command_time = make_time_pair(self.next_cal_time)
-                 msg = pmt.make_dict()
+                msg = pmt.make_dict()
                 msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
 
                 self.message_port_pub(pmt.intern('command'), msg) #issue message
