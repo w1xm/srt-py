@@ -62,7 +62,7 @@ def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, va
                 cal_states.append(0 if i%2==0 else len(valid_masks)-1)
 
         #pad the end to account for calibrator control latency (unavoidable due to integration time)
-        wait_cycles.append(3)
+        wait_cycles.append(4)
         cal_states.append(cal_states[-1])
 
     elif cal_type=='REFL_PHASE':
@@ -78,7 +78,7 @@ def calibration_command_parameters(cal_type, num_channels=1, cal_duration=10, va
         cal_states =[0,1,2]*int(num_cycles/3)
 
         #pad the end to account for calibrator control latency (unavoidable due to integration time)
-        wait_cycles.append(3)
+        wait_cycles.append(4)
         cal_states.append(cal_states[-1])
 
     else:
