@@ -31,7 +31,7 @@ class tagging_and_ctl(gr.sync_block):
         #input parameters
         self.cal_mask = cal_mask
         self.integration_time = integration_time
-        self.cal_state = cal_state
+        self.cal_state_cmd = cal_state
         self.samp_rate = samp_rate
         self.num_channels = num_channels
         self.metadata_pmt = metadata_pmt
@@ -40,10 +40,10 @@ class tagging_and_ctl(gr.sync_block):
         #fixed derived variables
 
         self.calibrator_sample_interval = int(self.samp_rate * self.integration_time)
-
+        self.cal_state_active = False
         self.last_cal_state = False
         self.rx_time = None
-        self.next_cal_time = None
+        self.next_cal_time = 0
 
         self.offset = 0
         
@@ -110,14 +110,13 @@ class tagging_and_ctl(gr.sync_block):
                     self.add_item_tag(i, self.offset, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
 
                 #actually only want this to change in the metadata a full period after the calibrator switches, so set it after writing to the metadata on the cycle the command executes
-                if self.next_cal_time:
-                    if current_rx_time >= self.next_cal_time: 
-                        self.last_cal_state = self.cal_state
-                        self.next_cal_time = None
 
+                if current_rx_time >= self.next_cal_time: 
+                    self.last_cal_state = self.cal_state_active
 
+                #check if there's a new command
 
-                if self.last_cal_state != self.cal_state:
+                if self.cal_state_active != self.cal_state_cmd:
 
                     ########################################
                     #issue command to usrp for next state of calibrator, 
@@ -162,7 +161,7 @@ class tagging_and_ctl(gr.sync_block):
 
                     #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
-                    #self.last_cal_state = self.cal_state
+                    self.cal_state_active = self.cal_state_cmd
 
 
 
