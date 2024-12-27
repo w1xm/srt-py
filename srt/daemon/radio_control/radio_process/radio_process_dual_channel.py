@@ -414,7 +414,7 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_is_running(self, is_running):
         self.is_running = is_running
-        self.blocks_message_strobe_0.set_msg(pmt.to_pmt(self.is_running))
+        #self.blocks_message_strobe_0.set_msg(pmt.to_pmt(self.is_running))
 
     def get_glon(self):
         return self.glon
