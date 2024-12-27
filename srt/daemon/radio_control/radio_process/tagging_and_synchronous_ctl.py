@@ -40,8 +40,8 @@ class tagging_and_ctl(gr.sync_block):
         #fixed derived variables
 
         self.calibrator_sample_interval = int(self.samp_rate * self.integration_time)
-        self.cal_state_active = False
-        self.last_cal_state = False
+        self.cal_state_active = 0
+        self.last_cal_state = 0
         self.rx_time = None
         self.next_cal_time = 0
 
@@ -80,6 +80,60 @@ class tagging_and_ctl(gr.sync_block):
 
         else:
 
+            #check if there's a new command
+
+            if self.cal_state_active != self.cal_state_cmd:
+                ########################################
+                #issue command to usrp for next state of calibrator, 
+                #needs to be a timed command so it ends up synced with the integration periods
+                #only do this if we are changing things
+                #######################################
+
+                #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
+                #I probably need to fix this to actually match the time as recorded by the SDR
+
+                rftime = time.time() - float(self.rx_time[0]+self.rx_time[1])  #get the actual exact time since the radio started sampling
+                current_num_integration_cycles = int((rftime)/self.integration_time) #number of cycles that have been completed before
+                self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles+1)*self.integration_time #one cycle out from now
+
+                command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
+                #command_time = make_time_pair(self.next_cal_time)
+                 msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
+
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+                #issue command to toggle gpio
+
+                set_gpio = pmt.make_dict()
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
+                set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
+
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
+
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+
+                #clear command time 
+
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
+
+                self.message_port_pub(pmt.intern('command'), msg) #issue message
+
+                #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
+
+                self.cal_state_active = self.cal_state_cmd
+
+
+            ########################################
+            # actually handle rf samples and tagging
+            ########################################
+
+
             #determine what the sample number of the last sample in the input is
             nitems = len(input_items[0]) + self.nitems_written(0)
             #n_last_sample = (self.nitems_written(0) + len(input_items[0])) % self.calibrator_sample_interval
@@ -113,55 +167,6 @@ class tagging_and_ctl(gr.sync_block):
 
                 if current_rx_time >= self.next_cal_time: 
                     self.last_cal_state = self.cal_state_active
-
-                #check if there's a new command
-
-                if self.cal_state_active != self.cal_state_cmd:
-
-                    ########################################
-                    #issue command to usrp for next state of calibrator, 
-                    #needs to be a timed command so it ends up synced with the integration periods
-                    #only do this if we are changing things
-                    #######################################
-
-                    #set command time for approx 1 cycle hence (winds up being less when recieved at SDR)
-                    #I probably need to fix this to actually match the time as recorded by the SDR
-
-                    rftime = time.time() - float(self.rx_time[0]+self.rx_time[1])  #get the actual exact time since the radio started sampling
-                    current_num_integration_cycles = int((rftime)/self.integration_time) #number of cycles that have been completed before
-                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles+1)*self.integration_time #one cycle out from now
-
-                    command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
-                    #command_time = make_time_pair(self.next_cal_time)
-                    msg = pmt.make_dict()
-                    msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
-
-                    self.message_port_pub(pmt.intern('command'), msg) #issue message
-
-                    #issue command to toggle gpio
-
-                    set_gpio = pmt.make_dict()
-                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('bank'), pmt.to_pmt('FP0A'))
-                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('attr'), pmt.to_pmt('OUT'))
-                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('value'), pmt.from_double(self.cal_state))
-                    set_gpio = pmt.dict_add(set_gpio, pmt.to_pmt('mask'), pmt.from_double(self.cal_mask))
-
-                    msg = pmt.make_dict()
-                    msg = pmt.dict_add(msg, pmt.to_pmt('gpio'), set_gpio)
-
-                    self.message_port_pub(pmt.intern('command'), msg) #issue message
-
-
-                    #clear command time 
-
-                    msg = pmt.make_dict()
-                    msg = pmt.dict_add(msg, pmt.to_pmt('time'), pmt.PMT_NIL)
-
-                    self.message_port_pub(pmt.intern('command'), msg) #issue message
-
-                    #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
-
-                    self.cal_state_active = self.cal_state_cmd
 
 
 
