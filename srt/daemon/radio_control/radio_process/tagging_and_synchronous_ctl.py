@@ -93,7 +93,7 @@ class tagging_and_ctl(gr.sync_block):
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + float(self.offset)/self.samp_rate
 
                 if self.next_cal_time:
-                    if (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
+                    if (current_rx_time >= self.next_cal_time+self.integration_time): #actually only want this flag a full period after the calibrator switches
                         self.last_cal_state = self.cal_state
                         self.next_cal_time = None
 
@@ -130,7 +130,7 @@ class tagging_and_ctl(gr.sync_block):
 
                     rftime = time.time() - float(self.rx_time[0]+self.rx_time[1])  #get the actual exact time since the radio started sampling
                     current_num_integration_cycles = int((rftime+0.01)/self.integration_time) #number of cycles that have been completed before now with just a little padding to ensure theres time to send it
-                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles)*self.integration_time #one cycle ahead of now
+                    self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles+1)*self.integration_time #one cycle ahead of now
 
                     command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
                     #command_time = make_time_pair(self.next_cal_time)
