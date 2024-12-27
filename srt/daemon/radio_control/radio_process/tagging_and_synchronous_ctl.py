@@ -89,11 +89,6 @@ class tagging_and_ctl(gr.sync_block):
                 
                 self.offset += self.calibrator_sample_interval
 
-                #writeindex = len(input_items[0]) - n_last_sample
-
-                #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
-                #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
-                #since we really want that to line up with the transition.
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + float(self.offset)/self.samp_rate
 
@@ -101,6 +96,11 @@ class tagging_and_ctl(gr.sync_block):
                     if (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
                         self.last_cal_state = self.cal_state
                         self.next_cal_time = None
+
+                #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
+                #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
+                #since we really want that to line up with the transition.
+
 
                 key = pmt.intern('metadata')
                 value = self.metadata_pmt
