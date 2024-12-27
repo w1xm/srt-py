@@ -339,8 +339,23 @@ class radio_process_dual_channel(gr.top_block):
 
     def set_rf_gain(self, rf_gain):
         self.rf_gain = rf_gain
+
+        #figure out where the next integration edge is
+        pad_time = 0.01 #10ms pad ahead of next integration cycle edge so I don't issue a command that can't execute on time
+        integration_time = float(self.tag_period)/self.samp_rate
+        nowtime = time.time()
+        rftime = nowtime - self.radio_start_time + pad_time
+        current_num_integration_cycles = int(rftime/integration_time) #number of cycles that have been completed before now with a little padding
+
+        ##### timed tuning command 
+
+        self.uhd_usrp_source_1.clear_command_time()
+        self.uhd_usrp_source_1.set_command_time(uhd.time_spec(self.radio_start_time + (current_num_integration_cycles+1)*integration_time)) #occur at next integration edge
+
         self.uhd_usrp_source_1.set_gain(self.rf_gain, 0)
         self.uhd_usrp_source_1.set_gain(self.rf_gain, 1)
+
+        self.uhd_usrp_source_1.clear_command_time()
 
     def get_rf_freq(self):
         return self.rf_freq
@@ -348,18 +363,24 @@ class radio_process_dual_channel(gr.top_block):
     def set_rf_freq(self, rf_freq):
         self.rf_freq = rf_freq
 
+        #figure out where the next integration edge is
+        pad_time = 0.01 #10ms pad ahead of next integration cycle edge so I don't issue a command that can't execute on time
+        integration_time = float(self.tag_period)/self.samp_rate
+        nowtime = time.time()
+        rftime = nowtime - self.radio_start_time + pad_time
+        current_num_integration_cycles = int(rftime/integration_time) #number of cycles that have been completed before now with a little padding
+
         ##### timed tuning command 
 
-        #self.uhd_usrp_source_1.clear_command_time()
-        #now_time = self.uhd_usrp_source_1.get_time_last_pps()
-        #self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
+        self.uhd_usrp_source_1.clear_command_time()
+        self.uhd_usrp_source_1.set_command_time(uhd.time_spec(self.radio_start_time + (current_num_integration_cycles+1)*integration_time)) #occur at next integration edge
 
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
 
-        #self.uhd_usrp_source_1.clear_command_time()
+        self.uhd_usrp_source_1.clear_command_time()
 
     def get_num_channels(self):
         return self.num_channels
