@@ -142,8 +142,8 @@ class radio_process_dual_channel(gr.top_block):
 
         ##### timed tuning command 
 
-        self.uhd_usrp_source_1.clear_command_time()
-        self.uhd_usrp_source_1.set_command_time(uhd.time_spec(time.time()+1.0)) #occur in 1 second from now
+        #self.uhd_usrp_source_1.clear_command_time()
+        #self.uhd_usrp_source_1.set_command_time(uhd.time_spec(int(time.time())+2.0)) #occur in 1 second from now
         
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
