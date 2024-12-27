@@ -97,24 +97,22 @@ class tagging_and_ctl(gr.sync_block):
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset/self.samp_rate
 
-                if self.next_cal_time:
-                    if (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
-                        self.last_cal_state = self.cal_state
-                        self.next_cal_time = None
-
                 key = pmt.intern('metadata')
                 value = self.metadata_pmt
                 value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))
 
                 #apply tags
 
-
-
                 for i in range(self.num_channels):
                     self.add_item_tag(i, self.offset,key,value)
                     #self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(time.time()))
                     self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(current_rx_time)) #true to radio  timestamp
                     self.add_item_tag(i, self.offset, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
+
+                if self.next_cal_time:
+                    if (current_rx_time >= self.next_cal_time): #put this after the metadata write becasue we want it to lag a cycle
+                        self.last_cal_state = self.cal_state
+                        self.next_cal_time = None
 
 
                 if self.last_cal_state != self.cal_state:
