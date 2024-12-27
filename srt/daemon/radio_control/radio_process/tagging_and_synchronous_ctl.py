@@ -132,8 +132,8 @@ class tagging_and_ctl(gr.sync_block):
                     current_num_integration_cycles = int((rftime+0.01)/self.integration_time) #number of cycles that have been completed before now with a little padding for command execution
                     self.next_cal_time = float(self.rx_time[0]+self.rx_time[1]) + (current_num_integration_cycles +1)*self.integration_time
 
-                    #command_time = pmt.cons(pmt.from_uint64(int((self.nitems_written(0)+len(input_items[0]))/self.calibrator_sample_interval+self.cal_interval+self.rx_time[0])),pmt.from_double(self.rx_time[1]))
-                    command_time = make_time_pair(self.next_cal_time)
+                    command_time = pmt.cons(pmt.from_uint64(int(self.next_cal_time)),pmt.from_double(self.next_cal_time-int(self.next_cal_time)))
+                    #command_time = make_time_pair(self.next_cal_time)
                     msg = pmt.make_dict()
                     msg = pmt.dict_add(msg, pmt.to_pmt('time'), command_time)
 
