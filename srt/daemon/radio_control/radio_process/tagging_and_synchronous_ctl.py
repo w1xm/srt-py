@@ -46,8 +46,7 @@ class tagging_and_ctl(gr.sync_block):
         self.next_cal_time = None
 
         self.offset = 0
-        self.nsamps = nsamps
-
+        
         #self.message_port_register_in(pmt.intern('get_gpio'))
         self.message_port_register_out(pmt.intern('command'))
         self.message_port_register_out(pmt.intern('time_reference'))
@@ -98,7 +97,7 @@ class tagging_and_ctl(gr.sync_block):
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset*self.samp_rate
 
-                if self.next_cal_time & current_rx_time >= self.next_cal_time: #trigger cal state flag change on correct sample even if multiple cycles ahead
+                if self.next_cal_time & (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
                     self.last_cal_state = self.cal_state
                     self.next_cal_time = None
 
