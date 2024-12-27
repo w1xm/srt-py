@@ -97,9 +97,10 @@ class tagging_and_ctl(gr.sync_block):
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + self.offset*self.samp_rate
 
-                if self.next_cal_time & (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
-                    self.last_cal_state = self.cal_state
-                    self.next_cal_time = None
+                if self.next_cal_time:
+                    if (current_rx_time >= self.next_cal_time): #trigger cal state flag change on correct sample even if multiple cycles ahead
+                        self.last_cal_state = self.cal_state
+                        self.next_cal_time = None
 
                 key = pmt.intern('metadata')
                 value = self.metadata_pmt
