@@ -82,6 +82,10 @@ class tagging_and_ctl(gr.sync_block):
 
             #check if there's a new command
 
+            print(f'cal_state_cmd ={self.cal_state_cmd}')
+            print(f'cal_state_active ={self.cal_state_active}')
+            print(f'last_cal_state ={self.last_cal_state}')
+
             if self.cal_state_active != self.cal_state_cmd:
                 ########################################
                 #issue command to usrp for next state of calibrator, 
