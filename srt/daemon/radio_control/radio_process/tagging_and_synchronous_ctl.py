@@ -91,10 +91,6 @@ class tagging_and_ctl(gr.sync_block):
 
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + float(self.offset)/self.samp_rate
 
-                if self.next_cal_time:
-                    if current_rx_time >= self.next_cal_time: #actually only want this flag a full period after the calibrator switches
-                        self.last_cal_state = self.cal_state
-                        self.next_cal_time = None
 
                 #generate tags to be applied to data (pmt.cons does not work for metadata here, needs to be dict)
                 #we take in all the radio state from an external metadata constructor EXCEPT for cal state 
@@ -112,6 +108,13 @@ class tagging_and_ctl(gr.sync_block):
                     #self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(time.time()))
                     self.add_item_tag(i, self.offset, pmt.intern("rx_time"), make_time_pair(current_rx_time)) #true to radio  timestamp
                     self.add_item_tag(i, self.offset, pmt.intern("rx_freq"), pmt.to_pmt(float(self.center_frequency)))
+
+                #actually only want this to change in the metadata a full period after the calibrator switches, so set it after writing to the metadata on the cycle the command executes
+                if self.next_cal_time:
+                    if current_rx_time >= self.next_cal_time: 
+                        self.last_cal_state = self.cal_state
+                        self.next_cal_time = None
+
 
 
                 if self.last_cal_state != self.cal_state:
@@ -160,6 +163,8 @@ class tagging_and_ctl(gr.sync_block):
                     #self.message_port_pub(pmt.intern('command'), pmt.cons(pmt.to_pmt('time'), pmt.PMT_NIL))
 
                     #self.last_cal_state = self.cal_state
+
+
 
 
 
