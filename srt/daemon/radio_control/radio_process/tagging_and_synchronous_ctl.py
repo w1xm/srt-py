@@ -93,7 +93,7 @@ class tagging_and_ctl(gr.sync_block):
                 current_rx_time = float(self.rx_time[0]+self.rx_time[1]) + float(self.offset)/self.samp_rate
 
                 if self.next_cal_time:
-                    if (current_rx_time >= self.next_cal_time+self.integration_time): #actually only want this flag a full period after the calibrator switches
+                    if current_rx_time == self.next_cal_time: #actually only want this flag a full period after the calibrator switches
                         self.last_cal_state = self.cal_state
                         self.next_cal_time = None
 
@@ -107,8 +107,6 @@ class tagging_and_ctl(gr.sync_block):
                 value = pmt.dict_add(value, pmt.to_pmt('cal_on'),pmt.to_pmt(int(self.last_cal_state)))
 
                 #apply tags
-
-
 
                 for i in range(self.num_channels):
                     self.add_item_tag(i, self.offset,key,value)
