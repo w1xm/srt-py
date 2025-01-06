@@ -121,6 +121,64 @@ def get_fits_data(fits_file):
     return fits_data, fits_metadata
 
 
+def reflection_phase_correction_estimate(freqs):
+    """
+    takes in a set of frequencies and returns an estimate of the phase lag of the reflection off of the antenna.
+    this is needed for W1XM BIGDISH REFL_PHASE calibration specifically because the reflection phase produces a 180 
+    degree ambiguity that we need to resolve. We do this by removing an approximation of the known phase lag in the 
+    calibrator reflection to better than 180 degree accuracy by a one time phase measurement and a polynomial fit. 
+
+    Not this is ONLY for W1XM BIGDISH in dual polarized mode with the 1420MHz feed. It will not be generally applicable.
+
+    Inputs
+    ------
+
+    freqs : real numpy array
+        array of frequencies in Hz over which to produce a correction matrix
+
+    Returns
+    -------
+
+    reflection_phase_mat : complex numpy array 
+        matrix to remove the approximate reflection phase from the covariances
+
+    """
+
+    ### Hard Coded Correction Coefficients
+
+    polynomial_coefficients = np.array(
+        [ 7.64657851e+008,
+        -7.34326283e+000,
+        3.20514625e-008,
+        -8.41109465e-017,
+        1.47856754e-025,
+        -1.83476111e-034,
+        1.64844668e-043, 
+        -1.08072209e-052,
+        5.13234624e-062,
+        -1.72219896e-071,
+        3.87676226e-081,
+        -5.25736545e-091,
+        3.24881145e-101])
+
+    ### calculation
+
+    phases = np.zeros_like(freqs)
+
+    for i in range(len(polynomial_coefficients)):
+        phases = phases + polynomial_coefficients[i] * np.power(freqs, i)
+
+    #initialize matrix as all ones so we don't need to touch the diagonal
+    reflection_phase_mat = np.ones_like(cal_1_phasors) 
+    #set covariance phase corrections
+    reflection_phase_mat[0,1] = np.exp(-1j*phases)
+    reflection_phase_mat[1,0] = np.exp(1j*phases)
+
+    return reflection_phase_mat
+
+
+
+
 
 def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), tref=np.array([300]), num_channels=1, valid_masks=range(2)):
 
@@ -133,6 +191,9 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
     correction_mat : numpy array
         complex calibration correctionn matrix to be applied to data coming out of the radio
+
+    average_gains : numpy array
+        set of average gain terms generated from the corrrection matrix. Used in history display in the UI.
     """
 
     #internal variables
@@ -140,8 +201,11 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
     #start by pulling in fits file data and metadata
     fits_data, fits_metadata = get_fits_data(ref_file)
-    #and create a reference axis for fitting data
-    relative_freq_values = np.linspace(1419e6, 1420e6, len(fits_data[0,0,0])) #this doesn't actually matter as long as it's a linear range with the right number of points
+
+    #and create a reference axis for fitting data (this actually needs to be true frequencies for phasecal)
+    samp_rate = fits_metadata[0]['samp_rate'] #radio sample rate in Hz
+    freq = fits_metadata[0]['freq'] #radio sample rate in Hz
+    freq_values = np.linspace(freq-samp_rate/2, freq+samp_rate/2, len(fits_data[0,0,0])) 
 
     if cal_type=="COLD_SKY":
 
@@ -152,8 +216,8 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         #compute corections for diagonal of covariance matrix
 
         for i in range(num_channels):
-            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(average_spectra[i,i]), polynomial_order)
-            correction_mat[i,i] = (tref[i]+tsys[i])/poly_fit(relative_freq_values)
+            poly_fit = poly.Polynomial.fit(freq_values, np.real(average_spectra[i,i]), polynomial_order)
+            correction_mat[i,i] = (tref[i]+tsys[i])/poly_fit(freq_values)
 
         #propagate to off-diagonal terms in the matrix
 
@@ -191,8 +255,8 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         #compute corections for diagonal of covariance matrix
 
         for i in range(num_channels):
-            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(calibrator_diag_spectra[i]), polynomial_order)
-            correction_mat[i,i] = tref[i]/poly_fit(relative_freq_values)
+            poly_fit = poly.Polynomial.fit(freq_values, np.real(calibrator_diag_spectra[i]), polynomial_order)
+            correction_mat[i,i] = tref[i]/poly_fit(freq_values)
 
         #propagate to off-diagonal terms in the matrix
 
@@ -228,6 +292,10 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         cal_1_subtracted = state_averages[1] - state_averages[0]
         cal_2_subtracted = state_averages[2] - state_averages[0]
 
+        ##############
+        #Amplitude Cal
+        ##############
+
         #values to feed into amplitude cal matrix
 
         diag_spectra = [cal_1_subtracted[0,0],cal_2_subtracted[1,1]]
@@ -235,8 +303,8 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         #compute diagonal of amplitude correction matrix
 
         for i in range(num_channels):
-            poly_fit = poly.Polynomial.fit(relative_freq_values, np.real(diag_spectra[i]), polynomial_order)
-            amplitude_correction_mat[i,i] = tref[i]/poly_fit(relative_freq_values)
+            poly_fit = poly.Polynomial.fit(freq_values, np.real(diag_spectra[i]), polynomial_order)
+            amplitude_correction_mat[i,i] = tref[i]/poly_fit(freq_values)
 
         #propagate to off-diagonal terms in the matrix
 
@@ -245,18 +313,31 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
                 if i!=j:
                     amplitude_correction_mat[i,j] = np.sqrt(amplitude_correction_mat[i,i]*amplitude_correction_mat[j,j])
 
+        ##########
         #Phase Cal
-        cal_1_phasors_norm = cal_1_subtracted/np.abs(cal_1_subtracted)
-        cal_2_phasors_norm = cal_2_subtracted/np.abs(cal_2_subtracted)
+        ##########
+
+        #get reflection phase correction estimates
+
+        reflection_phase_mat = reflection_phase_correction_estimate(freq_values)
+
+        #multiply in to approximately cancel reflection phase
+
+        cal_1_phasors_coarse_corrected = cal_1_subtracted*np.conjugate(reflection_phase_mat)
+        cal_2_phasors_coarse_corrected = cal_2_subtracted*reflection_phase_mat
+
+
+        cal_1_phasors_norm = cal_1_phasors_coarse_corrected/np.abs(cal_1_phasors_coarse_corrected)
+        cal_2_phasors_norm = cal_2_phasors_coarse_corrected/np.abs(cal_2_phasors_coarse_corrected)
         error_vector=cal_1_phasors_norm+cal_2_phasors_norm #vector carrying the mean phase of the two calibrator covariance matrices.
         phase_error=np.unwrap(np.angle(error_vector[0,1]))
 
 
-        phasefit = stats.linregress(relative_freq_values,phase_error)
+        phasefit = stats.linregress(freq_values,phase_error)
         print(f'r value = {phasefit.rvalue}')
         print(f'p value = {phasefit.pvalue}')
 
-        fitphase = phasefit.intercept*np.ones_like(relative_freq_values) + phasefit.slope*relative_freq_values
+        fitphase = phasefit.intercept*np.ones_like(freq_values) + phasefit.slope*freq_values
 
         phase_correction_mat[0,1] = np.exp(-1j*fitphase)
         phase_correction_mat[1,0] = np.exp(1j*fitphase)
