@@ -121,7 +121,7 @@ def get_fits_data(fits_file):
     return fits_data, fits_metadata
 
 
-def reflection_phase_correction_estimate(freqs):
+def reflection_phase_correction_estimate(freqs,num_channels):
     """
     takes in a set of frequencies and returns an estimate of the phase lag of the reflection off of the antenna.
     this is needed for W1XM BIGDISH REFL_PHASE calibration specifically because the reflection phase produces a 180 
@@ -132,6 +132,9 @@ def reflection_phase_correction_estimate(freqs):
 
     Inputs
     ------
+
+    num_channels : int
+        number of channels
 
     freqs : real numpy array
         array of frequencies in Hz over which to produce a correction matrix
@@ -169,7 +172,7 @@ def reflection_phase_correction_estimate(freqs):
         phases = phases + polynomial_coefficients[i] * np.power(freqs, i)
 
     #initialize matrix as all ones so we don't need to touch the diagonal
-    reflection_phase_mat = np.ones_like(cal_1_phasors) 
+    reflection_phase_mat = np.ones((num_channels,num_channels,len(freqs)),dtype=np.complex64) 
     #set covariance phase corrections
     reflection_phase_mat[0,1] = np.exp(-1j*phases)
     reflection_phase_mat[1,0] = np.exp(1j*phases)
@@ -319,7 +322,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
         #get reflection phase correction estimates
 
-        reflection_phase_mat = reflection_phase_correction_estimate(freq_values)
+        reflection_phase_mat = reflection_phase_correction_estimate(freq_values, num_channels)
 
         #multiply in to approximately cancel reflection phase
 
@@ -328,7 +331,7 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
 
         cal_1_phasors_norm = cal_1_phasors_coarse_corrected/np.abs(cal_1_phasors_coarse_corrected)
         cal_2_phasors_norm = cal_2_phasors_coarse_corrected/np.abs(cal_2_phasors_coarse_corrected)
-        
+
         error_vector=cal_1_phasors_norm+cal_2_phasors_norm #vector carrying the mean phase of the two calibrator covariance matrices.
         phase_error=np.unwrap(np.angle(error_vector[0,1]))
 
