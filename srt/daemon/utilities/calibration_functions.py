@@ -326,9 +326,9 @@ def calculate_calibration_corrections(ref_file, cal_type, tsys=np.array([300]), 
         cal_1_phasors_coarse_corrected = cal_1_subtracted*np.conjugate(reflection_phase_mat)
         cal_2_phasors_coarse_corrected = cal_2_subtracted*reflection_phase_mat
 
-
         cal_1_phasors_norm = cal_1_phasors_coarse_corrected/np.abs(cal_1_phasors_coarse_corrected)
         cal_2_phasors_norm = cal_2_phasors_coarse_corrected/np.abs(cal_2_phasors_coarse_corrected)
+        
         error_vector=cal_1_phasors_norm+cal_2_phasors_norm #vector carrying the mean phase of the two calibrator covariance matrices.
         phase_error=np.unwrap(np.angle(error_vector[0,1]))
 
