@@ -147,7 +147,7 @@ def reflection_phase_correction_estimate(freqs,num_channels):
 
     """
 
-    ### Hard Coded Correction Coefficients
+    ### Hard Coded Correction Coefficients (yes, they really do need this many decimal places)
 
     polynomial_coefficients = np.array(
         [ 7.6465785107588041e+008,
@@ -164,6 +164,8 @@ def reflection_phase_correction_estimate(freqs,num_channels):
          -5.2573654504136935e-091,
          3.2488114541121001e-101])
 
+    phase_offset = np.pi #phase offset for fit to set correct horizontal and vertical polarization
+
     ### calculation
 
     phases = np.zeros_like(freqs)
@@ -174,8 +176,8 @@ def reflection_phase_correction_estimate(freqs,num_channels):
     #initialize matrix as all ones so we don't need to touch the diagonal
     reflection_phase_mat = np.ones((num_channels,num_channels,len(freqs)),dtype=np.complex64) 
     #set covariance phase corrections
-    reflection_phase_mat[0,1] = np.exp(-1j*phases)
-    reflection_phase_mat[1,0] = np.exp(1j*phases)
+    reflection_phase_mat[0,1] = np.exp(-1j*(phases+phase_offset))
+    reflection_phase_mat[1,0] = np.exp(1j*(phases+phase_offset))
 
     return reflection_phase_mat
 
