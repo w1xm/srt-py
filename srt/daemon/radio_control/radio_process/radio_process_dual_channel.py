@@ -329,15 +329,15 @@ class radio_process_dual_channel(gr.top_block):
         self.uhd_usrp_source_1.set_command_time(uhd.time_spec(self.radio_start_time + (current_num_integration_cycles+1)*integration_time)) #occur at next integration edge
 
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
-        self.tagging_and_ctl_0.cal_interval = self.tag_period/self.samp_rate
-        self.tagging_and_ctl_0.samp_rate = self.samp_rate 
-
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 0)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 1)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
 
         self.uhd_usrp_source_1.clear_command_time()
+
+        self.tagging_and_ctl_0.cal_interval = self.tag_period/self.samp_rate
+        self.tagging_and_ctl_0.samp_rate = self.samp_rate
 
     def get_rf_gain(self):
         return self.rf_gain

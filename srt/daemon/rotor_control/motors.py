@@ -804,7 +804,7 @@ class W1XMBigDishMotor(Motor):
         """
         Initializer for W1XM Big Dish controller
         """
-        super().__init__(None, None, (0.0, 360.0), (0.0, 85.0))
+        super().__init__(None, None, (0.0, 360.0), (0.0, 87.0))
         self.position = (60.0, 30.0)
         self.client = BigDishClient("172.25.15.11", 1234, "w1xm", "test", True)
 
