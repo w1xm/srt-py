@@ -925,10 +925,11 @@ class SmallRadioTelescopeDaemon:
         -------
         None
         """
-        if self.radio_save_task is not None:
-            self.radio_save_task.terminate()
-        self.radio_sample_frequency = samp_rate
-        self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
+        #if self.radio_save_task is not None:
+        #    self.radio_save_task.terminate()
+        #self.radio_sample_frequency = samp_rate
+        #self.radio_queue.put(("samp_rate", self.radio_sample_frequency))
+        self.log_message("changing sample rate is temporarily disbled. Please restart with different sample rate set in the config")
 
     def set_rf_gain(self, rf_gain):
         """Set the rf gain of the radio
