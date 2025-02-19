@@ -1410,7 +1410,8 @@ Commands Coming in Over ZMQ PUSH/PULL
                     self.set_freq(frequency=float(
                         command_parts[1]) * pow(10, 6))
                 elif command_name == "samp":
-                    self.set_samp_rate(samp_rate=float(command_parts[1]) * pow(10, 6))
+                    #self.set_samp_rate(samp_rate=float(command_parts[1]) * pow(10, 6))
+                    self.log_message(str("Changing Bandwidth While Running Is Not currently Supposrted"))
                 elif command_name == "rf_gain":
                     self.set_rf_gain(rf_gain=float(command_parts[1]))
                 elif command_name == "coords":
