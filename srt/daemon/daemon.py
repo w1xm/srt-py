@@ -31,7 +31,7 @@ from .utilities.calibration_functions import basic_cold_sky_calibration_fit, add
 
 #pull astropy things into the daemon too for now so we can create skycoord objects here more easily
 
-from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
+from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.coordinates import ICRS, Galactic, FK4, CIRS, AltAz, LSR
 from astropy.utils.iers.iers import conf
 from astropy.table import Table
@@ -530,7 +530,7 @@ class SmallRadioTelescopeDaemon:
 
             #start saving new calibration file
             sleep(0.1+2*self.radio_num_bins * self.radio_integ_cycles / self.radio_sample_frequency)
-            self.start_recording(name=cold_sky_name, file_dir=self.config_dir)
+            self.start_recording(name=cold_sky_name, file_dir=self.config_directory)
             sleep((self.cal_cycles+1)*self.radio_num_bins* self.radio_integ_cycles/ self.radio_sample_frequency)
             self.stop_recording()
 
