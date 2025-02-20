@@ -84,6 +84,7 @@ class SmallRadioTelescopeDaemon:
             (point["azimuth"], point["elevation"])
             for point in config_dict["HORIZON_POINTS"]
         ]
+        self.pointing_accuracy = config_dict["POINTING_ACCURACY"]
         self.motor_type = config_dict["MOTOR_TYPE"]
         self.motor_port = config_dict["MOTOR_PORT"]
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
@@ -303,7 +304,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_cmd_location = object_id
             self.rotor_destination = new_rotor_cmd_location
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 sleep(0.1)
         else:
             self.log_message(f"Object {object_id} Not in Motor Bounds")
@@ -344,7 +345,7 @@ class SmallRadioTelescopeDaemon:
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
             self.rotor_destination = new_rotor_destination
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 self.rotor_destination = new_rotor_destination
                 self.rotor_cmd_location = new_rotor_cmd_location
                 sleep(0.1)
@@ -400,7 +401,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_cmd_location = object_id
             self.rotor_destination = new_rotor_cmd_location
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 sleep(0.1)
         else:
             self.log_message(f"Object {object_id} Not in Motor Bounds")
@@ -443,7 +444,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_cmd_location = object_id
             self.rotor_destination = new_rotor_cmd_location
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 sleep(0.1)
         else:
             self.log_message(f"Object {object_id} Not in Motor Bounds")
@@ -470,7 +471,7 @@ class SmallRadioTelescopeDaemon:
         if self.rotor.angles_within_bounds(*new_rotor_cmd_location):
             self.rotor_offsets = new_rotor_offsets
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 sleep(0.1)
         else:
             self.log_message(f"Offset {new_rotor_offsets} Out of Bounds")
@@ -823,7 +824,7 @@ class SmallRadioTelescopeDaemon:
             self.ephemeris_cmd_location = name
             self.rotor_destination = new_rotor_cmd_location
             self.rotor_cmd_location = new_rotor_cmd_location
-            while not azel_within_range(self.rotor_location, self.rotor_cmd_location):
+            while not azel_within_range(self.rotor_location, self.rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                 sleep(0.1)
         else:
             self.log_message(f"Object {name} Not in Motor Bounds")
@@ -910,7 +911,7 @@ class SmallRadioTelescopeDaemon:
             try:
                 current_rotor_cmd_location = self.rotor_cmd_location
                 if not azel_within_range(
-                    self.rotor_location, current_rotor_cmd_location):
+                    self.rotor_location, current_rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
                     
                     self.rotor.set_azimuth_elevation(
                         *current_rotor_cmd_location)
@@ -918,7 +919,7 @@ class SmallRadioTelescopeDaemon:
                     start_time = time()
                     while (
                         not azel_within_range(
-                            self.rotor_location, current_rotor_cmd_location
+                            self.rotor_location, current_rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)
                         )
                     ) and (time() - start_time) < 15:
                         past_rotor_location = self.rotor_location
