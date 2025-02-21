@@ -88,6 +88,7 @@ class SmallRadioTelescopeDaemon:
         self.motor_type = config_dict["MOTOR_TYPE"]
         self.motor_port = config_dict["MOTOR_PORT"]
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
+        self.motor_loop_cadence = config_dict["MOTOR_LOOP_CADENCE"]
         self.radio_center_frequency = config_dict["RADIO_CF"]
         self.radio_sample_frequency = config_dict["RADIO_SF"]
         self.radio_rf_gain = config_dict["RADIO_RF_GAIN"]
@@ -145,7 +146,7 @@ class SmallRadioTelescopeDaemon:
             self.el_limits,
         )
         print("test", self.stow_location)
-        self.rotor_location = self.stow_location
+        self.rotor_location = (0,0)#self.stow_location
         self.rotor_destination = self.stow_location
         self.rotor_offsets = (0.0, 0.0)
         self.rotor_cmd_location = tuple(
@@ -908,14 +909,16 @@ class SmallRadioTelescopeDaemon:
         last_time = time()
 
         while True:
+            
             try:
                 current_rotor_cmd_location = self.rotor_cmd_location
                 if not azel_within_range(
                     self.rotor_location, current_rotor_cmd_location, bounds=(self.pointing_accuracy,self.pointing_accuracy)):
-                    
+
                     self.rotor.set_azimuth_elevation(
                         *current_rotor_cmd_location)
-                    sleep(0.1)
+                    
+                    sleep(self.motor_loop_cadence)
                     start_time = time()
                     while (
                         not azel_within_range(
@@ -942,15 +945,13 @@ class SmallRadioTelescopeDaemon:
                             self.current_vlsr = self.ephemeris_tracker.calculate_vlsr(sky_coord,obstime)
                             self.radio_queue.put(("vlsr", float(self.current_vlsr)))
 
-                        sleep(0.1)
+                        sleep(self.motor_loop_cadence)
                 else:
 
-                    #past_rotor_location = self.rotor_location
-                    #self.rotor_location = self.rotor.get_azimuth_elevation()
-
                     if (time() - last_time) > 5 : #don't bother recomputing the celestial coordinates so often if we're not actally moving
+
                         self.rotor.set_azimuth_elevation(*current_rotor_cmd_location) #always reissue pointing commands periodically and let rotor decide whether to adjust
-                        sleep(0.1)
+                        #sleep(0.3) #move this to the pointing routine in motors.py where it belongs
 
                         past_rotor_location = self.rotor_location
                         self.rotor_location = self.rotor.get_azimuth_elevation()
@@ -971,8 +972,9 @@ class SmallRadioTelescopeDaemon:
                         self.radio_queue.put(("vlsr", float(self.current_vlsr)))
 
                         last_time = time()
+                        print(f'last_time = {last_time}')
 
-                    sleep(0.1) #make it much more responsive to commands
+                    sleep(self.motor_loop_cadence) #make it much more responsive to commands
                     #aparrently making this loop too fast causes stability issues. prolly need to tweak rotor level code a bit to not 
                     #crash and burn ir a read comes in before it has a status update request comes before it has new data
 
@@ -1087,7 +1089,7 @@ class SmallRadioTelescopeDaemon:
                 self.radio_process_task.start()
             except RuntimeError as e:
                 self.log_message(str(e))
-            sleep(5) #wait a bit for the radio to actually start up
+            sleep(10) #wait a bit for the radio to actually start up
 
         # Send Settings to the GNU Radio Script
         radio_params = {
