@@ -103,8 +103,8 @@ class radio_process(gr.top_block):
         )
 
         self.uhd_usrp_source_1.set_samp_rate(samp_rate)
-        self.uhd_usrp_source_1.set_clock_source("external")
-        self.uhd_usrp_source_1.set_time_source("external")
+        self.uhd_usrp_source_1.set_clock_source("internal")
+        self.uhd_usrp_source_1.set_time_source("internal")
         _last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
         # Poll get_time_last_pps() every 50 ms until a change is seen
         while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
@@ -114,11 +114,13 @@ class radio_process(gr.top_block):
         # Sleep 1 second to ensure next PPS has come
         time.sleep(1)
 
-        self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
+        #self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
+        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0) #offset tune
         self.uhd_usrp_source_1.set_antenna("RX2", 0)
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 0)
         self.uhd_usrp_source_1.set_gain(rf_gain, 0)
         self.uhd_usrp_source_1.set_auto_dc_offset(True, 0)
+
 
         ##### Manually Configure USRP GPIO
         self.uhd_usrp_source_1.set_gpio_attr('FP0A', 'CTRL', 0x000, 0xFFF ^ calibrator_mask)  #set pins 2 and 3 manual

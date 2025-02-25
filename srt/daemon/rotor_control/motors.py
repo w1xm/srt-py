@@ -296,6 +296,7 @@ class Rot2Motor(Motor):
         az_relative = az - self.az_limits[0]
         el_relative = el - self.el_limits[0]
         self.send_rot2_pkt(cmd, az=az_relative, el=el_relative)
+        sleep(0.3)
 
     def status(self):
         """Requests the Current Location of the ROT2 Motor
@@ -784,6 +785,7 @@ class PushRodMotor(Motor):  # TODO: Test!
         None
         """
         self.send_pushrod_cmd(az, el, 0)
+        sleep(0.5)
 
     def status(self):
         """Requests the Current Location of the Pushrod Motor
@@ -823,7 +825,8 @@ class W1XMBigDishMotor(Motor):
         None
         """
         self.client.goto_posvel_azel(az, el, 0.0, 0.0)
-        self.position = (az, el)
+        sleep(0.01)
+        #self.position = (az, el)
 
     def status(self):
         """Returns the Position of the Dish
