@@ -977,7 +977,7 @@ class SmallRadioTelescopeDaemon:
                         self.radio_queue.put(("vlsr", float(self.current_vlsr)))
 
                         last_time = time()
-                        print(f'last_time = {last_time}')
+                        #print(f'last_time = {last_time}')
 
                     sleep(self.rotor.rotor_loop_cadence) #make it much more responsive to commands
                     #aparrently making this loop too fast causes stability issues. prolly need to tweak rotor level code a bit to not 
