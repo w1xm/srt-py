@@ -94,7 +94,7 @@ class radio_process(gr.top_block):
         
 
         self.uhd_usrp_source_1 = uhd.usrp_source(
-            ",".join(("addr=192.168.10.2", '')),
+            ",".join(("addr=172.25.14.11", '')),
             uhd.stream_args(
                 cpu_format="fc32",
                 args='',

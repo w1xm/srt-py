@@ -7,7 +7,6 @@ from enum import Enum
 
 from .motors import NoMotor, Rot2Motor, H180Motor, PushRodMotor, W1XMBigDishMotor
 
-
 def angle_within_range(angle, limits):
     lower_limit, upper_limit = limits
     if lower_limit <= upper_limit:
@@ -38,7 +37,8 @@ class Rotor:
     """
 
     def __init__(self, motor_type, port, baudrate, az_limits, el_limits):
-        """Initializes the Rotor with its Motor Object
+        """Initializes the Rotor with its Motor Object and defines 
+        fixed parameters needed for control and settling checks
 
         Parameters
         ----------
@@ -51,16 +51,27 @@ class Rotor:
         el_limits : (float, float)
             Tuple of Lower and Upper Elevation Limits
         """
+
         if motor_type == RotorType.NONE or motor_type == RotorType.NONE.value:
             self.motor = NoMotor(port, baudrate, az_limits, el_limits)
+            self.rotor_loop_cadence = 0.5
+            self.pointing_accuracy = 1.0
         elif motor_type == RotorType.ROT2 or motor_type == RotorType.ROT2.value:
             self.motor = Rot2Motor(port, baudrate, az_limits, el_limits)
+            self.rotor_loop_cadence = 0.5
+            self.pointing_accuracy = 0.6
         elif motor_type == RotorType.H180 or motor_type == RotorType.H180.value:
             self.motor = H180Motor(port, baudrate, az_limits, el_limits)
+            self.rotor_loop_cadence = 0.5
+            self.pointing_accuracy = 0.6
         elif motor_type == RotorType.PUSH_ROD == RotorType.PUSH_ROD.value:
             self.motor = PushRodMotor(port, baudrate, az_limits, el_limits)
+            self.rotor_loop_cadence = 0.5
+            self.pointing_accuracy = 0.6
         elif motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value:
             self.motor = W1XMBigDishMotor()
+            self.rotor_loop_cadence = 0.1
+            self.pointing_accuracy = 0.1
         else:
             raise ValueError("Not a known motor type")
 
