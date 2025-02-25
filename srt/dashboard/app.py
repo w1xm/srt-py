@@ -70,10 +70,10 @@ def generate_app(config_dir, config_dict):
     command_thread = CommandThread(port=5556)
     command_thread.start()
 
-    raw_spectrum_thread = SpectrumThread(port=5561, num_channels=radio_num_channels)
+    raw_spectrum_thread = SpectrumThread(port=5561, num_channels=radio_num_channels, history_length=500)
     raw_spectrum_thread.start()
 
-    cal_spectrum_thread = SpectrumThread(port=5563, num_channels=radio_num_channels)
+    cal_spectrum_thread = SpectrumThread(port=5563, num_channels=radio_num_channels,history_length=500)
     cal_spectrum_thread.start()
 
     # Dictionary of Pages and matching URL prefixes
