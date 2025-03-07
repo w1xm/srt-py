@@ -102,20 +102,27 @@ class radio_process(gr.top_block):
             ),
         )
 
+        
+        
+        #turn sync off for now since it seems to have trouble
+        
+        #self.uhd_usrp_source_1.set_clock_source("internal")
+        #self.uhd_usrp_source_1.set_time_source("internal")
+        #_last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
+        ## Poll get_time_last_pps() every 50 ms until a change is seen
+        #while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
+        #    time.sleep(0.05)
+        ## Set the time to PC time on next PPS
+        #self.uhd_usrp_source_1.set_time_now(uhd.time_spec(int(time.time()) + 1.0))
+        ## Sleep 1 second to ensure next PPS has come
+        #time.sleep(1)
+        
+        self.uhd_usrp_source_1.set_time_now(uhd.time_spec(time.time()))
+        
+        
         self.uhd_usrp_source_1.set_samp_rate(samp_rate)
-        self.uhd_usrp_source_1.set_clock_source("internal")
-        self.uhd_usrp_source_1.set_time_source("internal")
-        _last_pps_time = self.uhd_usrp_source_1.get_time_last_pps().get_real_secs()
-        # Poll get_time_last_pps() every 50 ms until a change is seen
-        while(self.uhd_usrp_source_1.get_time_last_pps().get_real_secs() == _last_pps_time):
-            time.sleep(0.05)
-        # Set the time to PC time on next PPS
-        self.uhd_usrp_source_1.set_time_next_pps(uhd.time_spec(int(time.time()) + 1.0))
-        # Sleep 1 second to ensure next PPS has come
-        time.sleep(1)
-
-        #self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
-        self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0) #offset tune
+        self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
+        #self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0) #offset tune
         self.uhd_usrp_source_1.set_antenna("RX2", 0)
         self.uhd_usrp_source_1.set_bandwidth(samp_rate, 0)
         self.uhd_usrp_source_1.set_gain(rf_gain, 0)
@@ -297,6 +304,7 @@ class radio_process(gr.top_block):
         self.uhd_usrp_source_1.set_samp_rate(self.samp_rate)
         self.uhd_usrp_source_1.set_bandwidth(self.samp_rate, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
 
     def get_rf_gain(self):
         return self.rf_gain
@@ -311,7 +319,7 @@ class radio_process(gr.top_block):
     def set_rf_freq(self, rf_freq):
         self.rf_freq = rf_freq
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
-        #self.uhd_usrp_source_1.set_center_freq(rf_freq, 0)
+        #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
 
     def get_motor_el(self):
         return self.motor_el
