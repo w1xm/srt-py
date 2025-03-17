@@ -9,7 +9,7 @@ The SRT software accepts commands in order to change settings at runtime as well
 |--------------|------------|-------|--------------------------------------------|
 | *            | Any text   | 1     | Makes Line a Comment                       |
 | azel         | [az] [el]  |       | Points at Azimuth 'az', Elevation 'el'     |
-| galactic     | [l] [b]|   | 10    | Points at galactic coordinates and tracks  |
+| galactic     | [l] [b]   | 10    | Points at galactic coordinates and tracks  |
 | radec        | [ra] [dec] | 7 10    | Points at specified Right Ascension/Declination angle and tracks      |
 | cal          | None       |       | Sends the Antenna to Calibration Position  |
 | calibrate    | None       | 2     | Runs antenna calibration routine           |
