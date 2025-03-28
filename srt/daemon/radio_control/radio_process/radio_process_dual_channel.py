@@ -37,7 +37,7 @@ from . import tagging_and_synchronous_ctl as tagging_and_ctl
 
 class radio_process_dual_channel(gr.top_block):
 
-    def __init__(self, num_bins=256, num_integrations=100000):
+    def __init__(self, num_bins=256, num_integrations=100000, samp_rate=2000000):
         gr.top_block.__init__(self, "radio_process_dual_channel", catch_exceptions=True)
 
         ##################################################
@@ -58,7 +58,7 @@ class radio_process_dual_channel(gr.top_block):
         self.tcal = tcal = np.array([290]*num_channels)
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
-        self.samp_rate = samp_rate = 2000000
+        self.samp_rate = samp_rate
         self.rf_gain = rf_gain = 20
         self.rf_freq = rf_freq = freq
         self.motor_el = motor_el = np.nan
@@ -350,16 +350,16 @@ class radio_process_dual_channel(gr.top_block):
 
         ##### timed tuning command 
 
-        #self.uhd_usrp_source_1.clear_command_time()
-        #now_time = self.uhd_usrp_source_1.get_time_last_pps()
-        #self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
+        self.uhd_usrp_source_1.clear_command_time()
+        now_time = self.uhd_usrp_source_1.get_time_last_pps()
+        self.uhd_usrp_source_1.set_command_time(now_time + uhd.time_spec(1.0)) #occur at next second or ASAP
 
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 0)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 0)
         #self.uhd_usrp_source_1.set_center_freq(self.rf_freq, 1)
         self.uhd_usrp_source_1.set_center_freq(uhd.tune_request(self.rf_freq,self.samp_rate*0.6), 1)
 
-        #self.uhd_usrp_source_1.clear_command_time()
+        self.uhd_usrp_source_1.clear_command_time()
 
     def get_num_channels(self):
         return self.num_channels

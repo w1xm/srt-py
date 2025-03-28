@@ -30,14 +30,14 @@ class RadioProcessTask(RadioTask):
     Multiprocessing Wrapper Process for Starting the Processing of Radio Signals
     """
 
-    def __init__(self, num_channels, num_bins, num_integrations):
+    def __init__(self, num_channels, num_bins, num_integrations, samp_rate):
         if num_channels ==1:
             super().__init__(
-                radio_process.main, num_bins=num_bins, num_channels=1, num_integrations=num_integrations
+                radio_process.main, num_bins=num_bins, num_channels=1, num_integrations=num_integrations, samp_rate=samp_rate
             )
         elif num_channels==2:
             super().__init__(
-                radio_process_dual_channel.main, num_bins=num_bins, num_integrations=num_integrations
+                radio_process_dual_channel.main, num_bins=num_bins, num_integrations=num_integrations, samp_rate=samp_rate
             )
         else:
             print("specified channel count not supported")

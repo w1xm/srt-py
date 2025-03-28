@@ -175,7 +175,8 @@ class SmallRadioTelescopeDaemon:
         self.radio_process_task = RadioProcessTask(
             num_channels = self.radio_num_channels,
             num_bins=self.radio_num_bins, 
-            num_integrations=self.radio_integ_cycles
+            num_integrations=self.radio_integ_cycles,
+            samp_rate=self.radio_sample_frequency
         )
         #else:
         #    self.radio_process_task = RadioProcessTask(

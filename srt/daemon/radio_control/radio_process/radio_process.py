@@ -36,7 +36,7 @@ from . import tagging_and_synchronous_ctl as tagging_and_ctl
 
 class radio_process(gr.top_block):
 
-    def __init__(self, num_bins=256, num_channels=1, num_integrations=100000):
+    def __init__(self, num_bins=256, num_channels=1, num_integrations=100000, samp_rate=2000000):
         gr.top_block.__init__(self, "radio_process", catch_exceptions=True)
 
         ##################################################
@@ -45,7 +45,7 @@ class radio_process(gr.top_block):
         self.num_bins = num_bins
         self.num_channels = num_channels
         self.num_integrations = num_integrations
-
+        self.samp_rate = samp_rate
         ##################################################
         # Variables
         ##################################################
@@ -58,7 +58,6 @@ class radio_process(gr.top_block):
         self.tcal = tcal = np.array([290]*num_channels)
         self.tag_period = tag_period = num_bins*num_integrations
         self.soutrack = soutrack = "at_stow"
-        self.samp_rate = samp_rate = 2000000
         self.rf_gain = rf_gain = 20
         self.rf_freq = rf_freq = freq
         self.motor_el = motor_el = np.nan
