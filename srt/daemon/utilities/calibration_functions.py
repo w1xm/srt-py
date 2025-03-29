@@ -149,22 +149,41 @@ def reflection_phase_correction_estimate(freqs,num_channels):
 
     ### Hard Coded Correction Coefficients (yes, they really do need this many decimal places)
 
-    polynomial_coefficients = np.array(
-        [ 7.6465785107588041e+008,
-         -7.3432628298884302e+000,
-         3.2051462474718254e-008,
-         -8.4110946470682854e-017,
-         1.4785675449864143e-025,
-         -1.8347611098402675e-034,
-         1.6484466830969358e-043,
-         -1.0807220949161609e-052,
-         5.1323462377557384e-062,
-         -1.7221989568818954e-071,
-         3.8767622630916224e-081,
-         -5.2573654504136935e-091,
-         3.2488114541121001e-101])
+    #old polynomial coefficients before filter change
 
-    phase_offset = np.pi #phase offset for fit to set correct horizontal and vertical polarization
+    # polynomial_coefficients = np.array(
+    #     [ 7.6465785107588041e+008,
+    #      -7.3432628298884302e+000,
+    #      3.2051462474718254e-008,
+    #      -8.4110946470682854e-017,
+    #      1.4785675449864143e-025,
+    #      -1.8347611098402675e-034,
+    #      1.6484466830969358e-043,
+    #      -1.0807220949161609e-052,
+    #      5.1323462377557384e-062,
+    #      -1.7221989568818954e-071,
+    #      3.8767622630916224e-081,
+    #      -5.2573654504136935e-091,
+    #      3.2488114541121001e-101])
+
+    #offset_freq = 0.0
+    #phase_offset = np.pi
+
+    #correction coefficients withh new filter
+
+
+    polynomial_coefficients = np.array(
+        [-9.3733070616067877e+00,
+        -2.2191453005656916e+02,
+        -1.7638359283659172e+03,
+        1.3952675713463188e+04,  
+        2.3593954023607098e+05, 
+        -4.3352190887139173e+05,
+        -9.2469755618342832e+06])
+
+    offset_freq = 1.41e9
+
+    phase_offset = 0 #np.pi #phase offset for fit to set correct horizontal and vertical polarization
 
     ### calculation
 
