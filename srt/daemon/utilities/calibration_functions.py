@@ -190,7 +190,7 @@ def reflection_phase_correction_estimate(freqs,num_channels):
     phases = np.zeros_like(freqs)
 
     for i in range(len(polynomial_coefficients)):
-        phases = phases + polynomial_coefficients[i] * np.power(freqs, i)
+        phases = phases + polynomial_coefficients[i] * np.power(freqs-offset_freq, i)
 
     #initialize matrix as all ones so we don't need to touch the diagonal
     reflection_phase_mat = np.ones((num_channels,num_channels,len(freqs)),dtype=np.complex64) 
