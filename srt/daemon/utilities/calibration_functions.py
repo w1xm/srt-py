@@ -171,17 +171,22 @@ def reflection_phase_correction_estimate(freqs,num_channels):
 
     #correction coefficients withh new filter
 
-    polynomial_coefficients = np.array(
-        [-9.3733070616067877e+00,
-        -2.2191453005656916e-07,
-        -1.7638359283659172e-15,
-        1.3952675713463188e-23,  
-        2.3593954023607098e-31, 
-        -4.3352190887139173e-40,
-        -9.2469755618342832e-48])
+    polynomial_coefficients = np.array([-1.2553159553104805e+01,
+                                -2.4832389505714564e-07,
+                                1.3232496974066651e-15,
+                                7.3934677154752838e-23,
+                                -1.1090585124619824e-30,
+                                -3.9070776657597619e-38,
+                                2.7952245735759650e-46,
+                                1.1304779096029285e-53,
+                                -1.4636071275755361e-62,
+                                -1.5254043218079208e-69,
+                                -3.5331127230679329e-78,
+                                7.7016072328814410e-86,
+                                3.6292780379149786e-94])
 
 
-    offset_freq = 1.41e9
+    offset_freq = 1.415e9
 
     phase_offset = 0 #np.pi #phase offset for fit to set correct horizontal and vertical polarization
 
