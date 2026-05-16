@@ -14,6 +14,7 @@ try:
 except:
     import dash_html_components as html
 
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 
 from urllib.parse import quote as urlquote
@@ -21,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-def generate_layout():
+def generate_layout(config=None):
     """Generates the Basic Layout for the System Page
 
     Returns
@@ -135,12 +136,13 @@ def register_callbacks(app, config, status_thread):
         Contains All Settings for Dashboard / Daemon
     status_thread : Thread
         Thread for Getting Status from Daemon
+    command_thread : Thread, optional
+        Thread for Sending Commands to Daemon
 
     Returns
     -------
     None
     """
-
     @app.callback(
         Output("emergency-contact-info", "children"),
         [Input("interval-component", "n_intervals")],
@@ -230,3 +232,4 @@ def register_callbacks(app, config, status_thread):
                 ] + [html.Li(html.A(foldername)) for foldername in folders]
             else:
                 return [html.Li(html.A(filename)) for filename in (files + folders)]
+

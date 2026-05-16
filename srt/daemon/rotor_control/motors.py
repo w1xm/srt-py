@@ -802,13 +802,14 @@ class W1XMBigDishMotor(Motor):
     Class for Controlling the 54 roof Big Dish
     """
 
-    def __init__(self):
+    def __init__(self, host, port, user, password, kick_others=False):
         """
         Initializer for W1XM Big Dish controller
         """
         super().__init__(None, None, (0.0, 360.0), (0.0, 85.0))
         self.position = (60.0, 30.0)
-        self.client = BigDishClient("172.25.15.11", 1234, "w1xm", "test", True)
+        self.client = BigDishClient(host, port, user, password)
+        self.session_active = self.client.init_session(kick_others=kick_others)
 
     def point(self, az, el):
         """Points the dish at a point

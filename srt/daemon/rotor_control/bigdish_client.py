@@ -6,16 +6,28 @@ import threading
 from websockets.sync.client import connect
 
 class BigDishClient:
-    def __init__(self, server_host, server_port, user, password, kick_others = False):
+    def __init__(self, server_host, server_port, user, password):
         self.websocket = connect(f"ws://{server_host}:{server_port}")
         self.message_id = 0
-        self.websocket.send(json.dumps({"type": "auth", "id": self.message_id, "user": user, "password": password, "version": "0.0.1"}))
-        self.message_id += 1
-        self.websocket.send(json.dumps({"type": "init", "id": self.message_id, "kick_others": kick_others}))
-        self.message_id += 1
         self.received_messages = {}
-        self._message_recv_thread_handle = threading.Thread(target = self._message_recv_thread)
-        self._message_recv_thread_handle.start()
+        self._recv_thread = threading.Thread(target=self._message_recv_thread, daemon=True)
+        self._recv_thread.start()
+        self.websocket.send(json.dumps({"type": "auth", "id": self.message_id,
+                                        "user": user, "password": password, "version": "0.0.1"}))
+        auth_resp = self._wait_for_response(self.message_id)
+        if not auth_resp.get("success", False):
+            self.websocket.close()
+            raise PermissionError(f"BigDish auth failed: {auth_resp.get('reason', 'unknown')}")
+
+    def init_session(self, kick_others=False):
+        """Send init message. Returns True if session was granted."""
+        self.websocket.send(json.dumps({"type": "init", "id": self.message_id,
+                                        "kick_others": kick_others}))
+        resp = self._wait_for_response(self.message_id)
+        return resp.get("success", False)
+
+    def close(self):
+        self.websocket.close()
 
     def _message_recv_thread(self):
         for message in self.websocket:
@@ -38,7 +50,7 @@ class BigDishClient:
     def goto_posvel_azel(self, az_pos, el_pos, az_vel, el_vel):
         self.websocket.send(json.dumps({"type": "goto_posvel", "id": self.message_id, "coords": "azel", "az_pos": az_pos, "az_vel": az_vel, "el_pos": el_pos, "el_vel": el_vel}))
         return self._wait_for_response(self.message_id)
-    
+
     def track_radec(self, ra_pos, dec_pos, duration):
         self.websocket.send(json.dumps({"type": "track", "id": self.message_id, "coords": "radec", "ra_pos": ra_pos, "dec_pos": dec_pos, "duration": duration}))
         return self._wait_for_response(self.message_id)
@@ -52,7 +64,18 @@ class BigDishClient:
         return self._wait_for_response(self.message_id)
 
 if __name__ == "__main__":
-    client = BigDishClient("localhost", 1234, "w1xm", "test", kick_others = True)
-    #while True:
-    #    client.track_gal(162.592,4.5697, 5)
-    #    time.sleep(1)
+    import getpass
+    import sys
+    host = sys.argv[1] if len(sys.argv) > 1 else "localhost"
+    port = int(sys.argv[2]) if len(sys.argv) > 2 else 1234
+    user = input("Username: ")
+    password = getpass.getpass("Password: ")
+    client = BigDishClient(host, port, user, password)
+    granted = client.init_session(kick_others=False)
+    if not granted:
+        answer = input("Another session is active. Kick them? [y/N]: ")
+        if answer.strip().lower() == "y":
+            client.init_session(kick_others=True)
+        else:
+            client.close()
+            sys.exit(0)

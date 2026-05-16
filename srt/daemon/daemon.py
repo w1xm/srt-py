@@ -92,6 +92,16 @@ class SmallRadioTelescopeDaemon:
         self.motor_type = config_dict["MOTOR_TYPE"]
         self.motor_port = config_dict["MOTOR_PORT"]
         self.motor_baudrate = config_dict["MOTOR_BAUDRATE"]
+        self.bigdish_config = None
+        if self.motor_type == "W1XMBIGDISH":
+            self.bigdish_config = {
+                "host": config_dict.get("BIGDISH_HOST", "172.25.15.11"),
+                "port": config_dict.get("BIGDISH_PORT", 1234),
+                "user": config_dict["BIGDISH_USER"],
+                "password": config_dict["BIGDISH_PASSWORD"],
+                "kick_others": config_dict.get("BIGDISH_KICK_OTHERS", False),
+            }
+        self.bigdish_session_busy = False
         self.radio_num_channels = config_dict["RADIO_NUM_CHANNELS"]
         self.radio_center_frequency = config_dict["RADIO_CF"]
         self.radio_sample_frequency = config_dict["RADIO_SF"]
@@ -155,7 +165,10 @@ class SmallRadioTelescopeDaemon:
             self.motor_baudrate,
             self.az_limits,
             self.el_limits,
+            bigdish_config=self.bigdish_config,
         )
+        if self.motor_type == "W1XMBIGDISH":
+            self.bigdish_session_busy = not self.rotor.motor.session_active
 
         #vars pulled in from rotor definition
         #self.rotor.rotor_loop_cadence
@@ -1233,6 +1246,7 @@ class SmallRadioTelescopeDaemon:
                 "beam_switch_data": self.beam_switch_data,
                 "time": time(),
                 "cal_state": self.radio_calibrator_state,
+                "bigdish_session_busy": self.bigdish_session_busy,
             }
             status_socket.send_json(status)
             sleep(self.dashboard_refresh_rate)
@@ -1476,6 +1490,20 @@ Commands Coming in Over ZMQ PUSH/PULL
                         sleep(time_delta)
                     else:
                         self.log_message('target command time past. skipping wait')
+                elif command_name == "bigdish_connect":
+                    if self.bigdish_config is None:
+                        self.log_message("bigdish_connect: motor is not W1XMBIGDISH")
+                    else:
+                        kick = len(command_parts) > 1 and command_parts[1].lower() == "kick"
+                        try:
+                            granted = self.rotor.motor.client.init_session(kick_others=kick)
+                            self.bigdish_session_busy = not granted
+                            if granted:
+                                self.log_message("BigDish session connected")
+                            else:
+                                self.log_message("BigDish session busy — another client is active")
+                        except Exception as e:
+                            self.log_message(f"BigDish connect error: {e}")
                 else:
                     self.log_message(f"Command Not Identified '{command}'")
                 self.command_queue.task_done()
