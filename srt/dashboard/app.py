@@ -136,6 +136,33 @@ def generate_app(config_dir, config_dict):
             ]
         ),
     }
+
+    if config_dict.get("MOTOR_TYPE") == "W1XMBIGDISH":
+        side_content["Antenna Session"] = html.Div(
+            [
+                html.H4("Antenna Session"),
+                dcc.Markdown(id="sidebar-bigdish-status"),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Connect",
+                            id="sidebar-bigdish-connect-btn",
+                            color="primary",
+                            size="sm",
+                            style={"margin-right": "6px"},
+                        ),
+                        dbc.Button(
+                            "Kick & Connect",
+                            id="sidebar-bigdish-kick-btn",
+                            color="danger",
+                            size="sm",
+                        ),
+                    ],
+                    style={"margin-top": "6px"},
+                ),
+                html.Div(id="sidebar-bigdish-result"),
+            ]
+        )
     sidebar = generate_sidebar(side_title, side_content)
 
     # Build Dashboard Framework
@@ -186,7 +213,7 @@ def generate_app(config_dir, config_dict):
         radio_num_channels
     )
     # Create Callbacks for System Page Objects
-    system_page.register_callbacks(app, config_dict, status_thread, command_thread)
+    system_page.register_callbacks(app, config_dict, status_thread)
 
     # # Create Callbacks for figure page callbacks
     # figure_page.register_callbacks(app,config_dict, status_thread)
@@ -322,6 +349,39 @@ def generate_app(config_dir, config_dict):
             """
 
         return status_string
+
+    if config_dict.get("MOTOR_TYPE") == "W1XMBIGDISH":
+        import dash as _dash
+
+        @app.callback(
+            Output("sidebar-bigdish-status", "children"),
+            [Input("interval-component", "n_intervals")],
+        )
+        def update_bigdish_status(n):
+            status = status_thread.get_status()
+            if status is None:
+                return "Daemon not connected"
+            if status.get("bigdish_session_busy", False):
+                return "**Session busy** — another client is active"
+            return "**Session active**"
+
+        @app.callback(
+            Output("sidebar-bigdish-result", "children"),
+            [
+                Input("sidebar-bigdish-connect-btn", "n_clicks"),
+                Input("sidebar-bigdish-kick-btn", "n_clicks"),
+            ],
+        )
+        def handle_bigdish_buttons(connect_clicks, kick_clicks):
+            ctx = _dash.callback_context
+            if not ctx.triggered:
+                return ""
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "sidebar-bigdish-connect-btn":
+                command_thread.add_to_queue("bigdish_connect")
+            elif button_id == "sidebar-bigdish-kick-btn":
+                command_thread.add_to_queue("bigdish_connect kick")
+            return ""
 
     @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
     def render_page_content(pathname):
