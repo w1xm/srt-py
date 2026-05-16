@@ -4,6 +4,8 @@ Function for Generating System Page and Creating Callback
 
 """
 
+import dash
+
 try:
     from dash import dcc
 except:
@@ -293,15 +295,16 @@ def register_callbacks(app, config, status_thread, command_thread=None):
                 Input("bigdish-connect-btn", "n_clicks"),
                 Input("bigdish-kick-btn", "n_clicks"),
             ],
-            prevent_initial_call=True,
         )
         def handle_bigdish_buttons(connect_clicks, kick_clicks):
-            from dash import ctx
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return ""
             if command_thread is None:
                 return "No command thread available"
-            triggered = ctx.triggered_id
-            if triggered == "bigdish-connect-btn":
+            button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+            if button_id == "bigdish-connect-btn":
                 command_thread.add_to_queue("bigdish_connect")
-            elif triggered == "bigdish-kick-btn":
+            elif button_id == "bigdish-kick-btn":
                 command_thread.add_to_queue("bigdish_connect kick")
             return ""
