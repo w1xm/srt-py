@@ -14,6 +14,7 @@ try:
 except:
     import dash_html_components as html
 
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 
 from urllib.parse import quote as urlquote
@@ -21,13 +22,50 @@ from datetime import datetime
 from pathlib import Path
 
 
-def generate_layout():
+def generate_layout(config=None):
     """Generates the Basic Layout for the System Page
 
     Returns
     -------
     System Page Layout
     """
+    is_bigdish = config is not None and config.get("MOTOR_TYPE") == "W1XMBIGDISH"
+
+    bigdish_panel = html.Div(
+        [
+            html.Div(
+                [
+                    html.H4(
+                        "Antenna Session",
+                        style={"text-align": "center"},
+                    ),
+                    dcc.Markdown(id="bigdish-status"),
+                    html.Div(
+                        [
+                            dbc.Button(
+                                "Connect",
+                                id="bigdish-connect-btn",
+                                color="primary",
+                                className="me-2",
+                                style={"margin-right": "8px"},
+                            ),
+                            dbc.Button(
+                                "Kick & Connect",
+                                id="bigdish-kick-btn",
+                                color="danger",
+                            ),
+                        ],
+                        style={"text-align": "center", "margin-top": "8px"},
+                    ),
+                    html.Div(id="bigdish-connect-result"),
+                ],
+                className="pretty_container four columns",
+            ),
+        ],
+        className="flex-display",
+        style={"justify-content": "center", "margin": "5px"},
+    ) if is_bigdish else html.Div()
+
     layout = html.Div(
         [
             html.Div(
@@ -119,12 +157,13 @@ def generate_layout():
                 className="flex-display",
                 style={"justify-content": "center", "margin": "5px"},
             ),
+            bigdish_panel,
         ]
     )
     return layout
 
 
-def register_callbacks(app, config, status_thread):
+def register_callbacks(app, config, status_thread, command_thread=None):
     """Registers the Callbacks for the System Page
 
     Parameters
@@ -135,11 +174,14 @@ def register_callbacks(app, config, status_thread):
         Contains All Settings for Dashboard / Daemon
     status_thread : Thread
         Thread for Getting Status from Daemon
+    command_thread : Thread, optional
+        Thread for Sending Commands to Daemon
 
     Returns
     -------
     None
     """
+    is_bigdish = config.get("MOTOR_TYPE") == "W1XMBIGDISH"
 
     @app.callback(
         Output("emergency-contact-info", "children"),
@@ -230,3 +272,36 @@ def register_callbacks(app, config, status_thread):
                 ] + [html.Li(html.A(foldername)) for foldername in folders]
             else:
                 return [html.Li(html.A(filename)) for filename in (files + folders)]
+
+    if is_bigdish:
+        @app.callback(
+            Output("bigdish-status", "children"),
+            [Input("interval-component", "n_intervals")],
+        )
+        def update_bigdish_status(n):
+            status = status_thread.get_status()
+            if status is None:
+                return "Daemon not connected"
+            busy = status.get("bigdish_session_busy", False)
+            if busy:
+                return "**Session busy** — another client is active"
+            return "**Session active**"
+
+        @app.callback(
+            Output("bigdish-connect-result", "children"),
+            [
+                Input("bigdish-connect-btn", "n_clicks"),
+                Input("bigdish-kick-btn", "n_clicks"),
+            ],
+            prevent_initial_call=True,
+        )
+        def handle_bigdish_buttons(connect_clicks, kick_clicks):
+            from dash import ctx
+            if command_thread is None:
+                return "No command thread available"
+            triggered = ctx.triggered_id
+            if triggered == "bigdish-connect-btn":
+                command_thread.add_to_queue("bigdish_connect")
+            elif triggered == "bigdish-kick-btn":
+                command_thread.add_to_queue("bigdish_connect kick")
+            return ""

@@ -36,7 +36,7 @@ class Rotor:
     motors.py
     """
 
-    def __init__(self, motor_type, port, baudrate, az_limits, el_limits):
+    def __init__(self, motor_type, port, baudrate, az_limits, el_limits, bigdish_config=None):
         """Initializes the Rotor with its Motor Object and defines 
         fixed parameters needed for control and settling checks
 
@@ -69,7 +69,14 @@ class Rotor:
             self.rotor_loop_cadence = 0.5
             self.pointing_accuracy = 0.6
         elif motor_type == RotorType.W1XM_BIG_DISH or motor_type == RotorType.W1XM_BIG_DISH.value:
-            self.motor = W1XMBigDishMotor()
+            cfg = bigdish_config or {}
+            self.motor = W1XMBigDishMotor(
+                host=cfg["host"],
+                port=cfg["port"],
+                user=cfg["user"],
+                password=cfg["password"],
+                kick_others=cfg.get("kick_others", False),
+            )
             self.rotor_loop_cadence = 0.1
             self.pointing_accuracy = 0.1
         else:

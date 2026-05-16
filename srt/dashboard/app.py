@@ -163,7 +163,7 @@ def generate_app(config_dir, config_dict):
         [
             layout,
             monitor_page.generate_layout(config_dict["SOFTWARE"], config_dict["RADIO_NUM_CHANNELS"]),
-            system_page.generate_layout(),
+            system_page.generate_layout(config_dict),
             #    figure_page.generate_layout()
         ]
     )  # Necessary for Allowing Other Files to Create Callbacks
@@ -186,7 +186,7 @@ def generate_app(config_dir, config_dict):
         radio_num_channels
     )
     # Create Callbacks for System Page Objects
-    system_page.register_callbacks(app, config_dict, status_thread)
+    system_page.register_callbacks(app, config_dict, status_thread, command_thread)
 
     # # Create Callbacks for figure page callbacks
     # figure_page.register_callbacks(app,config_dict, status_thread)
@@ -340,7 +340,7 @@ def generate_app(config_dir, config_dict):
         if pathname in ["/", f"/{pages['Monitor Page']}"]:
             return monitor_page.generate_layout(config_dict["SOFTWARE"], config_dict["RADIO_NUM_CHANNELS"])
         elif pathname == f"/{pages['System Page']}":
-            return system_page.generate_layout()
+            return system_page.generate_layout(config_dict)
         # elif pathname == f"/{pages['Figure Page']}":
         #     return figure_page.generate_layout()
         # If the user tries to reach a different page, return a 404 message
